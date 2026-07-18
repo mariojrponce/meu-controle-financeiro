@@ -42,11 +42,8 @@ function renderizarTabela(listaDeTransacoes) {
         const sinal = transacao.tipo === "SAIDA" ? "-" : "+";
 
         const linha = document.createElement("tr");
-        
-        // Nova estrutura com a coluna de Local/Saída
         linha.innerHTML = `
             <td>${dataBR}</td>
-            <td>${transacao.saida || "-"}</td> <!-- NOVO DADO AQUI -->
             <td>${transacao.descricao}</td>
             <td>${transacao.tipo_mov}</td>
             <td>${transacao.banco}</td>

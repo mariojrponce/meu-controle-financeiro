@@ -22,10 +22,8 @@ formulario.addEventListener("submit", async function(evento) {
     const botaoSalvar = formulario.querySelector("button");
     botaoSalvar.innerText = "Salvando...";
 
-    // Capturando os dados
     const valor = parseFloat(document.getElementById("valor").value);
     const data = document.getElementById("data").value;
-    const saida = document.getElementById("saida").value.toUpperCase(); // NOVO CAMPO
     const descricao = document.getElementById("descricao").value.toUpperCase();
     const banco = document.getElementById("banco").value.toUpperCase();
     const tipo = document.getElementById("tipo").value;
@@ -36,7 +34,6 @@ formulario.addEventListener("submit", async function(evento) {
         await addDoc(collection(db, "transacoes"), {
             valor: valor,
             data: data,
-            saida: saida, // SALVANDO O NOVO CAMPO AQUI
             descricao: descricao,
             banco: banco,
             tipo: tipo,
