@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Lançamento</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        input, select, button { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; border: none; padding: 10px; margin-top: 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        .menu { text-align: center; margin-bottom: 20px; }
+        .menu a { text-decoration: none; background: #007bff; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="menu">
+    <a href="extrato.html">📊 Ver Extrato de Transações</a>
+</div>
+
+<div class="container">
+    <h2>Nova Transação</h2>
+    <form id="form-transacao">
+        <label>Valor (R$):</label>
+        <input type="number" id="valor" step="0.01" required>
+
+        <label>Data:</label>
+        <input type="date" id="data" required>
+
+        <label>Descrição:</label>
+        <input type="text" id="descricao" required>
+
+        <label>Banco:</label>
+        <input type="text" id="banco" required>
+
+        <label>Tipo:</label>
+        <select id="tipo">
+            <option value="SAIDA">Saída</option>
+            <option value="ENTRADA">Entrada</option>
+        </select>
+
+        <label>Movimentação:</label>
+        <select id="tipo_mov">
+            <option value="EXTERNO">Externo (Gasto/Receita real)</option>
+            <option value="INTERNO">Interno (Transferência)</option>
+        </select>
+
+        <label>Classificação:</label>
+        <input type="text" id="classificacao_saida" required>
+
+        <button type="submit">Salvar Transação</button>
+    </form>
+</div>
+
+<script type="module" src="app.js"></script>
+
+</body>
+</html>

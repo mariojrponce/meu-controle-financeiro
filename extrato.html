@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrato</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .menu { text-align: center; margin-bottom: 20px; }
+        .menu a { text-decoration: none; background: #6c757d; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
+        
+        /* Estilos da Área de Filtros */
+        .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #e9ecef; padding: 15px; border-radius: 8px; align-items: flex-end; }
+        .campo-filtro { display: flex; flex-direction: column; flex: 1; min-width: 130px; }
+        .campo-filtro label { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+        .filtros input, .filtros select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        .filtros button { background-color: #007bff; color: white; border: none; padding: 9px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; height: 35px; }
+        .filtros button:hover { background-color: #0056b3; }
+        .btn-limpar { background-color: #dc3545 !important; }
+        .btn-limpar:hover { background-color: #c82333 !important; }
+
+        /* Estilos da Tabela */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .saida { color: red; }
+        .entrada { color: green; }
+    </style>
+</head>
+<body>
+
+<div class="menu">
+    <a href="index.html">⬅ Voltar para Lançamentos</a>
+</div>
+
+<div class="container">
+    <h2>Extrato de Transações</h2>
+    
+    <!-- ÁREA DE FILTROS -->
+    <div class="filtros">
+        <div class="campo-filtro">
+            <label>Data Início:</label>
+            <input type="date" id="filtro-data-inicio">
+        </div>
+        <div class="campo-filtro">
+            <label>Data Fim:</label>
+            <input type="date" id="filtro-data-fim">
+        </div>
+        <div class="campo-filtro">
+            <label>Banco (ex: NUBANK):</label>
+            <input type="text" id="filtro-banco" placeholder="Todos">
+        </div>
+        <div class="campo-filtro">
+            <label>Movimentação:</label>
+            <select id="filtro-movimentacao">
+                <option value="">Todas</option>
+                <option value="EXTERNO">Externo</option>
+                <option value="INTERNO">Interno</option>
+            </select>
+        </div>
+        <button id="btn-filtrar">Pesquisar</button>
+        <button id="btn-limpar" class="btn-limpar">Limpar</button>
+    </div>
+
+    <!-- TABELA -->
+    <table id="tabela-transacoes">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Movimentação</th> <!-- NOVA COLUNA AQUI -->
+                <th>Banco</th>
+                <th>Classificação</th>
+                <th>Valor (R$)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- As linhas vão aparecer aqui -->
+        </tbody>
+    </table>
+</div>
+
+<script type="module" src="extrato.js"></script>
+
+</body>
+</html>
