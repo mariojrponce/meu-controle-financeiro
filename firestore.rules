@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Estas regras precisam ser publicadas no Firebase Console:
+// Console do Firebase > Firestore Database > Regras > colar este conteúdo > Publicar
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /transacoes/{transacaoId} {
+
+      // Só permite LER se estiver logado E o documento pertencer ao usuário logado
+      allow read: if request.auth != null
+                  && request.auth.uid == resource.data.userId;
+
+      // Só permite CRIAR se estiver logado, o userId enviado bater com quem está criando,
+      // e os campos essenciais existirem com o tipo certo
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.userId
+                    && request.resource.data.valor is number
+                    && request.resource.data.valor > 0
+                    && request.resource.data.data is string
+                    && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
+                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO'];
+
+      // Ninguém pode editar ou apagar lançamentos pelo app (evita alterar histórico por engano)
+      // Remova este bloco e adicione "allow update, delete" se quiser permitir edição futuramente.
+      allow update, delete: if false;
+    }
+
+    // Bloqueia qualquer outra coleção não prevista explicitamente
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -7,10 +7,21 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
         .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .menu { text-align: center; margin-bottom: 20px; }
-        .menu a { text-decoration: none; background: #6c757d; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
-        
-        /* Estilos da Área de Filtros */
+        .menu { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .menu a, .menu button { text-decoration: none; background: #6c757d; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; width: auto; margin: 0; }
+        .menu .sair { background: #6c757d; }
+
+        /* Resumo */
+        .resumo { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .cartao { flex: 1; min-width: 140px; padding: 15px; border-radius: 8px; color: white; text-align: center; }
+        .cartao .rotulo { font-size: 12px; opacity: 0.9; }
+        .cartao .valor { font-size: 20px; font-weight: bold; margin-top: 4px; }
+        .cartao.entradas { background: #28a745; }
+        .cartao.saidas { background: #dc3545; }
+        .cartao.saldo-positivo { background: #007bff; }
+        .cartao.saldo-negativo { background: #343a40; }
+
+        /* Filtros */
         .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #e9ecef; padding: 15px; border-radius: 8px; align-items: flex-end; }
         .campo-filtro { display: flex; flex-direction: column; flex: 1; min-width: 130px; }
         .campo-filtro label { font-size: 12px; font-weight: bold; margin-bottom: 5px; }
@@ -20,7 +31,6 @@
         .btn-limpar { background-color: #dc3545 !important; }
         .btn-limpar:hover { background-color: #c82333 !important; }
 
-        /* Estilos da Tabela */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
@@ -32,11 +42,28 @@
 
 <div class="menu">
     <a href="index.html">⬅ Voltar para Lançamentos</a>
+    <button id="btn-sair" class="sair">Sair</button>
 </div>
 
 <div class="container">
     <h2>Extrato de Transações</h2>
-    
+
+    <!-- RESUMO -->
+    <div class="resumo" id="resumo">
+        <div class="cartao entradas">
+            <div class="rotulo">ENTRADAS</div>
+            <div class="valor" id="total-entradas">R$ 0,00</div>
+        </div>
+        <div class="cartao saidas">
+            <div class="rotulo">SAÍDAS</div>
+            <div class="valor" id="total-saidas">R$ 0,00</div>
+        </div>
+        <div class="cartao saldo-positivo" id="cartao-saldo">
+            <div class="rotulo">SALDO</div>
+            <div class="valor" id="total-saldo">R$ 0,00</div>
+        </div>
+    </div>
+
     <!-- ÁREA DE FILTROS -->
     <div class="filtros">
         <div class="campo-filtro">
@@ -69,14 +96,13 @@
             <tr>
                 <th>Data</th>
                 <th>Descrição</th>
-                <th>Movimentação</th> <!-- NOVA COLUNA AQUI -->
+                <th>Movimentação</th>
                 <th>Banco</th>
                 <th>Classificação</th>
                 <th>Valor (R$)</th>
             </tr>
         </thead>
         <tbody>
-            <!-- As linhas vão aparecer aqui -->
         </tbody>
     </table>
 </div>

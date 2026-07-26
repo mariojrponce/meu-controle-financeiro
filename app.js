@@ -1,53 +1,56 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db } from "./firebase-config.js";
+import { exigirLogin, ligarBotaoSair } from "./auth-guard.js";
 
-// ⚠️ COLE A SUA CHAVE DE CONEXÃO AQUI
-const firebaseConfig = {
-  apiKey: "AIzaSyDOcArv9AXmCV2_UWKGc7ElLkjIri8cK5Q",
-  authDomain: "meucontrolefinanceiro-85d6e.firebaseapp.com",
-  projectId: "meucontrolefinanceiro-85d6e",
-  storageBucket: "meucontrolefinanceiro-85d6e.firebasestorage.app",
-  messagingSenderId: "260712769903",
-  appId: "1:260712769903:web:a7ddbe3cc527b585be209a",
-  measurementId: "G-BS5WZ6YBG9"
-};
+// Bloqueia a página até confirmar que há um usuário logado
+const usuario = await exigirLogin();
+ligarBotaoSair();
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const formulario = document.getElementById("form-transacao");
 
-formulario.addEventListener("submit", async function(evento) {
+formulario.addEventListener("submit", async function (evento) {
     evento.preventDefault();
-    
+
     const botaoSalvar = formulario.querySelector("button");
+    botaoSalvar.disabled = true;
     botaoSalvar.innerText = "Salvando...";
 
     const valor = parseFloat(document.getElementById("valor").value);
     const data = document.getElementById("data").value;
-    const descricao = document.getElementById("descricao").value.toUpperCase();
-    const banco = document.getElementById("banco").value.toUpperCase();
+    const descricao = document.getElementById("descricao").value.trim().toUpperCase();
+    const banco = document.getElementById("banco").value.trim().toUpperCase();
     const tipo = document.getElementById("tipo").value;
     const tipo_mov = document.getElementById("tipo_mov").value;
-    const classificacao_saida = document.getElementById("classificacao_saida").value.toUpperCase();
+    const classificacao_saida = document.getElementById("classificacao_saida").value.trim().toUpperCase();
+
+    // Validação básica no cliente (a validação que realmente protege está nas Firestore Rules)
+    if (!valor || valor <= 0 || !descricao || !banco || !classificacao_saida) {
+        alert("Preencha todos os campos corretamente.");
+        botaoSalvar.disabled = false;
+        botaoSalvar.innerText = "Salvar Transação";
+        return;
+    }
 
     try {
         await addDoc(collection(db, "transacoes"), {
+            userId: usuario.uid,        // 🔑 cada lançamento pertence a este usuário
             valor: valor,
             data: data,
             descricao: descricao,
             banco: banco,
             tipo: tipo,
             tipo_mov: tipo_mov,
-            classificacao_saida: classificacao_saida
+            classificacao_saida: classificacao_saida,
+            criadoEm: serverTimestamp()
         });
 
         alert("Transação salva!");
         formulario.reset();
-        botaoSalvar.innerText = "Salvar Transação";
-        
     } catch (erro) {
         console.error("Erro ao salvar: ", erro);
-        alert("Erro ao salvar.");
+        alert("Erro ao salvar. Tente novamente.");
+    } finally {
+        botaoSalvar.disabled = false;
         botaoSalvar.innerText = "Salvar Transação";
     }
 });

@@ -11,30 +11,33 @@
         input, select, button { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
         button { background-color: #28a745; color: white; border: none; padding: 10px; margin-top: 15px; cursor: pointer; border-radius: 4px; font-weight: bold; }
         button:hover { background-color: #218838; }
-        .menu { text-align: center; margin-bottom: 20px; }
-        .menu a { text-decoration: none; background: #007bff; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
+        .menu { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .menu a, .menu button { text-decoration: none; background: #007bff; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; width: auto; margin: 0; }
+        .menu .sair { background: #6c757d; }
+        .menu .sair:hover { background: #5a6268; }
     </style>
 </head>
 <body>
 
 <div class="menu">
     <a href="extrato.html">📊 Ver Extrato de Transações</a>
+    <button id="btn-sair" class="sair">Sair</button>
 </div>
 
 <div class="container">
     <h2>Nova Transação</h2>
     <form id="form-transacao">
         <label>Valor (R$):</label>
-        <input type="number" id="valor" step="0.01" required>
+        <input type="number" id="valor" step="0.01" min="0.01" required>
 
         <label>Data:</label>
         <input type="date" id="data" required>
 
         <label>Descrição:</label>
-        <input type="text" id="descricao" required>
+        <input type="text" id="descricao" required maxlength="120">
 
         <label>Banco:</label>
-        <input type="text" id="banco" required>
+        <input type="text" id="banco" required maxlength="60">
 
         <label>Tipo:</label>
         <select id="tipo">
@@ -49,7 +52,7 @@
         </select>
 
         <label>Classificação:</label>
-        <input type="text" id="classificacao_saida" required>
+        <input type="text" id="classificacao_saida" required maxlength="60">
 
         <button type="submit">Salvar Transação</button>
     </form>
