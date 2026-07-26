@@ -5,11 +5,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    match /transacoes/{transacaoId} {
+    match /carteira/{itemId} {
 
+      // Só permite LER se estiver logado E o documento pertencer ao usuário logado
       allow read: if request.auth != null
                   && request.auth.uid == resource.data.userId;
 
+      // Só permite CRIAR se estiver logado, o userId enviado bater com quem está criando,
+      // e os campos essenciais existirem com o tipo certo
       allow create: if request.auth != null
                     && request.auth.uid == request.resource.data.userId
                     && request.resource.data.valor is number
@@ -18,9 +21,16 @@ service cloud.firestore {
                     && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
                     && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO'];
 
-      allow update, delete: if false;
+      // Permite EXCLUIR apenas o próprio dono do lançamento
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.userId;
+
+      // Edição continua bloqueada (evita alterar histórico por engano).
+      // Se um dia quiser permitir editar, troque para uma regra "allow update" própria.
+      allow update: if false;
     }
 
+    // Bloqueia qualquer outra coleção não prevista explicitamente
     match /{document=**} {
       allow read, write: if false;
     }

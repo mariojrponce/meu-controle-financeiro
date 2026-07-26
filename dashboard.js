@@ -4,14 +4,15 @@ import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { formatarMoeda } from "./utils.js";
 
+const NOME_COLECAO = "carteira";
+
 const usuario = await exigirLogin();
 renderizarNav("dashboard", usuario.email);
 
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 function chaveAnoMes(data) {
-    // data no formato "aaaa-mm-dd" -> "aaaa-mm"
-    return (data ?? "").slice(0, 7);
+    return (data ?? "").slice(0, 7); // "aaaa-mm-dd" -> "aaaa-mm"
 }
 
 async function carregarDashboard() {
@@ -21,21 +22,30 @@ async function carregarDashboard() {
         `Visão geral das suas finanças — ${NOMES_MES[hoje.getMonth()]} de ${hoje.getFullYear()}`;
 
     try {
-        const consulta = query(collection(db, "transacoes"), where("userId", "==", usuario.uid));
+        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
         const snapshot = await getDocs(consulta);
 
         const transacoes = [];
         snapshot.forEach((doc) => transacoes.push(doc.data()));
 
-        // ---- Saldo geral (todas as transações, todos os tempos) ----
+        // ---- Por banco: saldo, entradas e saídas separadas (todo o período) ----
+        const porBanco = {}; // { NUBANK: { saldo, entradas, saidas } }
         let saldoGeral = 0;
-        const saldoPorBanco = {};
 
         transacoes.forEach((t) => {
             if (typeof t.valor !== "number" || !t.banco) return;
-            const sinal = t.tipo === "SAIDA" ? -1 : 1;
-            saldoGeral += sinal * t.valor;
-            saldoPorBanco[t.banco] = (saldoPorBanco[t.banco] ?? 0) + sinal * t.valor;
+
+            if (!porBanco[t.banco]) porBanco[t.banco] = { saldo: 0, entradas: 0, saidas: 0 };
+
+            if (t.tipo === "ENTRADA") {
+                porBanco[t.banco].entradas += t.valor;
+                porBanco[t.banco].saldo += t.valor;
+                saldoGeral += t.valor;
+            } else {
+                porBanco[t.banco].saidas += t.valor;
+                porBanco[t.banco].saldo -= t.valor;
+                saldoGeral -= t.valor;
+            }
         });
 
         // ---- Totais do mês atual ----
@@ -58,7 +68,7 @@ async function carregarDashboard() {
 
         const saldoMes = entradasMes - saidasMes;
 
-        // ---- Renderiza cartões principais ----
+        // ---- Cartões principais ----
         document.getElementById("saldo-geral").textContent = `R$ ${formatarMoeda(saldoGeral)}`;
         document.getElementById("entradas-mes").textContent = `R$ ${formatarMoeda(entradasMes)}`;
         document.getElementById("saidas-mes").textContent = `R$ ${formatarMoeda(saidasMes)}`;
@@ -72,10 +82,7 @@ async function carregarDashboard() {
         cartaoSaldoMes.classList.toggle("metrica-saldo-neg", saldoMes < 0);
         cartaoSaldoMes.classList.toggle("metrica-neutra", saldoMes >= 0);
 
-        // ---- Renderiza saldo por carteira/banco ----
-        renderizarCarteiras(saldoPorBanco);
-
-        // ---- Renderiza maiores classificações de gasto do mês ----
+        renderizarCarteiras(porBanco);
         renderizarClassificacoes(gastoPorClassificacaoMes);
 
     } catch (erro) {
@@ -85,11 +92,31 @@ async function carregarDashboard() {
     }
 }
 
-function renderizarCarteiras(saldoPorBanco) {
+function linhaCarteira(rotulo, valor, classeExtra = "") {
+    const linha = document.createElement("div");
+    linha.className = `linha-carteira ${classeExtra}`;
+
+    const spanRotulo = document.createElement("span");
+    spanRotulo.className = "rotulo-linha";
+    spanRotulo.textContent = rotulo;
+
+    const spanValor = document.createElement("span");
+    spanValor.className = "valor-linha";
+    spanValor.textContent = `R$ ${formatarMoeda(valor)}`;
+    if (classeExtra === "saldo") {
+        spanValor.classList.add(valor >= 0 ? "valor-positivo" : "valor-negativo");
+    }
+
+    linha.appendChild(spanRotulo);
+    linha.appendChild(spanValor);
+    return linha;
+}
+
+function renderizarCarteiras(porBanco) {
     const container = document.getElementById("grade-carteiras");
     container.innerHTML = "";
 
-    const bancos = Object.keys(saldoPorBanco).sort((a, b) => saldoPorBanco[b] - saldoPorBanco[a]);
+    const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saldo - porBanco[a].saldo);
 
     if (bancos.length === 0) {
         container.innerHTML = "<p class='vazio'>Nenhuma transação cadastrada ainda.</p>";
@@ -97,21 +124,20 @@ function renderizarCarteiras(saldoPorBanco) {
     }
 
     bancos.forEach((banco) => {
-        const saldo = saldoPorBanco[banco];
+        const dados = porBanco[banco];
+
         const cartao = document.createElement("div");
         cartao.className = "cartao-carteira";
 
         const nome = document.createElement("div");
         nome.className = "nome-banco";
         nome.textContent = banco;
-
-        const valor = document.createElement("div");
-        valor.className = "saldo-banco";
-        valor.style.color = saldo >= 0 ? "var(--cor-sucesso)" : "var(--cor-perigo)";
-        valor.textContent = `R$ ${formatarMoeda(saldo)}`;
-
         cartao.appendChild(nome);
-        cartao.appendChild(valor);
+
+        cartao.appendChild(linhaCarteira("Entradas", dados.entradas));
+        cartao.appendChild(linhaCarteira("Saídas", dados.saidas));
+        cartao.appendChild(linhaCarteira("Saldo", dados.saldo, "saldo"));
+
         container.appendChild(cartao);
     });
 }
@@ -139,7 +165,7 @@ function renderizarClassificacoes(gastoPorClassificacao) {
         cabecalho.className = "cabecalho-barra";
 
         const spanNome = document.createElement("span");
-        spanNome.textContent = nome; // texto do usuário: nunca via innerHTML
+        spanNome.textContent = nome;
 
         const spanValor = document.createElement("span");
         spanValor.textContent = `R$ ${formatarMoeda(valor)}`;

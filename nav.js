@@ -1,36 +1,67 @@
 // nav.js
-// Monta a barra de navegação no topo de cada página e liga o botão "Sair".
+// Monta o layout com barra lateral (sidebar) e move o conteúdo já existente
+// da página para dentro dela — sem precisar reescrever o HTML de cada tela.
 import { sair } from "./auth-guard.js";
 
+const PAGINAS = [
+  { id: "lancar", href: "index.html", icone: "➕", rotulo: "Lançar" },
+  { id: "extrato", href: "extrato.html", icone: "📋", rotulo: "Extrato" },
+  { id: "dashboard", href: "dashboard.html", icone: "📊", rotulo: "Dashboard" }
+];
+
 export function renderizarNav(paginaAtiva, emailUsuario) {
+  const conteudoOriginal = Array.from(document.body.children);
+
+  const layout = document.createElement("div");
+  layout.className = "layout";
+
+  const aside = document.createElement("aside");
+  aside.className = "sidebar";
+
+  const marca = document.createElement("div");
+  marca.className = "sidebar-marca";
+  marca.textContent = "💰 Meu Financeiro";
+
   const nav = document.createElement("nav");
-  nav.className = "nav-topo";
+  nav.className = "sidebar-links";
+  PAGINAS.forEach((p) => {
+    const link = document.createElement("a");
+    link.href = p.href;
+    if (p.id === paginaAtiva) link.classList.add("ativo");
+    const icone = document.createElement("span");
+    icone.className = "icone";
+    icone.textContent = p.icone;
+    const rotulo = document.createElement("span");
+    rotulo.textContent = p.rotulo;
+    link.appendChild(icone);
+    link.appendChild(rotulo);
+    nav.appendChild(link);
+  });
 
-  const paginas = [
-    { id: "lancar", href: "index.html", rotulo: "➕ Lançar" },
-    { id: "extrato", href: "extrato.html", rotulo: "📋 Extrato" },
-    { id: "dashboard", href: "dashboard.html", rotulo: "📊 Dashboard" }
-  ];
+  const rodape = document.createElement("div");
+  rodape.className = "sidebar-rodape";
+  const spanEmail = document.createElement("div");
+  spanEmail.className = "sidebar-email";
+  spanEmail.textContent = emailUsuario ?? "";
+  const botaoSair = document.createElement("button");
+  botaoSair.id = "btn-sair";
+  botaoSair.className = "botao-sair";
+  botaoSair.textContent = "🚪 Sair";
+  botaoSair.addEventListener("click", sair);
+  rodape.appendChild(spanEmail);
+  rodape.appendChild(botaoSair);
 
-  const linksHtml = paginas
-    .map(p => `<a href="${p.href}" class="${p.id === paginaAtiva ? "ativo" : ""}">${p.rotulo}</a>`)
-    .join("");
+  aside.appendChild(marca);
+  aside.appendChild(nav);
+  aside.appendChild(rodape);
 
-  nav.innerHTML = `
-    <div class="nav-marca">💰 Meu Financeiro</div>
-    <div class="nav-links">${linksHtml}</div>
-    <div class="nav-usuario">
-      <span class="nav-email"></span>
-      <button id="btn-sair" class="botao botao-secundario botao-pequeno">Sair</button>
-    </div>
-  `;
+  const main = document.createElement("main");
+  main.className = "conteudo-principal";
+  conteudoOriginal.forEach((el) => main.appendChild(el));
 
-  document.body.prepend(nav);
+  layout.appendChild(aside);
+  layout.appendChild(main);
+  document.body.appendChild(layout);
 
-  const spanEmail = nav.querySelector(".nav-email");
-  if (emailUsuario) spanEmail.textContent = emailUsuario;
-
-  nav.querySelector("#btn-sair").addEventListener("click", sair);
-
-  return nav;
+  return { aside, main };
 }

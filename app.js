@@ -2,8 +2,11 @@ import { collection, addDoc, getDocs, query, where, serverTimestamp } from "http
 import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
+import { mostrarToast } from "./ui.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes, preencherDatalist } from "./dados-comuns.js";
-import { brParaISO, ligarCampoDataInteligente } from "./utils.js";
+import { brParaISO, normalizarDataDigitada, ligarCampoDataInteligente } from "./utils.js";
+
+const NOME_COLECAO = "carteira";
 
 const usuario = await exigirLogin();
 renderizarNav("lancar", usuario.email);
@@ -15,7 +18,7 @@ ligarCampoDataInteligente(campoData);
 // os bancos e classificações que ele já usou, e sugeri-los de novo.
 async function carregarSugestoes() {
     try {
-        const consulta = query(collection(db, "transacoes"), where("userId", "==", usuario.uid));
+        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
         const snapshot = await getDocs(consulta);
 
         const bancosUsados = [];
@@ -30,7 +33,6 @@ async function carregarSugestoes() {
         preencherDatalist("lista-classificacoes", mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
     } catch (erro) {
         console.error("Não foi possível carregar sugestões:", erro);
-        // Mesmo se falhar, deixa pelo menos as sugestões fixas disponíveis
         preencherDatalist("lista-bancos", BANCOS_SUGERIDOS);
         preencherDatalist("lista-classificacoes", CLASSIFICACOES_SUGERIDAS);
     }
@@ -42,31 +44,41 @@ const formulario = document.getElementById("form-transacao");
 formulario.addEventListener("submit", async function (evento) {
     evento.preventDefault();
 
+    // Garante que a data foi reconhecida antes de tentar salvar
+    const dataNormalizada = normalizarDataDigitada(campoData.value);
+    if (dataNormalizada) campoData.value = dataNormalizada;
+
     const botaoSalvar = formulario.querySelector("button");
-    botaoSalvar.disabled = true;
-    botaoSalvar.textContent = "Salvando...";
 
     const valor = parseFloat(document.getElementById("valor").value);
     const dataISO = brParaISO(campoData.value);
     const descricao = document.getElementById("descricao").value.trim().toUpperCase();
+    const saida = document.getElementById("saida").value.trim().toUpperCase();
     const banco = document.getElementById("banco").value.trim().toUpperCase();
     const tipo = document.getElementById("tipo").value;
     const tipo_mov = document.getElementById("tipo_mov").value;
     const classificacao_saida = document.getElementById("classificacao_saida").value.trim().toUpperCase();
 
-    if (!valor || valor <= 0 || !dataISO || !descricao || !banco || !classificacao_saida) {
-        alert("Preencha todos os campos corretamente. A data deve estar no formato dd/mm/aaaa.");
-        botaoSalvar.disabled = false;
-        botaoSalvar.textContent = "Salvar transação";
+    if (!valor || valor <= 0 || !descricao || !banco || !classificacao_saida) {
+        mostrarToast("Preencha todos os campos obrigatórios.", "erro");
+        return;
+    }
+    if (!dataISO) {
+        campoData.classList.add("campo-invalido");
+        mostrarToast("Data inválida. Use dd/mm/aaaa.", "erro");
         return;
     }
 
+    botaoSalvar.disabled = true;
+    botaoSalvar.textContent = "Salvando...";
+
     try {
-        await addDoc(collection(db, "transacoes"), {
+        await addDoc(collection(db, NOME_COLECAO), {
             userId: usuario.uid,
             valor,
             data: dataISO,
             descricao,
+            saida,
             banco,
             tipo,
             tipo_mov,
@@ -74,12 +86,12 @@ formulario.addEventListener("submit", async function (evento) {
             criadoEm: serverTimestamp()
         });
 
-        alert("Transação salva!");
+        mostrarToast("Salvo!", "sucesso");
         formulario.reset();
-        carregarSugestoes(); // atualiza sugestões com o que acabou de digitar, se for novo
+        carregarSugestoes();
     } catch (erro) {
         console.error("Erro ao salvar: ", erro);
-        alert("Erro ao salvar. Tente novamente.");
+        mostrarToast("Erro ao salvar. Tente novamente.", "erro");
     } finally {
         botaoSalvar.disabled = false;
         botaoSalvar.textContent = "Salvar transação";

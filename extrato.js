@@ -1,9 +1,12 @@
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { isoParaBR, brParaISO, formatarMoeda, ligarCampoDataInteligente } from "./utils.js";
+import { isoParaBR, brParaISO, normalizarDataDigitada, formatarMoeda, ligarCampoDataInteligente } from "./utils.js";
 import { preencherDatalist } from "./dados-comuns.js";
+import { mostrarToast, confirmarAcao } from "./ui.js";
+
+const NOME_COLECAO = "carteira";
 
 const usuario = await exigirLogin();
 renderizarNav("extrato", usuario.email);
@@ -40,6 +43,27 @@ function renderizarResumo(lista) {
     cartaoSaldo.classList.add(saldo >= 0 ? "metrica-saldo-pos" : "metrica-saldo-neg");
 }
 
+async function excluirTransacao(transacao) {
+    const confirmou = await confirmarAcao({
+        titulo: "Excluir lançamento?",
+        mensagem: `Tem certeza que quer apagar "${transacao.descricao ?? "esta transação"}" no valor de R$ ${formatarMoeda(transacao.valor)}? Essa ação não pode ser desfeita.`,
+        textoConfirmar: "Excluir",
+        textoCancelar: "Cancelar"
+    });
+
+    if (!confirmou) return;
+
+    try {
+        await deleteDoc(doc(db, NOME_COLECAO, transacao.id));
+        todasTransacoes = todasTransacoes.filter((t) => t.id !== transacao.id);
+        renderizarTabela(todasTransacoes);
+        mostrarToast("Lançamento excluído.", "sucesso");
+    } catch (erro) {
+        console.error("Erro ao excluir:", erro);
+        mostrarToast("Erro ao excluir. Tente novamente.", "erro");
+    }
+}
+
 function renderizarTabela(lista) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
     corpoTabela.innerHTML = "";
@@ -49,7 +73,7 @@ function renderizarTabela(lista) {
     if (lista.length === 0) {
         const linha = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 6;
+        td.colSpan = 8;
         td.className = "vazio";
         td.textContent = "Nenhuma transação encontrada.";
         linha.appendChild(td);
@@ -66,6 +90,7 @@ function renderizarTabela(lista) {
         const linha = document.createElement("tr");
         linha.appendChild(celulaTexto(isoParaBR(transacao.data)));
         linha.appendChild(celulaTexto(transacao.descricao ?? ""));
+        linha.appendChild(celulaTexto(transacao.saida ?? ""));
         linha.appendChild(celulaTexto(transacao.tipo_mov ?? ""));
         linha.appendChild(celulaTexto(transacao.banco ?? ""));
         linha.appendChild(celulaTexto(transacao.classificacao_saida ?? ""));
@@ -77,25 +102,32 @@ function renderizarTabela(lista) {
         tdValor.appendChild(b);
         linha.appendChild(tdValor);
 
+        const tdAcoes = document.createElement("td");
+        tdAcoes.className = "col-acoes";
+        const botaoExcluir = document.createElement("button");
+        botaoExcluir.className = "botao-icone-perigo";
+        botaoExcluir.title = "Excluir lançamento";
+        botaoExcluir.textContent = "🗑";
+        botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
+        tdAcoes.appendChild(botaoExcluir);
+        linha.appendChild(tdAcoes);
+
         corpoTabela.appendChild(linha);
     });
 }
 
 async function carregarTransacoesDoBanco() {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
-    corpoTabela.innerHTML = "<tr><td colspan='6' class='vazio'>Carregando dados...</td></tr>";
+    corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Carregando dados...</td></tr>";
 
     try {
-        // Importante: aqui filtramos SÓ por userId (sem orderBy do Firestore).
-        // Combinar "where" + "orderBy" em campos diferentes exige um índice composto
-        // no Firestore; se ele não existir, a consulta falha e nada aparece.
-        // Por isso ordenamos os resultados aqui no navegador, o que também funciona
-        // sem precisar criar índice nenhum.
-        const consulta = query(collection(db, "transacoes"), where("userId", "==", usuario.uid));
+        // Filtramos só por userId (sem orderBy do Firestore) e ordenamos aqui no
+        // navegador — assim não é preciso criar nenhum índice composto no banco.
+        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
         const snapshot = await getDocs(consulta);
 
         todasTransacoes = [];
-        snapshot.forEach((doc) => todasTransacoes.push(doc.data()));
+        snapshot.forEach((doc) => todasTransacoes.push({ id: doc.id, ...doc.data() }));
 
         todasTransacoes.sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""));
 
@@ -106,13 +138,16 @@ async function carregarTransacoesDoBanco() {
 
     } catch (erro) {
         console.error("Erro ao buscar transações: ", erro);
-        corpoTabela.innerHTML = "<tr><td colspan='6' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
+        corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
     }
 }
 
 document.getElementById("btn-filtrar").addEventListener("click", () => {
-    const dataInicioISO = brParaISO(document.getElementById("filtro-data-inicio").value);
-    const dataFimISO = brParaISO(document.getElementById("filtro-data-fim").value);
+    const inicioDigitado = document.getElementById("filtro-data-inicio").value;
+    const fimDigitado = document.getElementById("filtro-data-fim").value;
+
+    const dataInicioISO = brParaISO(normalizarDataDigitada(inicioDigitado) ?? "");
+    const dataFimISO = brParaISO(normalizarDataDigitada(fimDigitado) ?? "");
     const bancoFiltro = document.getElementById("filtro-banco").value.toUpperCase();
     const movFiltro = document.getElementById("filtro-movimentacao").value;
 
