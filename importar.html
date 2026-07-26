@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar · Meu Financeiro</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .caixa-upload {
+            border: 2px dashed var(--cor-borda);
+            border-radius: var(--raio);
+            padding: 28px;
+            text-align: center;
+            background: var(--cor-fundo);
+        }
+        .caixa-upload input[type="file"] { max-width: 360px; margin: 14px auto 0; }
+        .resumo-linhas { display: flex; gap: 14px; margin: 18px 0; flex-wrap: wrap; }
+        .pilula { padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+        .pilula-ok { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
+        .pilula-erro { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
+        .status-ok { color: var(--cor-sucesso); font-weight: 700; }
+        .status-erro { color: var(--cor-perigo); font-weight: 700; cursor: help; }
+        .modelo-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="pagina">
+    <h2>Importar lançamentos</h2>
+    <p class="subtitulo">Suba um arquivo .csv, .txt ou .xlsx com suas transações. Você confere tudo antes de importar de verdade.</p>
+
+    <div class="cartao">
+        <h3>1. Baixe o modelo</h3>
+        <p class="dica-campo">
+            Preencha o modelo com seus dados (uma linha por transação) e depois suba o arquivo aqui embaixo.
+            As colunas precisam ser: <code>data, valor, descricao, saida, banco, tipo, tipo_mov, classificacao_saida</code>.
+        </p>
+        <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
+    </div>
+
+    <div class="cartao" style="margin-top:18px;">
+        <h3>2. Suba o arquivo preenchido</h3>
+        <div class="caixa-upload">
+            <div>📤 Selecione o arquivo .csv, .txt ou .xlsx</div>
+            <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
+        </div>
+
+        <div id="resumo-importacao"></div>
+        <div id="area-preview"></div>
+
+        <button id="btn-importar" class="botao botao-primario" style="display:none;">Importar lançamentos válidos</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module" src="importar.js"></script>
+
+</body>
+</html>

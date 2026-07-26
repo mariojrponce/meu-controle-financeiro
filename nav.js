@@ -5,6 +5,7 @@ import { sair } from "./auth-guard.js";
 
 const PAGINAS = [
   { id: "lancar", href: "index.html", icone: "➕", rotulo: "Lançar" },
+  { id: "importar", href: "importar.html", icone: "📥", rotulo: "Importar" },
   { id: "extrato", href: "extrato.html", icone: "📋", rotulo: "Extrato" },
   { id: "dashboard", href: "dashboard.html", icone: "📊", rotulo: "Dashboard" }
 ];

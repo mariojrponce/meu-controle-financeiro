@@ -59,6 +59,46 @@ export function formatarMoeda(valor) {
   return (valor ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// ---------- Conversores usados na importação de arquivos (CSV/TXT/XLSX) ----------
+
+// Converte o valor de uma célula (Date do Excel, número serial ou texto) para "aaaa-mm-dd".
+export function celulaParaDataISO(valorCelula) {
+  if (valorCelula instanceof Date && !isNaN(valorCelula)) {
+    const ano = valorCelula.getFullYear();
+    const mes = String(valorCelula.getMonth() + 1).padStart(2, "0");
+    const dia = String(valorCelula.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  }
+  if (typeof valorCelula === "number" && !isNaN(valorCelula)) {
+    // número serial de data do Excel (base 30/12/1899)
+    const base = new Date(Date.UTC(1899, 11, 30));
+    const data = new Date(base.getTime() + valorCelula * 86400000);
+    const ano = data.getUTCFullYear();
+    const mes = String(data.getUTCMonth() + 1).padStart(2, "0");
+    const dia = String(data.getUTCDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  }
+  if (typeof valorCelula === "string" && valorCelula.trim() !== "") {
+    const normalizada = normalizarDataDigitada(valorCelula);
+    return normalizada ? brParaISO(normalizada) : null;
+  }
+  return null;
+}
+
+// Converte o valor de uma célula para número, aceitando tanto "150.50" quanto "150,50" / "1.234,56".
+export function celulaParaNumero(valorCelula) {
+  if (typeof valorCelula === "number") return valorCelula;
+  if (typeof valorCelula !== "string") return NaN;
+
+  let texto = valorCelula.trim().replace(/R\$/gi, "").replace(/\s/g, "");
+  if (texto === "") return NaN;
+
+  if (texto.includes(",")) {
+    texto = texto.replace(/\./g, "").replace(",", ".");
+  }
+  return parseFloat(texto);
+}
+
 // Liga um <input type="text"> para se comportar como campo de data "inteligente":
 // - o usuário pode digitar livremente (com ou sem separador, 1 ou 2 dígitos, ano com 2 ou 4 dígitos)
 // - ao sair do campo (blur), o valor é reconhecido e normalizado para "dd/mm/aaaa"
