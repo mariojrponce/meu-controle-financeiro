@@ -101,7 +101,7 @@ body {
 .conteudo-principal { flex: 1; min-width: 0; }
 
 /* ---------- Container de página ---------- */
-.pagina { max-width: 1100px; margin: 0 auto; padding: 28px 28px 60px; }
+.pagina { max-width: 1600px; margin: 0 auto; padding: 28px 28px 60px; }
 .pagina-estreita { max-width: 460px; }
 
 h1, h2, h3 { margin: 0 0 4px; }
@@ -197,14 +197,17 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .metrica-neutra { background: linear-gradient(135deg, #0891b2, #0e7490); }
 
 /* ---------- Tabela ---------- */
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--cor-borda); white-space: nowrap; }
-th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--cor-texto-suave); font-weight: 700; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; table-layout: auto; }
+th, td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--cor-borda); }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--cor-texto-suave); font-weight: 700; white-space: nowrap; }
+td { white-space: normal; word-break: break-word; }
 tr:hover td { background: var(--cor-fundo); }
 .saida { color: var(--cor-perigo); }
 .entrada { color: var(--cor-sucesso); }
-.tabela-scroll { overflow-x: auto; }
-.col-acoes { text-align: center; width: 50px; }
+/* A rolagem (quando necessária) fica contida numa altura visível, em vez de
+   obrigar a rolar a página inteira até o fim para então rolar para o lado. */
+.tabela-scroll { overflow: auto; max-height: 68vh; }
+.col-acoes { text-align: center; width: 50px; white-space: nowrap; }
 
 .th-ordenavel { cursor: pointer; user-select: none; }
 .th-ordenavel:hover { color: var(--cor-primaria); }
