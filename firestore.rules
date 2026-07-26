@@ -34,9 +34,12 @@ service cloud.firestore {
                     && camposDeTextoValidos(request.resource.data);
 
       // Permite EDITAR apenas o próprio dono do lançamento, mantendo os
-      // mesmos campos essenciais válidos depois da edição
+      // mesmos campos essenciais válidos depois da edição. O userId não pode
+      // mudar na edição — senão o dono conseguiria "abandonar" o documento
+      // atribuindo-o a outro uid, tornando-o ilegível/inedável por qualquer um.
       allow update: if request.auth != null
                     && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId
                     && request.resource.data.valor is number
                     && request.resource.data.valor > 0
                     && request.resource.data.data is string
