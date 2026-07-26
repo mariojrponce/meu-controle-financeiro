@@ -198,13 +198,22 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ---------- Tabela ---------- */
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--cor-borda); }
+th, td { padding: 11px 10px; text-align: left; border-bottom: 1px solid var(--cor-borda); white-space: nowrap; }
 th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--cor-texto-suave); font-weight: 700; }
 tr:hover td { background: var(--cor-fundo); }
 .saida { color: var(--cor-perigo); }
 .entrada { color: var(--cor-sucesso); }
 .tabela-scroll { overflow-x: auto; }
 .col-acoes { text-align: center; width: 50px; }
+
+.th-ordenavel { cursor: pointer; user-select: none; }
+.th-ordenavel:hover { color: var(--cor-primaria); }
+.th-ordenavel .seta-ordenacao { display: inline-block; width: 12px; font-size: 10px; margin-left: 2px; color: var(--cor-primaria); }
+
+/* Valores em R$ nunca quebram linha, mesmo em colunas/cartões estreitos */
+.cartao-metrica .valor, .valor-linha, td.entrada b, td.saida b {
+  white-space: nowrap;
+}
 
 /* ---------- Filtros ---------- */
 .filtros { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }

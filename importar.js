@@ -1,18 +1,16 @@
-import { collection, doc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 import { mapearCabecalhos, processarLinha, CAMPOS_OBRIGATORIOS } from "./importacao.js";
-import { formatarMoeda, isoParaBR } from "./utils.js";
-
-const NOME_COLECAO = "carteira";
-const TAMANHO_LOTE = 400; // Firestore aceita até 500 operações por lote; deixamos margem
+import { formatarReais, isoParaBR } from "./utils.js";
+import { importarTransacoes } from "./dados-carteira.js";
+import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 
 const usuario = await exigirLogin();
 renderizarNav("importar", usuario.email);
 
 let linhasProcessadas = [];
+let ordenacaoAtual = null;
 
 const inputArquivo = document.getElementById("input-arquivo");
 const areaPreview = document.getElementById("area-preview");
@@ -108,11 +106,25 @@ function renderizarResumoEPreview(linhas) {
 
     const tabela = document.createElement("table");
     const thead = document.createElement("thead");
-    thead.innerHTML = "<tr><th>#</th><th>Data</th><th>Descrição</th><th>Banco</th><th>Tipo</th><th>Valor</th><th>Status</th></tr>";
+    thead.innerHTML = "<tr><th data-chave=\"indice\" data-tipo=\"numero\">#</th><th data-chave=\"data\" data-tipo=\"texto\">Data</th><th data-chave=\"descricao\" data-tipo=\"texto\">Descrição</th><th data-chave=\"banco\" data-tipo=\"texto\">Banco</th><th data-chave=\"tipo\" data-tipo=\"texto\">Tipo</th><th data-chave=\"valor\" data-tipo=\"numero\">Valor</th><th data-chave=\"status\" data-tipo=\"texto\">Status</th></tr>";
     tabela.appendChild(thead);
 
+    const linhasComIndice = linhas.map((linha, indice) => ({ ...linha, indice: indice + 1 }));
+    const linhasOrdenadas = ordenacaoAtual
+        ? [...linhasComIndice].sort((a, b) => {
+            const valorA = ordenacaoAtual.chave === "status" ? (a.valido ? "0" : "1")
+                : ordenacaoAtual.chave === "indice" ? a.indice
+                : a.dados[ordenacaoAtual.chave];
+            const valorB = ordenacaoAtual.chave === "status" ? (b.valido ? "0" : "1")
+                : ordenacaoAtual.chave === "indice" ? b.indice
+                : b.dados[ordenacaoAtual.chave];
+            const resultado = compararValores(valorA, valorB, ordenacaoAtual.tipo);
+            return ordenacaoAtual.direcao === "asc" ? resultado : -resultado;
+        })
+        : linhasComIndice;
+
     const tbody = document.createElement("tbody");
-    linhas.forEach((linha, indice) => {
+    linhasOrdenadas.forEach((linha) => {
         const tr = document.createElement("tr");
 
         const celulaTexto = (texto) => {
@@ -121,12 +133,12 @@ function renderizarResumoEPreview(linhas) {
             return td;
         };
 
-        tr.appendChild(celulaTexto(String(indice + 1)));
+        tr.appendChild(celulaTexto(String(linha.indice)));
         tr.appendChild(celulaTexto(linha.dados.data ? isoParaBR(linha.dados.data) : "—"));
         tr.appendChild(celulaTexto(linha.dados.descricao || "—"));
         tr.appendChild(celulaTexto(linha.dados.banco || "—"));
         tr.appendChild(celulaTexto(linha.dados.tipo || "—"));
-        tr.appendChild(celulaTexto(Number.isFinite(linha.dados.valor) ? `R$ ${formatarMoeda(linha.dados.valor)}` : "—"));
+        tr.appendChild(celulaTexto(Number.isFinite(linha.dados.valor) ? formatarReais(linha.dados.valor) : "—"));
 
         const tdStatus = document.createElement("td");
         if (linha.valido) {
@@ -144,6 +156,11 @@ function renderizarResumoEPreview(linhas) {
     tabela.appendChild(tbody);
     wrapperTabela.appendChild(tabela);
     areaPreview.appendChild(wrapperTabela);
+
+    ativarOrdenacao(thead, (chave, direcao, tipo) => {
+        ordenacaoAtual = { chave, direcao, tipo };
+        renderizarResumoEPreview(linhasProcessadas);
+    });
 
     botaoImportar.style.display = validas.length > 0 ? "inline-flex" : "none";
     botaoImportar.textContent = `Importar ${validas.length} lançamento${validas.length === 1 ? "" : "s"} válido${validas.length === 1 ? "" : "s"}`;
@@ -164,7 +181,7 @@ botaoImportar.addEventListener("click", async () => {
     botaoImportar.disabled = true;
 
     try {
-        await importarEmLotes(validas, (feitos, total) => {
+        await importarTransacoes(usuario, validas.map(l => l.dados), (feitos, total) => {
             botaoImportar.textContent = `Importando... ${feitos}/${total}`;
         });
 
@@ -182,24 +199,3 @@ botaoImportar.addEventListener("click", async () => {
         botaoImportar.disabled = false;
     }
 });
-
-async function importarEmLotes(linhasValidas, aoProgredir) {
-    let feitos = 0;
-    for (let i = 0; i < linhasValidas.length; i += TAMANHO_LOTE) {
-        const fatia = linhasValidas.slice(i, i + TAMANHO_LOTE);
-        const lote = writeBatch(db);
-
-        fatia.forEach((linha) => {
-            const referencia = doc(collection(db, NOME_COLECAO));
-            lote.set(referencia, {
-                userId: usuario.uid,
-                ...linha.dados,
-                criadoEm: serverTimestamp()
-            });
-        });
-
-        await lote.commit();
-        feitos += fatia.length;
-        aoProgredir(feitos, linhasValidas.length);
-    }
-}

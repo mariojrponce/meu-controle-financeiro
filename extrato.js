@@ -1,15 +1,13 @@
-import { collection, getDocs, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import {
-    isoParaBR, brParaISO, normalizarDataDigitada, formatarMoeda,
+    isoParaBR, brParaISO, normalizarDataDigitada, formatarReais,
     ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
+import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-
-const NOME_COLECAO = "carteira";
+import { obterTransacoes, excluirTransacaoPorId } from "./dados-carteira.js";
 
 const usuario = await exigirLogin();
 renderizarNav("extrato", usuario.email);
@@ -31,6 +29,12 @@ const seletorBanco = criarSeletorMultiplo({
 });
 
 let todasTransacoes = [];
+let ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
+
+ativarOrdenacao(document.querySelector("#tabela-transacoes thead"), (chave, direcao, tipo) => {
+    ordenacaoAtual = { chave, direcao, tipo };
+    aplicarFiltros();
+});
 
 function celulaTexto(texto) {
     const td = document.createElement("td");
@@ -38,7 +42,6 @@ function celulaTexto(texto) {
     return td;
 }
 
-// ---------- Seletor de Ano ----------
 function popularSeletorAno(anoSelecionado) {
     const anoAtual = new Date().getFullYear();
     const anosDosDados = todasTransacoes.map(t => Number((t.data ?? "").slice(0, 4))).filter(Boolean);
@@ -55,7 +58,6 @@ function popularSeletorAno(anoSelecionado) {
     campoAno.value = String(anoSelecionado);
 }
 
-// Ano/Mês escolhidos preenchem automaticamente os campos de data
 function aplicarAnoMesNosCampos() {
     const { inicioISO, fimISO } = intervaloParaAnoMes(campoAno.value, campoMes.value);
     campoInicio.value = isoParaBR(inicioISO);
@@ -66,7 +68,6 @@ campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFil
 campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);
 
-// ---------- Resumo e tabela ----------
 function renderizarResumo(lista) {
     let entradas = 0;
     let saidas = 0;
@@ -80,9 +81,9 @@ function renderizarResumo(lista) {
     const saldo = entradas - saidas;
     const cartaoSaldo = document.getElementById("cartao-saldo");
 
-    document.getElementById("total-entradas").textContent = `R$ ${formatarMoeda(entradas)}`;
-    document.getElementById("total-saidas").textContent = `R$ ${formatarMoeda(saidas)}`;
-    document.getElementById("total-saldo").textContent = `R$ ${formatarMoeda(saldo)}`;
+    document.getElementById("total-entradas").textContent = formatarReais(entradas);
+    document.getElementById("total-saidas").textContent = formatarReais(saidas);
+    document.getElementById("total-saldo").textContent = formatarReais(saldo);
 
     cartaoSaldo.classList.remove("metrica-saldo-pos", "metrica-saldo-neg");
     cartaoSaldo.classList.add(saldo >= 0 ? "metrica-saldo-pos" : "metrica-saldo-neg");
@@ -91,14 +92,14 @@ function renderizarResumo(lista) {
 async function excluirTransacao(transacao) {
     const confirmou = await confirmarAcao({
         titulo: "Excluir lançamento?",
-        mensagem: `Tem certeza que quer apagar "${transacao.descricao ?? "esta transação"}" no valor de R$ ${formatarMoeda(transacao.valor)}? Essa ação não pode ser desfeita.`,
+        mensagem: `Tem certeza que quer apagar "${transacao.descricao ?? "esta transação"}" no valor de ${formatarReais(transacao.valor)}? Essa ação não pode ser desfeita.`,
         textoConfirmar: "Excluir",
         textoCancelar: "Cancelar"
     });
     if (!confirmou) return;
 
     try {
-        await deleteDoc(doc(db, NOME_COLECAO, transacao.id));
+        await excluirTransacaoPorId(usuario, transacao.id);
         todasTransacoes = todasTransacoes.filter((t) => t.id !== transacao.id);
         aplicarFiltros();
         mostrarToast("Lançamento excluído.", "sucesso");
@@ -142,7 +143,7 @@ function renderizarTabela(lista) {
         const tdValor = document.createElement("td");
         tdValor.className = classeCor;
         const b = document.createElement("b");
-        b.textContent = `${sinal} R$ ${formatarMoeda(transacao.valor)}`;
+        b.textContent = `${sinal} ${formatarReais(transacao.valor)}`;
         tdValor.appendChild(b);
         linha.appendChild(tdValor);
 
@@ -173,6 +174,11 @@ function aplicarFiltros() {
     if (bancosFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
 
+    listaFiltrada = [...listaFiltrada].sort((a, b) => {
+        const resultado = compararValores(a[ordenacaoAtual.chave], b[ordenacaoAtual.chave], ordenacaoAtual.tipo);
+        return ordenacaoAtual.direcao === "asc" ? resultado : -resultado;
+    });
+
     renderizarTabela(listaFiltrada);
 }
 
@@ -188,30 +194,29 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     aplicarFiltros();
 });
 
-async function carregarTransacoesDoBanco() {
+document.getElementById("btn-atualizar").addEventListener("click", () => carregarTransacoesDoBanco(true));
+
+async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
     corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Carregando dados...</td></tr>";
 
     try {
-        // Filtramos só por userId (sem orderBy do Firestore) e ordenamos aqui no
-        // navegador — assim não é preciso criar nenhum índice composto no banco.
-        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
-        const snapshot = await getDocs(consulta);
-
-        todasTransacoes = [];
-        snapshot.forEach((doc) => todasTransacoes.push({ id: doc.id, ...doc.data() }));
-
-        todasTransacoes.sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""));
+        todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
 
         const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
         seletorBanco.definirOpcoes(bancos);
 
-        // Padrão ao abrir: mês atual, do dia 1 até hoje
-        const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
-        popularSeletorAno(ano);
-        campoMes.value = String(mes).padStart(2, "0");
-        campoInicio.value = isoParaBR(inicioISO);
-        campoFim.value = isoParaBR(fimISO);
+        if (!forcarAtualizacao) {
+            // Padrão ao abrir: mês atual, do dia 1 até hoje
+            const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
+            popularSeletorAno(ano);
+            campoMes.value = String(mes).padStart(2, "0");
+            campoInicio.value = isoParaBR(inicioISO);
+            campoFim.value = isoParaBR(fimISO);
+        } else {
+            popularSeletorAno(Number(campoAno.value) || new Date().getFullYear());
+            mostrarToast("Dados atualizados.", "sucesso");
+        }
 
         aplicarFiltros();
 

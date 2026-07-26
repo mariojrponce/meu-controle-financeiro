@@ -89,19 +89,20 @@
                     </div>
                     <button id="btn-filtrar" class="botao botao-primario" style="margin:0;width:auto;">Pesquisar</button>
                     <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
+                    <button id="btn-atualizar" class="botao botao-secundario" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
                 </div>
 
                 <div class="tabela-scroll">
                     <table id="tabela-transacoes">
                         <thead>
                             <tr>
-                                <th>Data</th>
-                                <th>Descrição</th>
-                                <th>Detalhe</th>
-                                <th>Movimentação</th>
-                                <th>Banco</th>
-                                <th>Classificação</th>
-                                <th>Valor (R$)</th>
+                                <th data-chave="data" data-tipo="texto">Data</th>
+                                <th data-chave="descricao" data-tipo="texto">Descrição</th>
+                                <th data-chave="saida" data-tipo="texto">Detalhe</th>
+                                <th data-chave="tipo_mov" data-tipo="texto">Movimentação</th>
+                                <th data-chave="banco" data-tipo="texto">Banco</th>
+                                <th data-chave="classificacao_saida" data-tipo="texto">Classificação</th>
+                                <th data-chave="valor" data-tipo="numero">Valor (R$)</th>
                                 <th class="col-acoes">Ações</th>
                             </tr>
                         </thead>

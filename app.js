@@ -1,13 +1,12 @@
-import { collection, addDoc, getDocs, query, where, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
-import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarMoeda } from "./utils.js";
+import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
+import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
+import { obterTransacoes, criarTransacao, excluirTransacaoPorId } from "./dados-carteira.js";
 
-const NOME_COLECAO = "carteira";
 const QTD_ULTIMOS = 10;
 
 const usuario = await exigirLogin();
@@ -19,30 +18,39 @@ ligarCampoDataInteligente(campoData);
 const comboboxBanco = criarComboboxTexto(document.getElementById("banco"), BANCOS_SUGERIDOS);
 const comboboxClassificacao = criarComboboxTexto(document.getElementById("classificacao_saida"), CLASSIFICACOES_SUGERIDAS);
 
+let ultimosAtuais = [];
+let ordenacaoAtual = { chave: "criadoEm", direcao: "desc", tipo: "numero" };
+
 function milissegundosCriacao(transacao) {
-    // criadoEm é um Timestamp do Firestore; se faltar (ex: importado sem esse campo), vai para o final
     return transacao.criadoEm?.toMillis ? transacao.criadoEm.toMillis() : 0;
 }
 
-// Uma única busca serve tanto para preencher as sugestões de Banco/Classificação
-// quanto para mostrar os últimos lançamentos.
+function valorParaOrdenar(transacao, chave) {
+    if (chave === "criadoEm") return milissegundosCriacao(transacao);
+    return transacao[chave];
+}
+
+ativarOrdenacao(document.querySelector("#tabela-ultimos thead"), (chave, direcao, tipo) => {
+    ordenacaoAtual = { chave, direcao, tipo };
+    renderizarUltimos(ultimosAtuais);
+});
+
+// Uma única busca (com cache) serve tanto para as sugestões de Banco/Classificação
+// quanto para os últimos lançamentos.
 async function carregarDadosAuxiliares() {
     try {
-        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
-        const snapshot = await getDocs(consulta);
-
-        const transacoes = [];
-        snapshot.forEach((doc) => transacoes.push({ id: doc.id, ...doc.data() }));
+        const transacoes = await obterTransacoes(usuario);
 
         const bancosUsados = transacoes.map(t => t.banco).filter(Boolean);
         const classificacoesUsadas = transacoes.map(t => t.classificacao_saida).filter(Boolean);
         comboboxBanco.atualizarOpcoes(mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados));
         comboboxClassificacao.atualizarOpcoes(mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
 
-        const ultimos = [...transacoes]
+        ultimosAtuais = [...transacoes]
             .sort((a, b) => milissegundosCriacao(b) - milissegundosCriacao(a))
             .slice(0, QTD_ULTIMOS);
-        renderizarUltimos(ultimos);
+        ordenacaoAtual = { chave: "criadoEm", direcao: "desc", tipo: "numero" };
+        renderizarUltimos(ultimosAtuais);
 
     } catch (erro) {
         console.error("Não foi possível carregar dados auxiliares:", erro);
@@ -60,15 +68,24 @@ function celulaTexto(texto) {
 }
 
 function renderizarUltimos(lista) {
+    const listaOrdenada = [...lista].sort((a, b) => {
+        const resultado = compararValores(
+            valorParaOrdenar(a, ordenacaoAtual.chave),
+            valorParaOrdenar(b, ordenacaoAtual.chave),
+            ordenacaoAtual.tipo
+        );
+        return ordenacaoAtual.direcao === "asc" ? resultado : -resultado;
+    });
+
     const corpo = document.querySelector("#tabela-ultimos tbody");
     corpo.innerHTML = "";
 
-    if (lista.length === 0) {
+    if (listaOrdenada.length === 0) {
         corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhum lançamento ainda.</td></tr>";
         return;
     }
 
-    lista.forEach((transacao) => {
+    listaOrdenada.forEach((transacao) => {
         const linha = document.createElement("tr");
         const classeCor = transacao.tipo === "SAIDA" ? "saida" : "entrada";
         const sinal = transacao.tipo === "SAIDA" ? "-" : "+";
@@ -80,7 +97,7 @@ function renderizarUltimos(lista) {
         const tdValor = document.createElement("td");
         tdValor.className = classeCor;
         const b = document.createElement("b");
-        b.textContent = `${sinal} R$ ${formatarMoeda(transacao.valor)}`;
+        b.textContent = `${sinal} ${formatarReais(transacao.valor)}`;
         tdValor.appendChild(b);
         linha.appendChild(tdValor);
 
@@ -101,14 +118,14 @@ function renderizarUltimos(lista) {
 async function excluirTransacao(transacao) {
     const confirmou = await confirmarAcao({
         titulo: "Excluir lançamento?",
-        mensagem: `Tem certeza que quer apagar "${transacao.descricao ?? "esta transação"}" no valor de R$ ${formatarMoeda(transacao.valor)}? Essa ação não pode ser desfeita.`,
+        mensagem: `Tem certeza que quer apagar "${transacao.descricao ?? "esta transação"}" no valor de ${formatarReais(transacao.valor)}? Essa ação não pode ser desfeita.`,
         textoConfirmar: "Excluir",
         textoCancelar: "Cancelar"
     });
     if (!confirmou) return;
 
     try {
-        await deleteDoc(doc(db, NOME_COLECAO, transacao.id));
+        await excluirTransacaoPorId(usuario, transacao.id);
         mostrarToast("Lançamento excluído.", "sucesso");
         carregarDadosAuxiliares();
     } catch (erro) {
@@ -152,18 +169,7 @@ formulario.addEventListener("submit", async function (evento) {
     botaoSalvar.textContent = "Salvando...";
 
     try {
-        await addDoc(collection(db, NOME_COLECAO), {
-            userId: usuario.uid,
-            valor,
-            data: dataISO,
-            descricao,
-            saida,
-            banco,
-            tipo,
-            tipo_mov,
-            classificacao_saida,
-            criadoEm: serverTimestamp()
-        });
+        await criarTransacao(usuario, { valor, data: dataISO, descricao, saida, banco, tipo, tipo_mov, classificacao_saida });
 
         mostrarToast("Salvo!", "sucesso");
         formulario.reset();

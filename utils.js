@@ -59,6 +59,12 @@ export function formatarMoeda(valor) {
   return (valor ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// "R$" e o valor unidos por um espaço que nunca quebra linha (evita o "R$"
+// aparecer numa linha e o número na linha de baixo em colunas estreitas).
+export function formatarReais(valor) {
+  return `R$\u00A0${formatarMoeda(valor)}`;
+}
+
 // ---------- Intervalos de data (usados nos filtros de Extrato e Dashboard) ----------
 
 function doisDigitos(numero) {

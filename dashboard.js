@@ -1,16 +1,20 @@
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import {
-    formatarMoeda, isoParaBR, brParaISO, normalizarDataDigitada,
+    formatarReais, isoParaBR, brParaISO, normalizarDataDigitada,
     ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
+import { obterTransacoes } from "./dados-carteira.js";
+import { mostrarToast } from "./ui.js";
+import {
+    obterCategoriasSeparadas, salvarCategoriasSeparadas,
+    obterVisoesPersonalizadas, salvarVisoesPersonalizadas
+} from "./preferencias-dashboard.js";
 
-const NOME_COLECAO = "carteira";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const ROTULOS_CAMPO = { classificacao_saida: "Classificação", banco: "Banco", saida: "Detalhe" };
 
 const usuario = await exigirLogin();
 renderizarNav("dashboard", usuario.email);
@@ -32,6 +36,23 @@ const seletorBanco = criarSeletorMultiplo({
 });
 
 let todasTransacoes = [];
+let seletorCategoriasSeparadas = null;
+
+campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
+campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
+campoMov.addEventListener("change", aplicarFiltros);
+document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
+document.getElementById("btn-atualizar").addEventListener("click", () => carregarDashboard(true));
+
+document.getElementById("btn-limpar").addEventListener("click", () => {
+    const { ano, mes } = intervaloMesAtual();
+    campoAno.value = String(ano);
+    campoMes.value = String(mes).padStart(2, "0");
+    aplicarAnoMesNosCampos();
+    seletorBanco.definirSelecionados([]);
+    campoMov.value = "";
+    aplicarFiltros();
+});
 
 function popularSeletorAno(anoSelecionado) {
     const anoAtual = new Date().getFullYear();
@@ -55,29 +76,13 @@ function aplicarAnoMesNosCampos() {
     campoFim.value = isoParaBR(fimISO);
 }
 
-campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
-campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
-campoMov.addEventListener("change", aplicarFiltros);
-document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
-
-document.getElementById("btn-limpar").addEventListener("click", () => {
-    const { ano, mes } = intervaloMesAtual();
-    campoAno.value = String(ano);
-    campoMes.value = String(mes).padStart(2, "0");
-    aplicarAnoMesNosCampos();
-    seletorBanco.definirSelecionados([]);
-    campoMov.value = "";
-    aplicarFiltros();
-});
-
 function rotuloDoPeriodo(inicioISO, fimISO) {
     if (!inicioISO || !fimISO) return "";
     const [anoI, mesI] = inicioISO.split("-");
     const [anoF, mesF] = fimISO.split("-");
     if (anoI === anoF && mesI === mesF) {
         const nomeMes = NOMES_MES[Number(mesI) - 1];
-        const nomeCapitalizado = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
-        return `${nomeCapitalizado}/${anoI.slice(2)}`;
+        return `${nomeMes.charAt(0).toUpperCase()}${nomeMes.slice(1)}/${anoI.slice(2)}`;
     }
     return `${isoParaBR(inicioISO)} a ${isoParaBR(fimISO)}`;
 }
@@ -92,10 +97,8 @@ function linhaCarteira(rotulo, valor, classeExtra = "") {
 
     const spanValor = document.createElement("span");
     spanValor.className = "valor-linha";
-    spanValor.textContent = `R$ ${formatarMoeda(valor)}`;
-    if (classeExtra === "saldo") {
-        spanValor.classList.add(valor >= 0 ? "valor-positivo" : "valor-negativo");
-    }
+    spanValor.textContent = formatarReais(valor);
+    if (classeExtra === "saldo") spanValor.classList.add(valor >= 0 ? "valor-positivo" : "valor-negativo");
 
     linha.appendChild(spanRotulo);
     linha.appendChild(spanValor);
@@ -107,7 +110,6 @@ function renderizarCarteiras(porBanco) {
     container.innerHTML = "";
 
     const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saldo - porBanco[a].saldo);
-
     if (bancos.length === 0) {
         container.innerHTML = "<p class='vazio'>Nenhuma transação neste período.</p>";
         return;
@@ -123,13 +125,40 @@ function renderizarCarteiras(porBanco) {
 
         const nome = document.createElement("div");
         nome.className = "nome-banco";
-
         const ponto = document.createElement("span");
         ponto.className = "ponto-banco";
         ponto.style.background = cor;
-
         nome.appendChild(ponto);
         nome.appendChild(document.createTextNode(banco));
+        cartao.appendChild(nome);
+
+        cartao.appendChild(linhaCarteira("Entradas", dados.entradas));
+        cartao.appendChild(linhaCarteira("Saídas", dados.saidas));
+        cartao.appendChild(linhaCarteira("Saldo", dados.saldo, "saldo"));
+
+        container.appendChild(cartao);
+    });
+}
+
+function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
+    const container = document.getElementById("grade-categorias-separadas");
+    container.innerHTML = "";
+
+    const categorias = Object.keys(dadosPorCategoria);
+    if (categorias.length === 0) {
+        container.innerHTML = "<p class='vazio'>Nenhuma categoria configurada como \"à parte\" ainda.</p>";
+        return;
+    }
+
+    categorias.forEach((categoria) => {
+        const dados = dadosPorCategoria[categoria];
+        const cartao = document.createElement("div");
+        cartao.className = "cartao-carteira";
+        cartao.style.borderTopColor = "#d97706";
+
+        const nome = document.createElement("div");
+        nome.className = "nome-banco";
+        nome.textContent = `🍱 ${categoria}`;
         cartao.appendChild(nome);
 
         cartao.appendChild(linhaCarteira("Entradas", dados.entradas));
@@ -145,14 +174,12 @@ function renderizarListaBarras(idContainer, dados, textoVazio) {
     container.innerHTML = "";
 
     const itens = Object.entries(dados).sort((a, b) => b[1] - a[1]);
-
     if (itens.length === 0) {
         container.innerHTML = `<p class="vazio">${textoVazio}</p>`;
         return;
     }
 
     const maiorValor = itens[0][1];
-
     itens.forEach(([nome, valor]) => {
         const percentual = maiorValor > 0 ? Math.round((valor / maiorValor) * 100) : 0;
 
@@ -161,13 +188,10 @@ function renderizarListaBarras(idContainer, dados, textoVazio) {
 
         const cabecalho = document.createElement("div");
         cabecalho.className = "cabecalho-barra";
-
         const spanNome = document.createElement("span");
         spanNome.textContent = nome;
-
         const spanValor = document.createElement("span");
-        spanValor.textContent = `R$ ${formatarMoeda(valor)}`;
-
+        spanValor.textContent = formatarReais(valor);
         cabecalho.appendChild(spanNome);
         cabecalho.appendChild(spanValor);
 
@@ -184,6 +208,134 @@ function renderizarListaBarras(idContainer, dados, textoVazio) {
     });
 }
 
+// ---------- Configuração de categorias "à parte" ----------
+document.getElementById("btn-config-separadas").addEventListener("click", () => {
+    const painel = document.getElementById("config-categorias-separadas");
+    painel.style.display = painel.style.display === "none" ? "block" : "none";
+});
+
+function inicializarSeletorCategoriasSeparadas(classificacoesDisponiveis) {
+    const painel = document.getElementById("config-categorias-separadas");
+    if (!seletorCategoriasSeparadas) {
+        seletorCategoriasSeparadas = criarSeletorMultiplo({
+            container: painel,
+            opcoes: classificacoesDisponiveis,
+            selecionados: obterCategoriasSeparadas(usuario.uid),
+            rotuloTodos: "Nenhuma categoria à parte",
+            aoMudar: (selecionados) => {
+                salvarCategoriasSeparadas(usuario.uid, selecionados);
+                aplicarFiltros();
+            }
+        });
+    } else {
+        seletorCategoriasSeparadas.definirOpcoes(classificacoesDisponiveis);
+    }
+}
+
+// ---------- Visões personalizadas ----------
+document.getElementById("btn-nova-visao").addEventListener("click", () => {
+    const form = document.getElementById("form-nova-visao");
+    form.style.display = form.style.display === "none" ? "block" : "none";
+});
+document.getElementById("btn-cancelar-visao").addEventListener("click", () => {
+    document.getElementById("form-nova-visao").style.display = "none";
+});
+
+document.getElementById("btn-salvar-visao").addEventListener("click", () => {
+    const titulo = document.getElementById("visao-titulo").value.trim();
+    if (!titulo) {
+        mostrarToast("Dê um título para a visão.", "erro");
+        return;
+    }
+
+    const visao = {
+        id: `visao_${Date.now()}`,
+        titulo,
+        filtroCampo: document.getElementById("visao-filtro-campo").value,
+        filtroValor: document.getElementById("visao-filtro-valor").value.trim().toUpperCase(),
+        agruparPor: document.getElementById("visao-agrupar-por").value,
+        tipo: document.getElementById("visao-tipo").value
+    };
+
+    const visoes = obterVisoesPersonalizadas(usuario.uid);
+    visoes.push(visao);
+    salvarVisoesPersonalizadas(usuario.uid, visoes);
+
+    document.getElementById("visao-titulo").value = "";
+    document.getElementById("visao-filtro-valor").value = "";
+    document.getElementById("form-nova-visao").style.display = "none";
+
+    mostrarToast("Visão criada!", "sucesso");
+    aplicarFiltros();
+});
+
+function calcularVisaoPersonalizada(lista, visao) {
+    let filtrada = lista;
+    if (visao.filtroCampo && visao.filtroValor) {
+        filtrada = filtrada.filter(t => (t[visao.filtroCampo] ?? "") === visao.filtroValor);
+    }
+    if (visao.tipo !== "AMBOS") {
+        filtrada = filtrada.filter(t => t.tipo === visao.tipo);
+    }
+
+    const grupos = {};
+    filtrada.forEach((t) => {
+        if (typeof t.valor !== "number") return;
+        const chave = t[visao.agruparPor] || "SEM VALOR";
+        grupos[chave] = (grupos[chave] ?? 0) + t.valor;
+    });
+    return grupos;
+}
+
+function renderizarVisoesPersonalizadas(lista) {
+    const container = document.getElementById("visoes-personalizadas");
+    container.innerHTML = "";
+
+    const visoes = obterVisoesPersonalizadas(usuario.uid);
+    if (visoes.length === 0) return;
+
+    visoes.forEach((visao) => {
+        const bloco = document.createElement("div");
+        bloco.className = "secao";
+        bloco.style.marginTop = "0";
+
+        const titulo = document.createElement("div");
+        titulo.className = "secao-titulo";
+
+        const h4 = document.createElement("h3");
+        h4.style.fontSize = "15px";
+        const descricaoFiltro = visao.filtroCampo
+            ? ` (${ROTULOS_CAMPO[visao.filtroCampo]}: ${visao.filtroValor || "—"})`
+            : "";
+        h4.textContent = `${visao.titulo}${descricaoFiltro}`;
+
+        const botaoRemover = document.createElement("button");
+        botaoRemover.className = "botao botao-secundario botao-pequeno";
+        botaoRemover.textContent = "🗑 Remover";
+        botaoRemover.addEventListener("click", () => {
+            const restantes = obterVisoesPersonalizadas(usuario.uid).filter(v => v.id !== visao.id);
+            salvarVisoesPersonalizadas(usuario.uid, restantes);
+            aplicarFiltros();
+        });
+
+        titulo.appendChild(h4);
+        titulo.appendChild(botaoRemover);
+        bloco.appendChild(titulo);
+
+        const areaBarras = document.createElement("div");
+        areaBarras.className = "lista-barras";
+        bloco.appendChild(areaBarras);
+
+        container.appendChild(bloco);
+
+        const dados = calcularVisaoPersonalizada(lista, visao);
+        const idTemporario = `visao-barras-${visao.id}`;
+        areaBarras.id = idTemporario;
+        renderizarListaBarras(idTemporario, dados, "Nenhum dado encontrado para essa visão neste período.");
+    });
+}
+
+// ---------- Filtro principal ----------
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
@@ -196,28 +348,58 @@ function aplicarFiltros() {
     if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
 
+    const categoriasSeparadas = new Set(obterCategoriasSeparadas(usuario.uid));
+
     let saldoGeral = 0;
     let entradasPeriodo = 0;
     let saidasPeriodo = 0;
+    let transferenciasInternas = 0;
     const porBanco = {};
     const gastoPorClassificacao = {};
     const entradaPorClassificacao = {};
+    const porCategoriaSeparada = {};
 
     lista.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco) return;
 
+        // Saldo por banco: conta TUDO (inclusive transferências internas), porque
+        // isso reflete o saldo real daquela conta.
         if (!porBanco[t.banco]) porBanco[t.banco] = { saldo: 0, entradas: 0, saidas: 0 };
-
         if (t.tipo === "ENTRADA") {
             porBanco[t.banco].entradas += t.valor;
             porBanco[t.banco].saldo += t.valor;
+        } else {
+            porBanco[t.banco].saidas += t.valor;
+            porBanco[t.banco].saldo -= t.valor;
+        }
+
+        const ehCategoriaSeparada = categoriasSeparadas.has(t.classificacao_saida);
+
+        if (ehCategoriaSeparada) {
+            const chave = t.classificacao_saida;
+            if (!porCategoriaSeparada[chave]) porCategoriaSeparada[chave] = { saldo: 0, entradas: 0, saidas: 0 };
+            if (t.tipo === "ENTRADA") {
+                porCategoriaSeparada[chave].entradas += t.valor;
+                porCategoriaSeparada[chave].saldo += t.valor;
+            } else {
+                porCategoriaSeparada[chave].saidas += t.valor;
+                porCategoriaSeparada[chave].saldo -= t.valor;
+            }
+            return; // não entra nos totais "de verdade" abaixo
+        }
+
+        if (t.tipo_mov === "INTERNO") {
+            transferenciasInternas += t.valor;
+            return; // transferência entre contas próprias não é receita/despesa real
+        }
+
+        // A partir daqui: só movimentações EXTERNAS e de categorias não-separadas
+        if (t.tipo === "ENTRADA") {
             saldoGeral += t.valor;
             entradasPeriodo += t.valor;
             const chaveEntrada = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
             entradaPorClassificacao[chaveEntrada] = (entradaPorClassificacao[chaveEntrada] ?? 0) + t.valor;
         } else {
-            porBanco[t.banco].saidas += t.valor;
-            porBanco[t.banco].saldo -= t.valor;
             saldoGeral -= t.valor;
             saidasPeriodo += t.valor;
             const chave = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
@@ -225,9 +407,10 @@ function aplicarFiltros() {
         }
     });
 
-    document.getElementById("saldo-geral").textContent = `R$ ${formatarMoeda(saldoGeral)}`;
-    document.getElementById("entradas-periodo").textContent = `R$ ${formatarMoeda(entradasPeriodo)}`;
-    document.getElementById("saidas-periodo").textContent = `R$ ${formatarMoeda(saidasPeriodo)}`;
+    document.getElementById("saldo-geral").textContent = formatarReais(saldoGeral);
+    document.getElementById("entradas-periodo").textContent = formatarReais(entradasPeriodo);
+    document.getElementById("saidas-periodo").textContent = formatarReais(saidasPeriodo);
+    document.getElementById("transferencias-internas").textContent = formatarReais(transferenciasInternas);
 
     const cartaoSaldoGeral = document.getElementById("cartao-saldo-geral");
     cartaoSaldoGeral.classList.toggle("metrica-saldo-neg", saldoGeral < 0);
@@ -237,27 +420,33 @@ function aplicarFiltros() {
     document.getElementById("subtitulo-periodo").textContent = rotulo ? `Mostrando: ${rotulo}` : "Selecione um período nos filtros abaixo.";
     document.getElementById("rotulo-periodo-entradas").textContent = rotulo ? `— ${rotulo}` : "";
 
+    const classificacoesDisponiveis = [...new Set(todasTransacoes.map(t => t.classificacao_saida).filter(Boolean))].sort();
+    inicializarSeletorCategoriasSeparadas(classificacoesDisponiveis);
+
     renderizarCarteiras(porBanco);
+    renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
     renderizarListaBarras("lista-entradas-categoria", entradaPorClassificacao, "Nenhuma entrada registrada neste período.");
     renderizarListaBarras("lista-classificacoes", gastoPorClassificacao, "Nenhuma saída registrada neste período.");
+    renderizarVisoesPersonalizadas(lista);
 }
 
-async function carregarDashboard() {
+async function carregarDashboard(forcarAtualizacao = false) {
     try {
-        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
-        const snapshot = await getDocs(consulta);
-
-        todasTransacoes = [];
-        snapshot.forEach((doc) => todasTransacoes.push(doc.data()));
+        todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
 
         const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
         seletorBanco.definirOpcoes(bancos);
 
-        const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
-        popularSeletorAno(ano);
-        campoMes.value = String(mes).padStart(2, "0");
-        campoInicio.value = isoParaBR(inicioISO);
-        campoFim.value = isoParaBR(fimISO);
+        if (!forcarAtualizacao) {
+            const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
+            popularSeletorAno(ano);
+            campoMes.value = String(mes).padStart(2, "0");
+            campoInicio.value = isoParaBR(inicioISO);
+            campoFim.value = isoParaBR(fimISO);
+        } else {
+            popularSeletorAno(Number(campoAno.value) || new Date().getFullYear());
+            mostrarToast("Dados atualizados.", "sucesso");
+        }
 
         aplicarFiltros();
 

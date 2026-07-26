@@ -74,6 +74,7 @@
                     </div>
                     <button id="btn-filtrar" class="botao botao-primario" style="margin:0;width:auto;">Pesquisar</button>
                     <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
+                    <button id="btn-atualizar" class="botao botao-secundario" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
                 </div>
             </div>
 
@@ -90,7 +91,15 @@
                     <div class="rotulo">Saídas no período</div>
                     <div class="valor" id="saidas-periodo">R$ 0,00</div>
                 </div>
+                <div class="cartao-metrica metrica-neutra" title="Transferências entre suas próprias contas — não contam como receita real">
+                    <div class="rotulo">🔁 Transferências internas</div>
+                    <div class="valor" id="transferencias-internas">R$ 0,00</div>
+                </div>
             </div>
+
+            <p class="dica-campo" style="margin:-10px 0 20px;">
+                💡 "Entradas" e "Saídas" acima consideram só movimentações <b>Externas</b> (dinheiro que realmente entrou ou saiu da sua vida financeira). Transferências <b>Internas</b> (entre suas próprias contas) aparecem separadas, sem inflar esse número.
+            </p>
 
             <div class="secao cartao">
                 <div class="secao-titulo">
@@ -98,6 +107,20 @@
                 </div>
                 <div class="grade-carteiras" id="grade-carteiras">
                     <p class="vazio">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>🍱 Categorias à parte</h3>
+                    <button id="btn-config-separadas" class="botao botao-secundario botao-pequeno">⚙️ Configurar</button>
+                </div>
+                <p class="dica-campo">
+                    Marque classificações que têm valor restrito (ex: Vale Alimentação) para vê-las à parte, sem misturar com seu saldo "de verdade" acima.
+                </p>
+                <div id="config-categorias-separadas" style="display:none; margin-bottom:14px;"></div>
+                <div class="grade-carteiras" id="grade-categorias-separadas">
+                    <p class="vazio">Nenhuma categoria configurada como "à parte" ainda.</p>
                 </div>
             </div>
 
@@ -117,6 +140,52 @@
                 <div class="lista-barras" id="lista-classificacoes">
                     <p class="vazio">Carregando...</p>
                 </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>🧩 Suas visões personalizadas</h3>
+                    <button id="btn-nova-visao" class="botao botao-secundario botao-pequeno">➕ Nova visão</button>
+                </div>
+                <p class="dica-campo">
+                    Crie recortes só seus, tipo "Transporte: Uber vs Ônibus" ou "Gastos no Pluxe por categoria". Fica salvo neste navegador.
+                </p>
+
+                <div id="form-nova-visao" style="display:none; margin-top:14px;">
+                    <label>Título da visão</label>
+                    <input type="text" id="visao-titulo" placeholder="Ex: Transporte: Uber vs Ônibus" maxlength="60">
+
+                    <label>Filtrar por</label>
+                    <select id="visao-filtro-campo">
+                        <option value="">Nenhum filtro (usar tudo)</option>
+                        <option value="classificacao_saida">Classificação específica</option>
+                        <option value="banco">Banco específico</option>
+                    </select>
+
+                    <label>Valor do filtro (quando aplicável)</label>
+                    <input type="text" id="visao-filtro-valor" placeholder="Ex: TRANSPORTE ou PLUXE">
+
+                    <label>Agrupar por</label>
+                    <select id="visao-agrupar-por">
+                        <option value="saida">Detalhe (onde gastou/recebeu)</option>
+                        <option value="classificacao_saida">Classificação</option>
+                        <option value="banco">Banco</option>
+                    </select>
+
+                    <label>Tipo de movimentação</label>
+                    <select id="visao-tipo">
+                        <option value="SAIDA">Só saídas</option>
+                        <option value="ENTRADA">Só entradas</option>
+                        <option value="AMBOS">Entradas e saídas</option>
+                    </select>
+
+                    <div style="display:flex; gap:10px; margin-top:18px;">
+                        <button id="btn-salvar-visao" class="botao botao-primario" style="margin:0;">Adicionar visão</button>
+                        <button id="btn-cancelar-visao" class="botao botao-secundario">Cancelar</button>
+                    </div>
+                </div>
+
+                <div id="visoes-personalizadas" style="margin-top:16px; display:flex; flex-direction:column; gap:16px;"></div>
             </div>
         </div>
     </main>

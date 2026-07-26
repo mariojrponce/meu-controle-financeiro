@@ -8,7 +8,7 @@ A causa era a consulta ao Firestore combinar `where("userId", "==", ...)` com `o
 
 **Correção:** a consulta agora só filtra por `userId`, e a ordenação por data é feita no próprio navegador. Resultado igual, sem depender de nenhum índice extra — o problema não deve mais acontecer.
 
-## Novidades desta versão
+## Novidades desta versao
 
 - **Design novo**, com tema de cores consistente, cartões, navegação fixa no topo e layout responsivo.
 - **Dropdowns pesquisáveis** para Banco e Classificação: comece a digitar e as opções filtram sozinhas. Vêm pré-carregadas com os valores que já apareciam na sua planilha (NUBANK, CLEAR, ALUGUEL, INTERNET, TRANSPORTE etc.) e o sistema aprende sozinho — qualquer valor novo que você digitar passa a ser sugestão nas próximas vezes.
