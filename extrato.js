@@ -2,7 +2,8 @@ import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import {
     isoParaBR, brParaISO, normalizarDataDigitada, formatarReais, hojeISO,
-    ligarCampoFiltroData, intervaloMesAtual, intervaloParaAnoMes
+    ligarCampoFiltroData, intervaloMesAtual, intervaloParaAnoEMeses,
+    NOMES_MESES, nomeMesParaNumero, numeroParaNomeMes
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
@@ -18,15 +19,27 @@ const usuario = await exigirLogin();
 renderizarNav("extrato", usuario.email);
 
 const campoAno = document.getElementById("filtro-ano");
-const campoMes = document.getElementById("filtro-mes");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
 const campoDetalhe = document.getElementById("filtro-detalhe");
 const campoDescricao = document.getElementById("filtro-descricao");
 
-ligarCampoFiltroData(campoInicio, () => ({ ano: campoAno.value, mes: campoMes.value }));
-ligarCampoFiltroData(campoFim, () => ({ ano: campoAno.value, mes: campoMes.value }));
+function contextoMesAtual() {
+    const selecionados = seletorMes.obterSelecionados();
+    const mesNumero = selecionados.length > 0 ? nomeMesParaNumero(selecionados[0]) : String(new Date().getMonth() + 1).padStart(2, "0");
+    return { ano: campoAno.value, mes: mesNumero };
+}
+
+ligarCampoFiltroData(campoInicio, contextoMesAtual);
+ligarCampoFiltroData(campoFim, contextoMesAtual);
+
+const seletorMes = criarSeletorMultiplo({
+    container: document.getElementById("filtro-mes"),
+    opcoes: NOMES_MESES,
+    rotuloTodos: "Todos os meses",
+    aoMudar: () => { aplicarAnoMesNosCampos(); aplicarFiltros(); }
+});
 
 const seletorBanco = criarSeletorMultiplo({
     container: document.getElementById("filtro-banco"),
@@ -67,13 +80,13 @@ function popularSeletorAno(anoSelecionado) {
 }
 
 function aplicarAnoMesNosCampos() {
-    const { inicioISO, fimISO } = intervaloParaAnoMes(campoAno.value, campoMes.value);
+    const mesesNumeros = seletorMes.obterSelecionados().map(nomeMesParaNumero).filter(Boolean);
+    const { inicioISO, fimISO } = intervaloParaAnoEMeses(campoAno.value, mesesNumeros);
     campoInicio.value = isoParaBR(inicioISO);
     campoFim.value = isoParaBR(fimISO);
 }
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
-campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);
 
 function debounce(fn, atrasoMs) {
@@ -243,7 +256,7 @@ function salvarEstadoFiltro() {
     if (carregando) return;
     salvarFiltro(usuario.uid, NOME_PAGINA, {
         ano: campoAno.value,
-        mes: campoMes.value,
+        meses: seletorMes.obterSelecionados(),
         inicioBR: campoInicio.value,
         fimBR: campoFim.value,
         bancos: seletorBanco.obterSelecionados(),
@@ -258,6 +271,7 @@ function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
     const bancosFiltro = seletorBanco.obterSelecionados();
+    const mesesFiltro = seletorMes.obterSelecionados().map(nomeMesParaNumero).filter(Boolean);
     const movFiltro = campoMov.value;
     const detalheFiltro = campoDetalhe.value.trim().toUpperCase();
     const descricaoFiltro = campoDescricao.value.trim().toUpperCase();
@@ -266,6 +280,7 @@ function aplicarFiltros() {
 
     if (dataInicioISO) listaFiltrada = listaFiltrada.filter(t => t.data >= dataInicioISO);
     if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
+    if (mesesFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => mesesFiltro.includes((t.data ?? "").slice(5, 7)));
     if (bancosFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
     if (detalheFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.saida ?? "").includes(detalheFiltro));
@@ -285,7 +300,7 @@ document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros)
 document.getElementById("btn-limpar").addEventListener("click", () => {
     const { ano, mes } = intervaloMesAtual();
     campoAno.value = String(ano);
-    campoMes.value = String(mes).padStart(2, "0");
+    seletorMes.definirSelecionados([numeroParaNomeMes(String(mes).padStart(2, "0"))]);
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
     campoMov.value = "";
@@ -313,7 +328,7 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
 
             if (salvo) {
                 popularSeletorAno(Number(salvo.ano) || new Date().getFullYear());
-                campoMes.value = salvo.mes ?? "";
+                seletorMes.definirSelecionados(salvo.meses ?? []);
                 campoInicio.value = salvo.inicioBR ?? "";
                 campoFim.value = salvo.fimBR ?? "";
                 seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
@@ -327,7 +342,7 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
             } else {
                 const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
                 popularSeletorAno(ano);
-                campoMes.value = String(mes).padStart(2, "0");
+                seletorMes.definirSelecionados([numeroParaNomeMes(String(mes).padStart(2, "0"))]);
                 campoInicio.value = isoParaBR(inicioISO);
                 campoFim.value = isoParaBR(fimISO);
             }

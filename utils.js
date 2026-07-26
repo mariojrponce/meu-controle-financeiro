@@ -124,6 +124,49 @@ export function intervaloParaAnoMes(ano, mes) {
   return { inicioISO: `${anoNum}-${doisDigitos(mesNum)}-01`, fimISO };
 }
 
+// Nomes dos meses (usados no seletor múltiplo de "Mês" nos filtros).
+export const NOMES_MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+export function nomeMesParaNumero(nome) {
+  const indice = NOMES_MESES.indexOf(nome);
+  return indice === -1 ? null : doisDigitos(indice + 1);
+}
+
+export function numeroParaNomeMes(numero) {
+  const indice = Number(numero) - 1;
+  return NOMES_MESES[indice] ?? "";
+}
+
+// Igual ao intervaloParaAnoMes, mas aceita VÁRIOS meses ao mesmo tempo (números
+// "01".."12"): o intervalo cobre do primeiro dia do menor mês selecionado até
+// o último dia do maior mês selecionado (ou hoje, se o maior mês for o atual).
+// A seleção exata dos meses (pulando os que estão no meio) é aplicada à parte,
+// filtrando cada lançamento pelo mês dele.
+export function intervaloParaAnoEMeses(ano, mesesNumeros) {
+  const anoNum = Number(ano);
+  const hoje = new Date();
+  const ehAnoAtual = anoNum === hoje.getFullYear();
+
+  if (!mesesNumeros || mesesNumeros.length === 0) {
+    const fimISO = ehAnoAtual ? hojeISO() : `${anoNum}-12-31`;
+    return { inicioISO: `${anoNum}-01-01`, fimISO };
+  }
+
+  const ordenados = [...mesesNumeros].map(Number).sort((a, b) => a - b);
+  const menorMes = ordenados[0];
+  const maiorMes = ordenados[ordenados.length - 1];
+
+  const inicioISO = `${anoNum}-${doisDigitos(menorMes)}-01`;
+
+  const mesAtualNum = hoje.getMonth() + 1;
+  const ehMaiorMesOAtual = ehAnoAtual && maiorMes === mesAtualNum;
+  const fimISO = ehMaiorMesOAtual
+    ? hojeISO()
+    : `${anoNum}-${doisDigitos(maiorMes)}-${doisDigitos(ultimoDiaDoMes(anoNum, maiorMes))}`;
+
+  return { inicioISO, fimISO };
+}
+
 // ---------- Conversores usados na importação de arquivos (CSV/TXT/XLSX) ----------
 
 // Converte o valor de uma célula (Date do Excel, número serial ou texto) para "aaaa-mm-dd".

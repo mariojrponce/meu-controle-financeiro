@@ -2,7 +2,8 @@ import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import {
     formatarReais, isoParaBR, brParaISO, normalizarDataDigitada, hojeISO,
-    ligarCampoFiltroData, intervaloMesAtual, intervaloParaAnoMes
+    ligarCampoFiltroData, intervaloMesAtual, intervaloParaAnoEMeses,
+    NOMES_MESES, nomeMesParaNumero, numeroParaNomeMes
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
@@ -22,15 +23,27 @@ const usuario = await exigirLogin();
 renderizarNav("dashboard", usuario.email);
 
 const campoAno = document.getElementById("filtro-ano");
-const campoMes = document.getElementById("filtro-mes");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
 const campoDetalhe = document.getElementById("filtro-detalhe");
 const campoDescricao = document.getElementById("filtro-descricao");
 
-ligarCampoFiltroData(campoInicio, () => ({ ano: campoAno.value, mes: campoMes.value }));
-ligarCampoFiltroData(campoFim, () => ({ ano: campoAno.value, mes: campoMes.value }));
+function contextoMesAtual() {
+    const selecionados = seletorMes.obterSelecionados();
+    const mesNumero = selecionados.length > 0 ? nomeMesParaNumero(selecionados[0]) : String(new Date().getMonth() + 1).padStart(2, "0");
+    return { ano: campoAno.value, mes: mesNumero };
+}
+
+ligarCampoFiltroData(campoInicio, contextoMesAtual);
+ligarCampoFiltroData(campoFim, contextoMesAtual);
+
+const seletorMes = criarSeletorMultiplo({
+    container: document.getElementById("filtro-mes"),
+    opcoes: NOMES_MESES,
+    rotuloTodos: "Todos os meses",
+    aoMudar: () => { aplicarAnoMesNosCampos(); aplicarFiltros(); }
+});
 
 const seletorBanco = criarSeletorMultiplo({
     container: document.getElementById("filtro-banco"),
@@ -44,7 +57,6 @@ let seletorCategoriasSeparadas = null;
 let carregando = true;
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
-campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);
 document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
 document.getElementById("btn-atualizar").addEventListener("click", () => carregarDashboard(true));
@@ -62,7 +74,7 @@ campoDescricao.addEventListener("input", debounce(aplicarFiltros, 250));
 document.getElementById("btn-limpar").addEventListener("click", () => {
     const { ano, mes } = intervaloMesAtual();
     campoAno.value = String(ano);
-    campoMes.value = String(mes).padStart(2, "0");
+    seletorMes.definirSelecionados([numeroParaNomeMes(String(mes).padStart(2, "0"))]);
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
     campoMov.value = "";
@@ -88,7 +100,8 @@ function popularSeletorAno(anoSelecionado) {
 }
 
 function aplicarAnoMesNosCampos() {
-    const { inicioISO, fimISO } = intervaloParaAnoMes(campoAno.value, campoMes.value);
+    const mesesNumeros = seletorMes.obterSelecionados().map(nomeMesParaNumero).filter(Boolean);
+    const { inicioISO, fimISO } = intervaloParaAnoEMeses(campoAno.value, mesesNumeros);
     campoInicio.value = isoParaBR(inicioISO);
     campoFim.value = isoParaBR(fimISO);
 }
@@ -380,7 +393,7 @@ function salvarEstadoFiltro() {
     if (carregando) return;
     salvarFiltro(usuario.uid, NOME_PAGINA, {
         ano: campoAno.value,
-        mes: campoMes.value,
+        meses: seletorMes.obterSelecionados(),
         inicioBR: campoInicio.value,
         fimBR: campoFim.value,
         bancos: seletorBanco.obterSelecionados(),
@@ -390,11 +403,60 @@ function salvarEstadoFiltro() {
     });
 }
 
+function renderizarPrevistos(listaFutura) {
+    const corpo = document.querySelector("#tabela-previstos tbody");
+    corpo.innerHTML = "";
+
+    if (listaFutura.length === 0) {
+        corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhum lançamento futuro neste período.</td></tr>";
+        return;
+    }
+
+    const ordenados = [...listaFutura].sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""));
+
+    ordenados.forEach((t) => {
+        if (typeof t.valor !== "number") return;
+
+        const classeCor = t.tipo === "SAIDA" ? "saida" : "entrada";
+        const sinal = t.tipo === "SAIDA" ? "-" : "+";
+
+        const linha = document.createElement("tr");
+        linha.classList.add("linha-prevista");
+
+        const tdData = document.createElement("td");
+        tdData.textContent = isoParaBR(t.data);
+        const selo = document.createElement("span");
+        selo.className = "selo-previsto";
+        selo.textContent = "Previsto";
+        tdData.appendChild(selo);
+        linha.appendChild(tdData);
+
+        const celulaTexto = (texto) => {
+            const td = document.createElement("td");
+            td.textContent = texto;
+            return td;
+        };
+        linha.appendChild(celulaTexto(t.descricao ?? ""));
+        linha.appendChild(celulaTexto(t.banco ?? ""));
+        linha.appendChild(celulaTexto(t.classificacao_saida ?? ""));
+
+        const tdValor = document.createElement("td");
+        tdValor.className = classeCor;
+        const b = document.createElement("b");
+        b.textContent = `${sinal} ${formatarReais(t.valor)}`;
+        tdValor.appendChild(b);
+        linha.appendChild(tdValor);
+
+        corpo.appendChild(linha);
+    });
+}
+
 // ---------- Filtro principal ----------
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
     const bancosFiltro = seletorBanco.obterSelecionados();
+    const mesesFiltro = seletorMes.obterSelecionados().map(nomeMesParaNumero).filter(Boolean);
     const movFiltro = campoMov.value;
     const detalheFiltro = campoDetalhe.value.trim().toUpperCase();
     const descricaoFiltro = campoDescricao.value.trim().toUpperCase();
@@ -402,6 +464,7 @@ function aplicarFiltros() {
     let lista = todasTransacoes;
     if (dataInicioISO) lista = lista.filter(t => t.data >= dataInicioISO);
     if (dataFimISO) lista = lista.filter(t => t.data <= dataFimISO);
+    if (mesesFiltro.length > 0) lista = lista.filter(t => mesesFiltro.includes((t.data ?? "").slice(5, 7)));
     if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
     if (detalheFiltro !== "") lista = lista.filter(t => (t.saida ?? "").includes(detalheFiltro));
@@ -498,6 +561,7 @@ function aplicarFiltros() {
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
     renderizarListaBarras("lista-entradas-categoria", entradaPorClassificacao, "Nenhuma entrada registrada neste período.");
     renderizarListaBarras("lista-classificacoes", gastoPorClassificacao, "Nenhuma saída registrada neste período.");
+    renderizarPrevistos(listaFutura);
     renderizarVisoesPersonalizadas(listaRealizada);
 
     salvarEstadoFiltro();
@@ -515,7 +579,7 @@ async function carregarDashboard(forcarAtualizacao = false) {
 
             if (salvo) {
                 popularSeletorAno(Number(salvo.ano) || new Date().getFullYear());
-                campoMes.value = salvo.mes ?? "";
+                seletorMes.definirSelecionados(salvo.meses ?? []);
                 campoInicio.value = salvo.inicioBR ?? "";
                 campoFim.value = salvo.fimBR ?? "";
                 seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
@@ -525,7 +589,7 @@ async function carregarDashboard(forcarAtualizacao = false) {
             } else {
                 const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
                 popularSeletorAno(ano);
-                campoMes.value = String(mes).padStart(2, "0");
+                seletorMes.definirSelecionados([numeroParaNomeMes(String(mes).padStart(2, "0"))]);
                 campoInicio.value = isoParaBR(inicioISO);
                 campoFim.value = isoParaBR(fimISO);
             }
@@ -542,6 +606,7 @@ async function carregarDashboard(forcarAtualizacao = false) {
         document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
         document.getElementById("lista-classificacoes").innerHTML = "";
         document.getElementById("lista-entradas-categoria").innerHTML = "";
+        document.querySelector("#tabela-previstos tbody").innerHTML = "<tr><td colspan='5' class='vazio'>Erro ao carregar dados.</td></tr>";
     }
 }
 

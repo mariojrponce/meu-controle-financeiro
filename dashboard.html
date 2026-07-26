@@ -36,21 +36,7 @@
                     </div>
                     <div class="campo-filtro">
                         <label>Mês</label>
-                        <select id="filtro-mes">
-                            <option value="">Todos</option>
-                            <option value="01">Janeiro</option>
-                            <option value="02">Fevereiro</option>
-                            <option value="03">Março</option>
-                            <option value="04">Abril</option>
-                            <option value="05">Maio</option>
-                            <option value="06">Junho</option>
-                            <option value="07">Julho</option>
-                            <option value="08">Agosto</option>
-                            <option value="09">Setembro</option>
-                            <option value="10">Outubro</option>
-                            <option value="11">Novembro</option>
-                            <option value="12">Dezembro</option>
-                        </select>
+                        <div id="filtro-mes"></div>
                     </div>
                     <div class="campo-filtro">
                         <label>Dia início <span class="dica-inline">(sempre dia 01)</span></label>
@@ -112,6 +98,31 @@
             <p class="dica-campo" style="margin:-10px 0 20px;">
                 💡 "Entradas" e "Saídas" acima consideram só movimentações <b>Externas</b> (dinheiro que realmente entrou ou saiu da sua vida financeira). Transferências <b>Internas</b> (entre suas próprias contas) aparecem separadas, sem inflar esse número.
             </p>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>📅 Lançamentos previstos (futuros)</h3>
+                </div>
+                <p class="dica-campo">
+                    Ainda não entraram no saldo real acima — aparecem aqui só como previsão do que está agendado para este período.
+                </p>
+                <div class="tabela-scroll">
+                    <table id="tabela-previstos">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Banco</th>
+                                <th>Classificação</th>
+                                <th>Valor (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="vazio">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <div class="secao cartao">
                 <div class="secao-titulo">
@@ -184,6 +195,7 @@
                         <option value="saida">Detalhe (onde gastou/recebeu)</option>
                         <option value="classificacao_saida">Classificação</option>
                         <option value="banco">Banco</option>
+                        <option value="descricao">Descrição</option>
                     </select>
 
                     <label>Tipo de movimentação</label>
