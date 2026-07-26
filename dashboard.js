@@ -1,8 +1,8 @@
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import {
-    formatarReais, isoParaBR, brParaISO, normalizarDataDigitada,
-    ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
+    formatarReais, isoParaBR, brParaISO, normalizarDataDigitada, hojeISO,
+    ligarCampoFiltroData, intervaloMesAtual, intervaloParaAnoMes
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
@@ -27,8 +27,8 @@ const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
 
-ligarCampoDataInteligente(campoInicio);
-ligarCampoDataInteligente(campoFim);
+ligarCampoFiltroData(campoInicio, () => ({ ano: campoAno.value, mes: campoMes.value }));
+ligarCampoFiltroData(campoFim, () => ({ ano: campoAno.value, mes: campoMes.value }));
 
 const seletorBanco = criarSeletorMultiplo({
     container: document.getElementById("filtro-banco"),
@@ -385,6 +385,10 @@ function aplicarFiltros() {
     if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
 
+    const hoje = hojeISO();
+    const listaRealizada = lista.filter(t => (t.data ?? "") <= hoje);
+    const listaFutura = lista.filter(t => (t.data ?? "") > hoje);
+
     const categoriasSeparadas = new Set(obterCategoriasSeparadas(usuario.uid));
 
     let saldoGeral = 0;
@@ -396,7 +400,7 @@ function aplicarFiltros() {
     const entradaPorClassificacao = {};
     const porCategoriaSeparada = {};
 
-    lista.forEach((t) => {
+    listaRealizada.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco) return;
 
         if (!porBanco[t.banco]) porBanco[t.banco] = { saldo: 0, entradas: 0, saidas: 0 };
@@ -446,6 +450,17 @@ function aplicarFiltros() {
     document.getElementById("saidas-periodo").textContent = formatarReais(saidasPeriodo);
     document.getElementById("transferencias-internas").textContent = formatarReais(transferenciasInternas);
 
+    // Saldo previsto = saldo real + o líquido dos lançamentos futuros (mesmas
+    // exclusões de transferência interna / categoria à parte que o saldo real usa)
+    let saldoFuturoLiquido = 0;
+    listaFutura.forEach((t) => {
+        if (typeof t.valor !== "number") return;
+        if (categoriasSeparadas.has(t.classificacao_saida)) return;
+        if (t.tipo_mov === "INTERNO") return;
+        saldoFuturoLiquido += t.tipo === "ENTRADA" ? t.valor : -t.valor;
+    });
+    document.getElementById("saldo-previsto").textContent = formatarReais(saldoGeral + saldoFuturoLiquido);
+
     const cartaoSaldoGeral = document.getElementById("cartao-saldo-geral");
     cartaoSaldoGeral.classList.toggle("metrica-saldo-neg", saldoGeral < 0);
     cartaoSaldoGeral.classList.toggle("metrica-saldo-pos", saldoGeral >= 0);
@@ -461,7 +476,7 @@ function aplicarFiltros() {
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
     renderizarListaBarras("lista-entradas-categoria", entradaPorClassificacao, "Nenhuma entrada registrada neste período.");
     renderizarListaBarras("lista-classificacoes", gastoPorClassificacao, "Nenhuma saída registrada neste período.");
-    renderizarVisoesPersonalizadas(lista);
+    renderizarVisoesPersonalizadas(listaRealizada);
 
     salvarEstadoFiltro();
 }

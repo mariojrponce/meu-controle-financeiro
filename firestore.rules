@@ -21,13 +21,19 @@ service cloud.firestore {
                     && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
                     && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO'];
 
+      // Permite EDITAR apenas o próprio dono do lançamento, mantendo os
+      // mesmos campos essenciais válidos depois da edição
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId
+                    && request.resource.data.valor is number
+                    && request.resource.data.valor > 0
+                    && request.resource.data.data is string
+                    && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
+                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO'];
+
       // Permite EXCLUIR apenas o próprio dono do lançamento
       allow delete: if request.auth != null
                     && request.auth.uid == resource.data.userId;
-
-      // Edição continua bloqueada (evita alterar histórico por engano).
-      // Se um dia quiser permitir editar, troque para uma regra "allow update" própria.
-      allow update: if false;
     }
 
     // Bloqueia qualquer outra coleção não prevista explicitamente

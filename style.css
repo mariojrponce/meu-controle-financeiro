@@ -211,7 +211,6 @@ tr:hover td { background: var(--cor-fundo); }
    para nunca precisar rolar a página inteira além da tabela (some a rolagem dupla)
    e se ajustar sozinha sempre que a janela for redimensionada. */
 .tabela-scroll-extrato { max-height: calc(100vh - 430px); min-height: 240px; }
-.col-acoes { text-align: center; width: 50px; white-space: nowrap; }
 
 .dica-inline { font-weight: 400; color: var(--cor-texto-suave); text-transform: none; letter-spacing: normal; font-size: 11px; }
 
@@ -310,6 +309,38 @@ tr:hover td { background: var(--cor-fundo); }
 .modal-caixa p { margin: 0 0 22px; font-size: 14px; color: var(--cor-texto-suave); line-height: 1.4; }
 .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; }
 .modal-acoes .botao { margin: 0; width: auto; }
+.modal-caixa-editor { max-width: 480px; text-align: left; max-height: 88vh; overflow-y: auto; }
+
+/* ---------- Ações da tabela (editar + excluir) ---------- */
+.col-acoes { text-align: center; width: 84px; white-space: nowrap; }
+.acoes-linha { display: flex; gap: 6px; justify-content: center; }
+.botao-icone-primario {
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria-escura);
+  border: 1px solid #a7f3d0;
+  border-radius: var(--raio-pequeno);
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.botao-icone-primario:hover { background: #d1fae5; }
+
+/* ---------- Lançamentos futuros (previstos, ainda não contabilizados) ---------- */
+tr.linha-prevista { opacity: 0.72; font-style: italic; }
+.selo-previsto {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-style: normal;
+}
 
 /* ---------- Combobox de texto (Banco/Classificação no formulário) ---------- */
 .combobox-wrap { position: relative; }

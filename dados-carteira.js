@@ -6,7 +6,7 @@
 // leitura gratuita rapidinho.
 import {
   collection, getDocs, query, where,
-  addDoc, deleteDoc, doc, writeBatch, serverTimestamp
+  addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
@@ -91,6 +91,17 @@ export async function criarTransacao(usuario, dados) {
   salvarCache(usuario.uid, cacheAtual);
 
   return referencia.id;
+}
+
+// Atualiza os campos editáveis de uma transação e reflete no cache local.
+export async function atualizarTransacao(usuario, id, dadosAtualizados) {
+  await updateDoc(doc(db, NOME_COLECAO, id), dadosAtualizados);
+
+  const cacheAtual = lerCache(usuario.uid);
+  if (cacheAtual) {
+    const atualizado = cacheAtual.map((t) => (t.id === id ? { ...t, ...dadosAtualizados } : t));
+    salvarCache(usuario.uid, atualizado);
+  }
 }
 
 // Exclui uma transação e atualiza o cache local.

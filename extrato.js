@@ -1,14 +1,16 @@
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import {
-    isoParaBR, brParaISO, normalizarDataDigitada, formatarReais,
-    ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
+    isoParaBR, brParaISO, normalizarDataDigitada, formatarReais, hojeISO,
+    ligarCampoFiltroData, intervaloMesAtual, intervaloParaAnoMes
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-import { obterTransacoes, excluirTransacaoPorId } from "./dados-carteira.js";
+import { obterTransacoes, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
+import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
+import { abrirEditorTransacao } from "./editor-transacao.js";
 
 const NOME_PAGINA = "extrato";
 
@@ -21,8 +23,8 @@ const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
 
-ligarCampoDataInteligente(campoInicio);
-ligarCampoDataInteligente(campoFim);
+ligarCampoFiltroData(campoInicio, () => ({ ano: campoAno.value, mes: campoMes.value }));
+ligarCampoFiltroData(campoFim, () => ({ ano: campoAno.value, mes: campoMes.value }));
 
 const seletorBanco = criarSeletorMultiplo({
     container: document.getElementById("filtro-banco"),
@@ -33,7 +35,7 @@ const seletorBanco = criarSeletorMultiplo({
 
 let todasTransacoes = [];
 let ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
-let carregando = true; // evita salvar o filtro default antes de restaurar o que estava salvo
+let carregando = true;
 
 const controladorOrdenacao = ativarOrdenacao(document.querySelector("#tabela-transacoes thead"), (chave, direcao, tipo) => {
     ordenacaoAtual = { chave, direcao, tipo };
@@ -73,21 +75,32 @@ campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFil
 campoMov.addEventListener("change", aplicarFiltros);
 
 function renderizarResumo(lista) {
+    const hoje = hojeISO();
     let entradas = 0;
     let saidas = 0;
+    let saldoFuturoLiquido = 0;
 
     lista.forEach((t) => {
         if (typeof t.valor !== "number") return;
-        if (t.tipo === "ENTRADA") entradas += t.valor;
-        else saidas += t.valor;
+        const sinal = t.tipo === "ENTRADA" ? t.valor : -t.valor;
+
+        if ((t.data ?? "") > hoje) {
+            saldoFuturoLiquido += sinal;
+        } else if (t.tipo === "ENTRADA") {
+            entradas += t.valor;
+        } else {
+            saidas += t.valor;
+        }
     });
 
     const saldo = entradas - saidas;
+    const saldoPrevisto = saldo + saldoFuturoLiquido;
     const cartaoSaldo = document.getElementById("cartao-saldo");
 
     document.getElementById("total-entradas").textContent = formatarReais(entradas);
     document.getElementById("total-saidas").textContent = formatarReais(saidas);
     document.getElementById("total-saldo").textContent = formatarReais(saldo);
+    document.getElementById("total-saldo-previsto").textContent = formatarReais(saldoPrevisto);
 
     cartaoSaldo.classList.remove("metrica-saldo-pos", "metrica-saldo-neg");
     cartaoSaldo.classList.add(saldo >= 0 ? "metrica-saldo-pos" : "metrica-saldo-neg");
@@ -113,6 +126,30 @@ async function excluirTransacao(transacao) {
     }
 }
 
+function listasDeSugestao() {
+    const bancosUsados = todasTransacoes.map(t => t.banco).filter(Boolean);
+    const classificacoesUsadas = todasTransacoes.map(t => t.classificacao_saida).filter(Boolean);
+    return {
+        bancosSugeridos: mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados),
+        classificacoesSugeridas: mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas)
+    };
+}
+
+async function editarTransacao(transacao) {
+    const dadosEditados = await abrirEditorTransacao(transacao, listasDeSugestao());
+    if (!dadosEditados) return;
+
+    try {
+        await atualizarTransacao(usuario, transacao.id, dadosEditados);
+        todasTransacoes = todasTransacoes.map((t) => (t.id === transacao.id ? { ...t, ...dadosEditados } : t));
+        aplicarFiltros();
+        mostrarToast("Lançamento atualizado!", "sucesso");
+    } catch (erro) {
+        console.error("Erro ao atualizar:", erro);
+        mostrarToast("Erro ao salvar as alterações. Tente novamente.", "erro");
+    }
+}
+
 function renderizarTabela(lista) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
     corpoTabela.innerHTML = "";
@@ -130,14 +167,27 @@ function renderizarTabela(lista) {
         return;
     }
 
+    const hoje = hojeISO();
+
     lista.forEach((transacao) => {
         if (!transacao.data || typeof transacao.valor !== "number") return;
 
+        const ehFuturo = transacao.data > hoje;
         const classeCor = transacao.tipo === "SAIDA" ? "saida" : "entrada";
         const sinal = transacao.tipo === "SAIDA" ? "-" : "+";
 
         const linha = document.createElement("tr");
-        linha.appendChild(celulaTexto(isoParaBR(transacao.data)));
+        if (ehFuturo) linha.classList.add("linha-prevista");
+
+        const tdData = celulaTexto(isoParaBR(transacao.data));
+        if (ehFuturo) {
+            const selo = document.createElement("span");
+            selo.className = "selo-previsto";
+            selo.textContent = "Previsto";
+            tdData.appendChild(selo);
+        }
+        linha.appendChild(tdData);
+
         linha.appendChild(celulaTexto(transacao.descricao ?? ""));
         linha.appendChild(celulaTexto(transacao.saida ?? ""));
         linha.appendChild(celulaTexto(transacao.tipo_mov ?? ""));
@@ -153,12 +203,24 @@ function renderizarTabela(lista) {
 
         const tdAcoes = document.createElement("td");
         tdAcoes.className = "col-acoes";
+        const wrapperAcoes = document.createElement("div");
+        wrapperAcoes.className = "acoes-linha";
+
+        const botaoEditar = document.createElement("button");
+        botaoEditar.className = "botao-icone-primario";
+        botaoEditar.title = "Editar lançamento";
+        botaoEditar.textContent = "✏️";
+        botaoEditar.addEventListener("click", () => editarTransacao(transacao));
+
         const botaoExcluir = document.createElement("button");
         botaoExcluir.className = "botao-icone-perigo";
         botaoExcluir.title = "Excluir lançamento";
         botaoExcluir.textContent = "🗑";
         botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
-        tdAcoes.appendChild(botaoExcluir);
+
+        wrapperAcoes.appendChild(botaoEditar);
+        wrapperAcoes.appendChild(botaoExcluir);
+        tdAcoes.appendChild(wrapperAcoes);
         linha.appendChild(tdAcoes);
 
         corpoTabela.appendChild(linha);
@@ -166,7 +228,7 @@ function renderizarTabela(lista) {
 }
 
 function salvarEstadoFiltro() {
-    if (carregando) return; // não sobrescreve o salvo enquanto ainda estamos restaurando
+    if (carregando) return;
     salvarFiltro(usuario.uid, NOME_PAGINA, {
         ano: campoAno.value,
         mes: campoMes.value,
@@ -230,7 +292,6 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
             const salvo = obterFiltroSalvo(usuario.uid, NOME_PAGINA);
 
             if (salvo) {
-                // Restaura o filtro e a ordenação que estavam configurados da última vez
                 popularSeletorAno(Number(salvo.ano) || new Date().getFullYear());
                 campoMes.value = salvo.mes ?? "";
                 campoInicio.value = salvo.inicioBR ?? "";
@@ -242,7 +303,6 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
                     controladorOrdenacao.definirEstado(salvo.ordenacao.chave, salvo.ordenacao.direcao);
                 }
             } else {
-                // Primeira vez: padrão é mês atual, do dia 1 até hoje
                 const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
                 popularSeletorAno(ano);
                 campoMes.value = String(mes).padStart(2, "0");

@@ -5,7 +5,8 @@ import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
-import { obterTransacoes, criarTransacao, excluirTransacaoPorId } from "./dados-carteira.js";
+import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
+import { abrirEditorTransacao } from "./editor-transacao.js";
 
 const QTD_ULTIMOS = 10;
 
@@ -90,12 +91,24 @@ function renderizarUltimos(lista) {
 
         const tdAcoes = document.createElement("td");
         tdAcoes.className = "col-acoes";
+        const wrapperAcoes = document.createElement("div");
+        wrapperAcoes.className = "acoes-linha";
+
+        const botaoEditar = document.createElement("button");
+        botaoEditar.className = "botao-icone-primario";
+        botaoEditar.title = "Editar lançamento";
+        botaoEditar.textContent = "✏️";
+        botaoEditar.addEventListener("click", () => editarTransacao(transacao));
+
         const botaoExcluir = document.createElement("button");
         botaoExcluir.className = "botao-icone-perigo";
         botaoExcluir.title = "Excluir lançamento";
         botaoExcluir.textContent = "🗑";
         botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
-        tdAcoes.appendChild(botaoExcluir);
+
+        wrapperAcoes.appendChild(botaoEditar);
+        wrapperAcoes.appendChild(botaoExcluir);
+        tdAcoes.appendChild(wrapperAcoes);
         linha.appendChild(tdAcoes);
 
         corpo.appendChild(linha);
@@ -118,6 +131,29 @@ async function excluirTransacao(transacao) {
     } catch (erro) {
         console.error("Erro ao excluir:", erro);
         mostrarToast("Erro ao excluir. Tente novamente.", "erro");
+    }
+}
+
+function listasDeSugestao(transacoes) {
+    const bancosUsados = transacoes.map(t => t.banco).filter(Boolean);
+    const classificacoesUsadas = transacoes.map(t => t.classificacao_saida).filter(Boolean);
+    return {
+        bancosSugeridos: mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados),
+        classificacoesSugeridas: mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas)
+    };
+}
+
+async function editarTransacao(transacao) {
+    const dadosEditados = await abrirEditorTransacao(transacao, listasDeSugestao(ultimosAtuais));
+    if (!dadosEditados) return;
+
+    try {
+        await atualizarTransacao(usuario, transacao.id, dadosEditados);
+        mostrarToast("Lançamento atualizado!", "sucesso");
+        carregarDadosAuxiliares();
+    } catch (erro) {
+        console.error("Erro ao atualizar:", erro);
+        mostrarToast("Erro ao salvar as alterações. Tente novamente.", "erro");
     }
 }
 

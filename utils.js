@@ -164,6 +164,58 @@ export function celulaParaNumero(valorCelula) {
   return parseFloat(texto);
 }
 
+// Igual ao ligarCampoDataInteligente, mas pensado para os campos de filtro
+// "Dia início"/"Dia fim": além de datas completas, aceita digitar só o dia
+// (1 ou 2 dígitos) e completa sozinho usando o Mês/Ano que já estão
+// selecionados no filtro (obterContexto deve devolver { ano, mes }).
+export function ligarCampoFiltroData(input, obterContexto) {
+  input.setAttribute("placeholder", "dd/mm/aaaa ou só o dia");
+  input.setAttribute("inputmode", "numeric");
+  input.setAttribute("maxlength", "10");
+
+  input.addEventListener("blur", () => {
+    const valor = input.value.trim();
+    if (valor === "") {
+      input.classList.remove("campo-invalido");
+      return;
+    }
+
+    const dataCompleta = normalizarDataDigitada(valor);
+    if (dataCompleta) {
+      input.value = dataCompleta;
+      input.classList.remove("campo-invalido");
+      return;
+    }
+
+    const somenteDia = valor.match(/^\d{1,2}$/);
+    if (somenteDia) {
+      const contexto = obterContexto?.();
+      if (contexto?.mes) {
+        const dia = valor.padStart(2, "0");
+        const diaNum = Number(dia);
+        if (diaNum >= 1 && diaNum <= 31) {
+          input.value = `${dia}/${contexto.mes}/${contexto.ano}`;
+          input.classList.remove("campo-invalido");
+          return;
+        }
+      }
+    }
+
+    input.classList.add("campo-invalido");
+  });
+
+  input.addEventListener("input", () => input.classList.remove("campo-invalido"));
+
+  input.addEventListener("paste", (evento) => {
+    const textoColado = (evento.clipboardData || window.clipboardData).getData("text");
+    const dataReconhecida = extrairDataDeTexto(textoColado);
+    if (dataReconhecida) {
+      evento.preventDefault();
+      input.value = dataReconhecida;
+      input.classList.remove("campo-invalido");
+    }
+  });
+}
 // Liga um <input type="text"> para se comportar como campo de data "inteligente":
 // - o usuário pode digitar livremente (com ou sem separador, 1 ou 2 dígitos, ano com 2 ou 4 dígitos)
 // - ao sair do campo (blur), o valor é reconhecido e normalizado para "dd/mm/aaaa"
