@@ -2,10 +2,17 @@
 // Deixa o cabeçalho de uma tabela clicável: clique numa coluna para ordenar
 // por ela; clique de novo para inverter a direção.
 
-export function ativarOrdenacao(thead, aoOrdenar) {
+export function ativarOrdenacao(thead, aoOrdenar, estadoInicial = null) {
   const celulas = Array.from(thead.querySelectorAll("th[data-chave]"));
-  let chaveAtual = null;
-  let direcaoAtual = "asc";
+  let chaveAtual = estadoInicial?.chave ?? null;
+  let direcaoAtual = estadoInicial?.direcao ?? "asc";
+
+  function atualizarSetas() {
+    celulas.forEach((c) => {
+      const seta = c.querySelector(".seta-ordenacao");
+      if (seta) seta.textContent = c.dataset.chave === chaveAtual ? (direcaoAtual === "asc" ? "▲" : "▼") : "";
+    });
+  }
 
   celulas.forEach((th) => {
     th.classList.add("th-ordenavel");
@@ -25,13 +32,22 @@ export function ativarOrdenacao(thead, aoOrdenar) {
       const chave = th.dataset.chave;
       direcaoAtual = chaveAtual === chave ? (direcaoAtual === "asc" ? "desc" : "asc") : "asc";
       chaveAtual = chave;
-
-      celulas.forEach((c) => { c.querySelector(".seta-ordenacao").textContent = ""; });
-      spanSeta.textContent = direcaoAtual === "asc" ? "▲" : "▼";
-
+      atualizarSetas();
       aoOrdenar(chaveAtual, direcaoAtual, th.dataset.tipo || "texto");
     });
   });
+
+  atualizarSetas();
+
+  return {
+    // Permite restaurar visualmente (a setinha) um estado de ordenação salvo,
+    // sem precisar que o usuário clique de novo no cabeçalho.
+    definirEstado(chave, direcao) {
+      chaveAtual = chave;
+      direcaoAtual = direcao;
+      atualizarSetas();
+    }
+  };
 }
 
 // Compara dois valores de acordo com o tipo da coluna ("numero" ou "texto").

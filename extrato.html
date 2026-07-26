@@ -68,11 +68,11 @@
                         </select>
                     </div>
                     <div class="campo-filtro">
-                        <label>Data início</label>
+                        <label>Dia início <span class="dica-inline">(sempre dia 01)</span></label>
                         <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa">
                     </div>
                     <div class="campo-filtro">
-                        <label>Data fim</label>
+                        <label>Dia fim <span class="dica-inline">(sempre hoje)</span></label>
                         <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa">
                     </div>
                     <div class="campo-filtro">
@@ -92,7 +92,7 @@
                     <button id="btn-atualizar" class="botao botao-secundario" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
                 </div>
 
-                <div class="tabela-scroll">
+                <div class="tabela-scroll tabela-scroll-extrato">
                     <table id="tabela-transacoes">
                         <thead>
                             <tr>

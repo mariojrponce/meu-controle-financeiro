@@ -13,8 +13,23 @@ import { db } from "./firebase-config.js";
 const NOME_COLECAO = "carteira";
 const IDADE_MAXIMA_MS = 6 * 60 * 60 * 1000; // 6 horas — depois disso busca de novo sozinho
 
+// Aumentar este número força todo mundo a buscar dados frescos uma vez
+// (usado aqui para corrigir o cache de quem já tinha o bug do criadoEm).
+const VERSAO_CACHE = 2;
+
 function chaveCache(uid) {
   return `carteira_cache_${uid}`;
+}
+
+// Converte o campo criadoEm (Timestamp do Firestore) num número de milissegundos
+// simples — que sobrevive ao cache em localStorage (Timestamps/funções não sobrevivem
+// a um JSON.stringify/parse, e é isso que causava a ordenação errada dos "últimos lançamentos").
+function paraCriadoEmMs(criadoEm) {
+  if (!criadoEm) return 0;
+  if (typeof criadoEm.toMillis === "function") return criadoEm.toMillis();
+  if (typeof criadoEm.seconds === "number") return criadoEm.seconds * 1000;
+  if (typeof criadoEm === "number") return criadoEm;
+  return 0;
 }
 
 function lerCache(uid) {
@@ -22,7 +37,7 @@ function lerCache(uid) {
     const bruto = localStorage.getItem(chaveCache(uid));
     if (!bruto) return null;
     const objeto = JSON.parse(bruto);
-    if (!objeto || !Array.isArray(objeto.transacoes)) return null;
+    if (!objeto || objeto.versao !== VERSAO_CACHE || !Array.isArray(objeto.transacoes)) return null;
     if (Date.now() - objeto.buscadoEm > IDADE_MAXIMA_MS) return null;
     return objeto.transacoes;
   } catch {
@@ -32,7 +47,7 @@ function lerCache(uid) {
 
 function salvarCache(uid, transacoes) {
   try {
-    localStorage.setItem(chaveCache(uid), JSON.stringify({ transacoes, buscadoEm: Date.now() }));
+    localStorage.setItem(chaveCache(uid), JSON.stringify({ versao: VERSAO_CACHE, transacoes, buscadoEm: Date.now() }));
   } catch (erro) {
     console.warn("Não foi possível salvar o cache local (não é grave, só volta a buscar do Firebase sempre):", erro);
   }
@@ -50,7 +65,10 @@ export async function obterTransacoes(usuario, { forcarAtualizacao = false } = {
   const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
   const snapshot = await getDocs(consulta);
   const transacoes = [];
-  snapshot.forEach((d) => transacoes.push({ id: d.id, ...d.data() }));
+  snapshot.forEach((d) => {
+    const dados = d.data();
+    transacoes.push({ id: d.id, ...dados, criadoEmMs: paraCriadoEmMs(dados.criadoEm) });
+  });
   salvarCache(usuario.uid, transacoes);
   return transacoes;
 }
@@ -68,7 +86,7 @@ export async function criarTransacao(usuario, dados) {
     id: referencia.id,
     userId: usuario.uid,
     ...dados,
-    criadoEm: { toMillis: () => Date.now() } // aproximação local até a próxima busca real
+    criadoEmMs: Date.now() // aproximação local (número simples, sobrevive ao cache)
   });
   salvarCache(usuario.uid, cacheAtual);
 
@@ -86,6 +104,8 @@ export async function excluirTransacaoPorId(usuario, id) {
 export async function importarTransacoes(usuario, listaDeDados, aoProgredir) {
   const TAMANHO_LOTE = 400;
   let feitos = 0;
+  let contador = 0;
+  const agora = Date.now();
   const novosDocs = [];
 
   for (let i = 0; i < listaDeDados.length; i += TAMANHO_LOTE) {
@@ -99,7 +119,8 @@ export async function importarTransacoes(usuario, listaDeDados, aoProgredir) {
 
     await lote.commit();
     fatia.forEach((dadosLinha, indice) => {
-      novosDocs.push({ id: referencias[indice].id, userId: usuario.uid, ...dadosLinha });
+      // soma um contador crescente pra manter a ordem relativa dentro do lote importado
+      novosDocs.push({ id: referencias[indice].id, userId: usuario.uid, ...dadosLinha, criadoEmMs: agora + (contador++) });
     });
 
     feitos += fatia.length;

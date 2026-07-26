@@ -8,11 +8,13 @@ import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
 import { obterTransacoes } from "./dados-carteira.js";
 import { mostrarToast } from "./ui.js";
+import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import {
     obterCategoriasSeparadas, salvarCategoriasSeparadas,
     obterVisoesPersonalizadas, salvarVisoesPersonalizadas
 } from "./preferencias-dashboard.js";
 
+const NOME_PAGINA = "dashboard";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 const ROTULOS_CAMPO = { classificacao_saida: "Classificação", banco: "Banco", saida: "Detalhe" };
 
@@ -37,6 +39,7 @@ const seletorBanco = criarSeletorMultiplo({
 
 let todasTransacoes = [];
 let seletorCategoriasSeparadas = null;
+let carregando = true;
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
@@ -67,7 +70,7 @@ function popularSeletorAno(anoSelecionado) {
         opcao.textContent = String(ano);
         campoAno.appendChild(opcao);
     });
-    campoAno.value = String(anoSelecionado);
+    if (listaOrdenada.includes(Number(anoSelecionado))) campoAno.value = String(anoSelecionado);
 }
 
 function aplicarAnoMesNosCampos() {
@@ -140,6 +143,13 @@ function renderizarCarteiras(porBanco) {
     });
 }
 
+function removerCategoriaSeparada(categoria) {
+    const restantes = obterCategoriasSeparadas(usuario.uid).filter((c) => c !== categoria);
+    salvarCategoriasSeparadas(usuario.uid, restantes);
+    if (seletorCategoriasSeparadas) seletorCategoriasSeparadas.definirSelecionados(restantes);
+    aplicarFiltros();
+}
+
 function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
     const container = document.getElementById("grade-categorias-separadas");
     container.innerHTML = "";
@@ -156,10 +166,25 @@ function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
         cartao.className = "cartao-carteira";
         cartao.style.borderTopColor = "#d97706";
 
+        const cabecalho = document.createElement("div");
+        cabecalho.style.display = "flex";
+        cabecalho.style.justifyContent = "space-between";
+        cabecalho.style.alignItems = "center";
+
         const nome = document.createElement("div");
         nome.className = "nome-banco";
+        nome.style.marginBottom = "0";
         nome.textContent = `🍱 ${categoria}`;
-        cartao.appendChild(nome);
+
+        const botaoRemover = document.createElement("button");
+        botaoRemover.className = "botao-icone-perigo";
+        botaoRemover.title = "Remover dos separados";
+        botaoRemover.textContent = "🗑";
+        botaoRemover.addEventListener("click", () => removerCategoriaSeparada(categoria));
+
+        cabecalho.appendChild(nome);
+        cabecalho.appendChild(botaoRemover);
+        cartao.appendChild(cabecalho);
 
         cartao.appendChild(linhaCarteira("Entradas", dados.entradas));
         cartao.appendChild(linhaCarteira("Saídas", dados.saidas));
@@ -335,6 +360,18 @@ function renderizarVisoesPersonalizadas(lista) {
     });
 }
 
+function salvarEstadoFiltro() {
+    if (carregando) return;
+    salvarFiltro(usuario.uid, NOME_PAGINA, {
+        ano: campoAno.value,
+        mes: campoMes.value,
+        inicioBR: campoInicio.value,
+        fimBR: campoFim.value,
+        bancos: seletorBanco.obterSelecionados(),
+        mov: campoMov.value
+    });
+}
+
 // ---------- Filtro principal ----------
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
@@ -362,8 +399,6 @@ function aplicarFiltros() {
     lista.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco) return;
 
-        // Saldo por banco: conta TUDO (inclusive transferências internas), porque
-        // isso reflete o saldo real daquela conta.
         if (!porBanco[t.banco]) porBanco[t.banco] = { saldo: 0, entradas: 0, saidas: 0 };
         if (t.tipo === "ENTRADA") {
             porBanco[t.banco].entradas += t.valor;
@@ -385,15 +420,14 @@ function aplicarFiltros() {
                 porCategoriaSeparada[chave].saidas += t.valor;
                 porCategoriaSeparada[chave].saldo -= t.valor;
             }
-            return; // não entra nos totais "de verdade" abaixo
+            return;
         }
 
         if (t.tipo_mov === "INTERNO") {
             transferenciasInternas += t.valor;
-            return; // transferência entre contas próprias não é receita/despesa real
+            return;
         }
 
-        // A partir daqui: só movimentações EXTERNAS e de categorias não-separadas
         if (t.tipo === "ENTRADA") {
             saldoGeral += t.valor;
             entradasPeriodo += t.valor;
@@ -428,26 +462,40 @@ function aplicarFiltros() {
     renderizarListaBarras("lista-entradas-categoria", entradaPorClassificacao, "Nenhuma entrada registrada neste período.");
     renderizarListaBarras("lista-classificacoes", gastoPorClassificacao, "Nenhuma saída registrada neste período.");
     renderizarVisoesPersonalizadas(lista);
+
+    salvarEstadoFiltro();
 }
 
 async function carregarDashboard(forcarAtualizacao = false) {
     try {
         todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
 
-        const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
-        seletorBanco.definirOpcoes(bancos);
+        const bancosDisponiveis = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
+        seletorBanco.definirOpcoes(bancosDisponiveis);
 
         if (!forcarAtualizacao) {
-            const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
-            popularSeletorAno(ano);
-            campoMes.value = String(mes).padStart(2, "0");
-            campoInicio.value = isoParaBR(inicioISO);
-            campoFim.value = isoParaBR(fimISO);
+            const salvo = obterFiltroSalvo(usuario.uid, NOME_PAGINA);
+
+            if (salvo) {
+                popularSeletorAno(Number(salvo.ano) || new Date().getFullYear());
+                campoMes.value = salvo.mes ?? "";
+                campoInicio.value = salvo.inicioBR ?? "";
+                campoFim.value = salvo.fimBR ?? "";
+                seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
+                campoMov.value = salvo.mov ?? "";
+            } else {
+                const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
+                popularSeletorAno(ano);
+                campoMes.value = String(mes).padStart(2, "0");
+                campoInicio.value = isoParaBR(inicioISO);
+                campoFim.value = isoParaBR(fimISO);
+            }
         } else {
             popularSeletorAno(Number(campoAno.value) || new Date().getFullYear());
             mostrarToast("Dados atualizados.", "sucesso");
         }
 
+        carregando = false;
         aplicarFiltros();
 
     } catch (erro) {

@@ -207,7 +207,13 @@ tr:hover td { background: var(--cor-fundo); }
 /* A rolagem (quando necessária) fica contida numa altura visível, em vez de
    obrigar a rolar a página inteira até o fim para então rolar para o lado. */
 .tabela-scroll { overflow: auto; max-height: 68vh; }
+/* Extrato: um pouco menor que o padrão, calculada a partir da altura da janela,
+   para nunca precisar rolar a página inteira além da tabela (some a rolagem dupla)
+   e se ajustar sozinha sempre que a janela for redimensionada. */
+.tabela-scroll-extrato { max-height: calc(100vh - 430px); min-height: 240px; }
 .col-acoes { text-align: center; width: 50px; white-space: nowrap; }
+
+.dica-inline { font-weight: 400; color: var(--cor-texto-suave); text-transform: none; letter-spacing: normal; font-size: 11px; }
 
 .th-ordenavel { cursor: pointer; user-select: none; }
 .th-ordenavel:hover { color: var(--cor-primaria); }

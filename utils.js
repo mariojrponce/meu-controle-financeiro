@@ -18,24 +18,38 @@ export function brParaISO(dataBR) {
 
 // Reconhece uma data digitada de forma flexível:
 // aceita dia/mês com 1 ou 2 dígitos, separador "/", "-", "." ou espaço,
-// e ano com 2 ou 4 dígitos. Sempre devolve no formato completo "dd/mm/aaaa",
-// ou null se o texto não for uma data válida.
+// e ano com 2 ou 4 dígitos — ou SEM ano, assumindo o ano atual (igual ao Excel:
+// digitar "26/07" e sair do campo já vira "26/07/2026" sozinho).
+// Sempre devolve no formato completo "dd/mm/aaaa", ou null se não for uma data válida.
 export function normalizarDataDigitada(texto) {
   const limpo = (texto ?? "").trim();
-  const m = limpo.match(/^(\d{1,2})[\/\-. ](\d{1,2})[\/\-. ](\d{2}|\d{4})$/);
-  if (!m) return null;
 
-  let [, dia, mes, ano] = m;
-  dia = dia.padStart(2, "0");
-  mes = mes.padStart(2, "0");
-  if (ano.length === 2) ano = `20${ano}`;
+  let m = limpo.match(/^(\d{1,2})[\/\-. ](\d{1,2})[\/\-. ](\d{2}|\d{4})$/);
+  if (m) {
+    let [, dia, mes, ano] = m;
+    if (ano.length === 2) ano = `20${ano}`;
+    return validarEFormatarData(dia, mes, ano);
+  }
 
+  // Sem ano: assume o ano atual
+  m = limpo.match(/^(\d{1,2})[\/\-. ](\d{1,2})$/);
+  if (m) {
+    const [, dia, mes] = m;
+    const anoAtual = String(new Date().getFullYear());
+    return validarEFormatarData(dia, mes, anoAtual);
+  }
+
+  return null;
+}
+
+function validarEFormatarData(dia, mes, ano) {
+  const diaFormatado = dia.padStart(2, "0");
+  const mesFormatado = mes.padStart(2, "0");
   const diaNum = Number(dia);
   const mesNum = Number(mes);
   if (mesNum < 1 || mesNum > 12) return null;
   if (diaNum < 1 || diaNum > 31) return null;
-
-  return `${dia}/${mes}/${ano}`;
+  return `${diaFormatado}/${mesFormatado}/${ano}`;
 }
 
 // Tenta encontrar uma data dentro de um texto colado (ex: copiado de um extrato

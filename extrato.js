@@ -8,6 +8,9 @@ import { criarSeletorMultiplo } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 import { obterTransacoes, excluirTransacaoPorId } from "./dados-carteira.js";
+import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
+
+const NOME_PAGINA = "extrato";
 
 const usuario = await exigirLogin();
 renderizarNav("extrato", usuario.email);
@@ -30,8 +33,9 @@ const seletorBanco = criarSeletorMultiplo({
 
 let todasTransacoes = [];
 let ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
+let carregando = true; // evita salvar o filtro default antes de restaurar o que estava salvo
 
-ativarOrdenacao(document.querySelector("#tabela-transacoes thead"), (chave, direcao, tipo) => {
+const controladorOrdenacao = ativarOrdenacao(document.querySelector("#tabela-transacoes thead"), (chave, direcao, tipo) => {
     ordenacaoAtual = { chave, direcao, tipo };
     aplicarFiltros();
 });
@@ -55,7 +59,7 @@ function popularSeletorAno(anoSelecionado) {
         opcao.textContent = String(ano);
         campoAno.appendChild(opcao);
     });
-    campoAno.value = String(anoSelecionado);
+    if (listaOrdenada.includes(Number(anoSelecionado))) campoAno.value = String(anoSelecionado);
 }
 
 function aplicarAnoMesNosCampos() {
@@ -161,6 +165,19 @@ function renderizarTabela(lista) {
     });
 }
 
+function salvarEstadoFiltro() {
+    if (carregando) return; // não sobrescreve o salvo enquanto ainda estamos restaurando
+    salvarFiltro(usuario.uid, NOME_PAGINA, {
+        ano: campoAno.value,
+        mes: campoMes.value,
+        inicioBR: campoInicio.value,
+        fimBR: campoFim.value,
+        bancos: seletorBanco.obterSelecionados(),
+        mov: campoMov.value,
+        ordenacao: ordenacaoAtual
+    });
+}
+
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
@@ -180,6 +197,7 @@ function aplicarFiltros() {
     });
 
     renderizarTabela(listaFiltrada);
+    salvarEstadoFiltro();
 }
 
 document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
@@ -191,6 +209,8 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
     campoMov.value = "";
+    ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
+    controladorOrdenacao.definirEstado("data", "desc");
     aplicarFiltros();
 });
 
@@ -203,21 +223,38 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
     try {
         todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
 
-        const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
-        seletorBanco.definirOpcoes(bancos);
+        const bancosDisponiveis = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
+        seletorBanco.definirOpcoes(bancosDisponiveis);
 
         if (!forcarAtualizacao) {
-            // Padrão ao abrir: mês atual, do dia 1 até hoje
-            const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
-            popularSeletorAno(ano);
-            campoMes.value = String(mes).padStart(2, "0");
-            campoInicio.value = isoParaBR(inicioISO);
-            campoFim.value = isoParaBR(fimISO);
+            const salvo = obterFiltroSalvo(usuario.uid, NOME_PAGINA);
+
+            if (salvo) {
+                // Restaura o filtro e a ordenação que estavam configurados da última vez
+                popularSeletorAno(Number(salvo.ano) || new Date().getFullYear());
+                campoMes.value = salvo.mes ?? "";
+                campoInicio.value = salvo.inicioBR ?? "";
+                campoFim.value = salvo.fimBR ?? "";
+                seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
+                campoMov.value = salvo.mov ?? "";
+                if (salvo.ordenacao) {
+                    ordenacaoAtual = salvo.ordenacao;
+                    controladorOrdenacao.definirEstado(salvo.ordenacao.chave, salvo.ordenacao.direcao);
+                }
+            } else {
+                // Primeira vez: padrão é mês atual, do dia 1 até hoje
+                const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
+                popularSeletorAno(ano);
+                campoMes.value = String(mes).padStart(2, "0");
+                campoInicio.value = isoParaBR(inicioISO);
+                campoFim.value = isoParaBR(fimISO);
+            }
         } else {
             popularSeletorAno(Number(campoAno.value) || new Date().getFullYear());
             mostrarToast("Dados atualizados.", "sucesso");
         }
 
+        carregando = false;
         aplicarFiltros();
 
     } catch (erro) {

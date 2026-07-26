@@ -19,6 +19,7 @@ function normalizarBusca(texto) {
 
 export function criarComboboxTexto(input, opcoesIniciais = []) {
   let opcoes = opcoesIniciais;
+  let apagando = false;
 
   const wrap = document.createElement("div");
   wrap.className = "combobox-wrap";
@@ -30,6 +31,17 @@ export function criarComboboxTexto(input, opcoesIniciais = []) {
   const painel = document.createElement("div");
   painel.className = "combobox-painel";
   wrap.appendChild(painel);
+
+  // Acha a primeira opção que COMEÇA com o texto digitado (autocompletar
+  // inline, tipo Excel/barra de endereço: completa e seleciona o restante).
+  function melhorSugestao(texto) {
+    if (!texto) return null;
+    const termo = normalizarBusca(texto);
+    return opcoes.find((op) => {
+      const opNormalizada = normalizarBusca(op);
+      return opNormalizada !== termo && opNormalizada.startsWith(termo);
+    }) ?? null;
+  }
 
   function renderizarPainel() {
     const termo = normalizarBusca(input.value);
@@ -67,8 +79,26 @@ export function criarComboboxTexto(input, opcoesIniciais = []) {
     painel.classList.remove("aberto");
   }
 
+  input.addEventListener("keydown", (evento) => {
+    apagando = evento.key === "Backspace" || evento.key === "Delete";
+  });
+
+  input.addEventListener("input", () => {
+    abrirPainel();
+
+    // Autocompleta enquanto digita (exceto ao apagar) — a parte sugerida fica
+    // selecionada, então: continuar digitando substitui; apertar Tab/Enter aceita.
+    if (!apagando) {
+      const sugestao = melhorSugestao(input.value);
+      if (sugestao) {
+        const tamanhoDigitado = input.value.length;
+        input.value = sugestao;
+        input.setSelectionRange(tamanhoDigitado, sugestao.length);
+      }
+    }
+  });
+
   input.addEventListener("focus", abrirPainel);
-  input.addEventListener("input", abrirPainel);
   input.addEventListener("blur", () => setTimeout(fecharPainel, 120));
 
   return {

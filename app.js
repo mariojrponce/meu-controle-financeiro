@@ -19,16 +19,7 @@ const comboboxBanco = criarComboboxTexto(document.getElementById("banco"), BANCO
 const comboboxClassificacao = criarComboboxTexto(document.getElementById("classificacao_saida"), CLASSIFICACOES_SUGERIDAS);
 
 let ultimosAtuais = [];
-let ordenacaoAtual = { chave: "criadoEm", direcao: "desc", tipo: "numero" };
-
-function milissegundosCriacao(transacao) {
-    return transacao.criadoEm?.toMillis ? transacao.criadoEm.toMillis() : 0;
-}
-
-function valorParaOrdenar(transacao, chave) {
-    if (chave === "criadoEm") return milissegundosCriacao(transacao);
-    return transacao[chave];
-}
+let ordenacaoAtual = { chave: "criadoEmMs", direcao: "desc", tipo: "numero" };
 
 ativarOrdenacao(document.querySelector("#tabela-ultimos thead"), (chave, direcao, tipo) => {
     ordenacaoAtual = { chave, direcao, tipo };
@@ -47,9 +38,9 @@ async function carregarDadosAuxiliares() {
         comboboxClassificacao.atualizarOpcoes(mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
 
         ultimosAtuais = [...transacoes]
-            .sort((a, b) => milissegundosCriacao(b) - milissegundosCriacao(a))
+            .sort((a, b) => (b.criadoEmMs ?? 0) - (a.criadoEmMs ?? 0))
             .slice(0, QTD_ULTIMOS);
-        ordenacaoAtual = { chave: "criadoEm", direcao: "desc", tipo: "numero" };
+        ordenacaoAtual = { chave: "criadoEmMs", direcao: "desc", tipo: "numero" };
         renderizarUltimos(ultimosAtuais);
 
     } catch (erro) {
@@ -69,11 +60,7 @@ function celulaTexto(texto) {
 
 function renderizarUltimos(lista) {
     const listaOrdenada = [...lista].sort((a, b) => {
-        const resultado = compararValores(
-            valorParaOrdenar(a, ordenacaoAtual.chave),
-            valorParaOrdenar(b, ordenacaoAtual.chave),
-            ordenacaoAtual.tipo
-        );
+        const resultado = compararValores(a[ordenacaoAtual.chave], b[ordenacaoAtual.chave], ordenacaoAtual.tipo);
         return ordenacaoAtual.direcao === "asc" ? resultado : -resultado;
     });
 
