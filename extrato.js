@@ -22,6 +22,8 @@ const campoMes = document.getElementById("filtro-mes");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
+const campoDetalhe = document.getElementById("filtro-detalhe");
+const campoDescricao = document.getElementById("filtro-descricao");
 
 ligarCampoFiltroData(campoInicio, () => ({ ano: campoAno.value, mes: campoMes.value }));
 ligarCampoFiltroData(campoFim, () => ({ ano: campoAno.value, mes: campoMes.value }));
@@ -73,6 +75,16 @@ function aplicarAnoMesNosCampos() {
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);
+
+function debounce(fn, atrasoMs) {
+    let temporizador;
+    return (...args) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => fn(...args), atrasoMs);
+    };
+}
+campoDetalhe.addEventListener("input", debounce(aplicarFiltros, 250));
+campoDescricao.addEventListener("input", debounce(aplicarFiltros, 250));
 
 function renderizarResumo(lista) {
     const hoje = hojeISO();
@@ -236,6 +248,8 @@ function salvarEstadoFiltro() {
         fimBR: campoFim.value,
         bancos: seletorBanco.obterSelecionados(),
         mov: campoMov.value,
+        detalhe: campoDetalhe.value,
+        descricao: campoDescricao.value,
         ordenacao: ordenacaoAtual
     });
 }
@@ -245,6 +259,8 @@ function aplicarFiltros() {
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
     const bancosFiltro = seletorBanco.obterSelecionados();
     const movFiltro = campoMov.value;
+    const detalheFiltro = campoDetalhe.value.trim().toUpperCase();
+    const descricaoFiltro = campoDescricao.value.trim().toUpperCase();
 
     let listaFiltrada = todasTransacoes;
 
@@ -252,6 +268,8 @@ function aplicarFiltros() {
     if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
     if (bancosFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
+    if (detalheFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.saida ?? "").includes(detalheFiltro));
+    if (descricaoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.descricao ?? "").includes(descricaoFiltro));
 
     listaFiltrada = [...listaFiltrada].sort((a, b) => {
         const resultado = compararValores(a[ordenacaoAtual.chave], b[ordenacaoAtual.chave], ordenacaoAtual.tipo);
@@ -271,6 +289,8 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
     campoMov.value = "";
+    campoDetalhe.value = "";
+    campoDescricao.value = "";
     ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
     controladorOrdenacao.definirEstado("data", "desc");
     aplicarFiltros();
@@ -298,6 +318,8 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
                 campoFim.value = salvo.fimBR ?? "";
                 seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
                 campoMov.value = salvo.mov ?? "";
+                campoDetalhe.value = salvo.detalhe ?? "";
+                campoDescricao.value = salvo.descricao ?? "";
                 if (salvo.ordenacao) {
                     ordenacaoAtual = salvo.ordenacao;
                     controladorOrdenacao.definirEstado(salvo.ordenacao.chave, salvo.ordenacao.direcao);

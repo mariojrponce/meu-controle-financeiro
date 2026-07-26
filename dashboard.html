@@ -65,6 +65,14 @@
                         <div id="filtro-banco"></div>
                     </div>
                     <div class="campo-filtro">
+                        <label>Detalhe</label>
+                        <input type="text" id="filtro-detalhe" placeholder="Ex: UBER, MERCADO EXTRA">
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Descrição</label>
+                        <input type="text" id="filtro-descricao" placeholder="Buscar na descrição...">
+                    </div>
+                    <div class="campo-filtro">
                         <label>Movimentação</label>
                         <select id="filtro-movimentacao">
                             <option value="">Todas</option>
@@ -164,10 +172,12 @@
                         <option value="">Nenhum filtro (usar tudo)</option>
                         <option value="classificacao_saida">Classificação específica</option>
                         <option value="banco">Banco específico</option>
+                        <option value="saida">Detalhe específico</option>
+                        <option value="descricao">Descrição específica</option>
                     </select>
 
                     <label>Valor do filtro (quando aplicável)</label>
-                    <input type="text" id="visao-filtro-valor" placeholder="Ex: TRANSPORTE ou PLUXE">
+                    <input type="text" id="visao-filtro-valor" placeholder="Ex: TRANSPORTE, PLUXE, UBER... (aceita parte do texto)">
 
                     <label>Agrupar por</label>
                     <select id="visao-agrupar-por">

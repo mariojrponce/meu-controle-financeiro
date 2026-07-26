@@ -16,7 +16,7 @@ import {
 
 const NOME_PAGINA = "dashboard";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-const ROTULOS_CAMPO = { classificacao_saida: "Classificação", banco: "Banco", saida: "Detalhe" };
+const ROTULOS_CAMPO = { classificacao_saida: "Classificação", banco: "Banco", saida: "Detalhe", descricao: "Descrição" };
 
 const usuario = await exigirLogin();
 renderizarNav("dashboard", usuario.email);
@@ -26,6 +26,8 @@ const campoMes = document.getElementById("filtro-mes");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
+const campoDetalhe = document.getElementById("filtro-detalhe");
+const campoDescricao = document.getElementById("filtro-descricao");
 
 ligarCampoFiltroData(campoInicio, () => ({ ano: campoAno.value, mes: campoMes.value }));
 ligarCampoFiltroData(campoFim, () => ({ ano: campoAno.value, mes: campoMes.value }));
@@ -47,6 +49,16 @@ campoMov.addEventListener("change", aplicarFiltros);
 document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
 document.getElementById("btn-atualizar").addEventListener("click", () => carregarDashboard(true));
 
+function debounce(fn, atrasoMs) {
+    let temporizador;
+    return (...args) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => fn(...args), atrasoMs);
+    };
+}
+campoDetalhe.addEventListener("input", debounce(aplicarFiltros, 250));
+campoDescricao.addEventListener("input", debounce(aplicarFiltros, 250));
+
 document.getElementById("btn-limpar").addEventListener("click", () => {
     const { ano, mes } = intervaloMesAtual();
     campoAno.value = String(ano);
@@ -54,6 +66,8 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
     campoMov.value = "";
+    campoDetalhe.value = "";
+    campoDescricao.value = "";
     aplicarFiltros();
 });
 
@@ -297,7 +311,9 @@ document.getElementById("btn-salvar-visao").addEventListener("click", () => {
 function calcularVisaoPersonalizada(lista, visao) {
     let filtrada = lista;
     if (visao.filtroCampo && visao.filtroValor) {
-        filtrada = filtrada.filter(t => (t[visao.filtroCampo] ?? "") === visao.filtroValor);
+        // Busca parcial (contém o texto), não precisa ser idêntico —
+        // assim "UBER" encontra "UBER EATS", "TRANS" encontra "TRANSPORTE", etc.
+        filtrada = filtrada.filter(t => (t[visao.filtroCampo] ?? "").includes(visao.filtroValor));
     }
     if (visao.tipo !== "AMBOS") {
         filtrada = filtrada.filter(t => t.tipo === visao.tipo);
@@ -368,7 +384,9 @@ function salvarEstadoFiltro() {
         inicioBR: campoInicio.value,
         fimBR: campoFim.value,
         bancos: seletorBanco.obterSelecionados(),
-        mov: campoMov.value
+        mov: campoMov.value,
+        detalhe: campoDetalhe.value,
+        descricao: campoDescricao.value
     });
 }
 
@@ -378,12 +396,16 @@ function aplicarFiltros() {
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
     const bancosFiltro = seletorBanco.obterSelecionados();
     const movFiltro = campoMov.value;
+    const detalheFiltro = campoDetalhe.value.trim().toUpperCase();
+    const descricaoFiltro = campoDescricao.value.trim().toUpperCase();
 
     let lista = todasTransacoes;
     if (dataInicioISO) lista = lista.filter(t => t.data >= dataInicioISO);
     if (dataFimISO) lista = lista.filter(t => t.data <= dataFimISO);
     if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
+    if (detalheFiltro !== "") lista = lista.filter(t => (t.saida ?? "").includes(detalheFiltro));
+    if (descricaoFiltro !== "") lista = lista.filter(t => (t.descricao ?? "").includes(descricaoFiltro));
 
     const hoje = hojeISO();
     const listaRealizada = lista.filter(t => (t.data ?? "") <= hoje);
@@ -498,6 +520,8 @@ async function carregarDashboard(forcarAtualizacao = false) {
                 campoFim.value = salvo.fimBR ?? "";
                 seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
                 campoMov.value = salvo.mov ?? "";
+                campoDetalhe.value = salvo.detalhe ?? "";
+                campoDescricao.value = salvo.descricao ?? "";
             } else {
                 const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
                 popularSeletorAno(ano);
