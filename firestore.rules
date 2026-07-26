@@ -1,6 +1,7 @@
 rules_version = '2';
 
-// Publique este arquivo em: Firebase Console > Firestore Database > Regras > Publicar
+// Publique este arquivo com: firebase deploy --only firestore:rules
+// (ou manualmente em Firebase Console > Firestore Database > Regras > Publicar)
 
 service cloud.firestore {
   match /databases/{database}/documents {
