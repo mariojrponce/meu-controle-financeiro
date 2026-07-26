@@ -5,6 +5,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Valida os campos de texto livre: tipo string e tamanho máximo igual ao
+    // maxlength dos formulários (index.html/editor-transacao.js). descricao,
+    // banco e classificacao_saida são obrigatórios na UI (não podem chegar
+    // vazios); saida (detalhe) é opcional e pode ser "".
+    function camposDeTextoValidos(dados) {
+      return dados.descricao is string && dados.descricao.size() > 0 && dados.descricao.size() <= 120
+             && dados.saida is string && dados.saida.size() <= 120
+             && dados.banco is string && dados.banco.size() > 0 && dados.banco.size() <= 60
+             && dados.classificacao_saida is string && dados.classificacao_saida.size() > 0 && dados.classificacao_saida.size() <= 60;
+    }
+
     match /carteira/{itemId} {
 
       // Só permite LER se estiver logado E o documento pertencer ao usuário logado
@@ -12,14 +23,15 @@ service cloud.firestore {
                   && request.auth.uid == resource.data.userId;
 
       // Só permite CRIAR se estiver logado, o userId enviado bater com quem está criando,
-      // e os campos essenciais existirem com o tipo certo
+      // e os campos essenciais existirem com o tipo, tamanho e formato certos
       allow create: if request.auth != null
                     && request.auth.uid == request.resource.data.userId
                     && request.resource.data.valor is number
                     && request.resource.data.valor > 0
                     && request.resource.data.data is string
                     && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
-                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO'];
+                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO']
+                    && camposDeTextoValidos(request.resource.data);
 
       // Permite EDITAR apenas o próprio dono do lançamento, mantendo os
       // mesmos campos essenciais válidos depois da edição
@@ -29,7 +41,8 @@ service cloud.firestore {
                     && request.resource.data.valor > 0
                     && request.resource.data.data is string
                     && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
-                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO'];
+                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO']
+                    && camposDeTextoValidos(request.resource.data);
 
       // Permite EXCLUIR apenas o próprio dono do lançamento
       allow delete: if request.auth != null
