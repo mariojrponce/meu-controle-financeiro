@@ -1,19 +1,18 @@
-import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { exigirLogin, ligarBotaoSair } from "./auth-guard.js";
+import { exigirLogin } from "./auth-guard.js";
+import { renderizarNav } from "./nav.js";
+import { isoParaBR, brParaISO, formatarMoeda, ligarCampoDataInteligente } from "./utils.js";
+import { preencherDatalist } from "./dados-comuns.js";
 
-// Bloqueia a página até confirmar login
 const usuario = await exigirLogin();
-ligarBotaoSair();
+renderizarNav("extrato", usuario.email);
+
+ligarCampoDataInteligente(document.getElementById("filtro-data-inicio"));
+ligarCampoDataInteligente(document.getElementById("filtro-data-fim"));
 
 let todasTransacoes = [];
 
-function formatarMoeda(valor) {
-    return valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-// Evita XSS: nunca inserir texto do usuário direto no innerHTML.
-// Criamos os elementos e usamos textContent, que trata qualquer conteúdo como texto puro.
 function celulaTexto(texto) {
     const td = document.createElement("td");
     td.textContent = texto;
@@ -37,40 +36,35 @@ function renderizarResumo(lista) {
     document.getElementById("total-saidas").textContent = `R$ ${formatarMoeda(saidas)}`;
     document.getElementById("total-saldo").textContent = `R$ ${formatarMoeda(saldo)}`;
 
-    cartaoSaldo.classList.remove("saldo-positivo", "saldo-negativo");
-    cartaoSaldo.classList.add(saldo >= 0 ? "saldo-positivo" : "saldo-negativo");
+    cartaoSaldo.classList.remove("metrica-saldo-pos", "metrica-saldo-neg");
+    cartaoSaldo.classList.add(saldo >= 0 ? "metrica-saldo-pos" : "metrica-saldo-neg");
 }
 
-function renderizarTabela(listaDeTransacoes) {
+function renderizarTabela(lista) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
     corpoTabela.innerHTML = "";
 
-    renderizarResumo(listaDeTransacoes);
+    renderizarResumo(lista);
 
-    if (listaDeTransacoes.length === 0) {
+    if (lista.length === 0) {
         const linha = document.createElement("tr");
         const td = document.createElement("td");
         td.colSpan = 6;
-        td.style.textAlign = "center";
+        td.className = "vazio";
         td.textContent = "Nenhuma transação encontrada.";
         linha.appendChild(td);
         corpoTabela.appendChild(linha);
         return;
     }
 
-    listaDeTransacoes.forEach((transacao) => {
-        if (!transacao.data || typeof transacao.valor !== "number") {
-            return;
-        }
-
-        const partesData = transacao.data.split('-');
-        const dataBR = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
+    lista.forEach((transacao) => {
+        if (!transacao.data || typeof transacao.valor !== "number") return;
 
         const classeCor = transacao.tipo === "SAIDA" ? "saida" : "entrada";
         const sinal = transacao.tipo === "SAIDA" ? "-" : "+";
 
         const linha = document.createElement("tr");
-        linha.appendChild(celulaTexto(dataBR));
+        linha.appendChild(celulaTexto(isoParaBR(transacao.data)));
         linha.appendChild(celulaTexto(transacao.descricao ?? ""));
         linha.appendChild(celulaTexto(transacao.tipo_mov ?? ""));
         linha.appendChild(celulaTexto(transacao.banco ?? ""));
@@ -89,50 +83,45 @@ function renderizarTabela(listaDeTransacoes) {
 
 async function carregarTransacoesDoBanco() {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
-    corpoTabela.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Carregando dados...</td></tr>";
+    corpoTabela.innerHTML = "<tr><td colspan='6' class='vazio'>Carregando dados...</td></tr>";
 
     try {
-        // 🔑 Só busca as transações do usuário logado (reforçado também pelas Firestore Rules)
-        const consulta = query(
-            collection(db, "transacoes"),
-            where("userId", "==", usuario.uid),
-            orderBy("data", "desc")
-        );
+        // Importante: aqui filtramos SÓ por userId (sem orderBy do Firestore).
+        // Combinar "where" + "orderBy" em campos diferentes exige um índice composto
+        // no Firestore; se ele não existir, a consulta falha e nada aparece.
+        // Por isso ordenamos os resultados aqui no navegador, o que também funciona
+        // sem precisar criar índice nenhum.
+        const consulta = query(collection(db, "transacoes"), where("userId", "==", usuario.uid));
         const snapshot = await getDocs(consulta);
 
         todasTransacoes = [];
-        snapshot.forEach((doc) => {
-            todasTransacoes.push(doc.data());
-        });
+        snapshot.forEach((doc) => todasTransacoes.push(doc.data()));
+
+        todasTransacoes.sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""));
+
+        const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
+        preencherDatalist("lista-bancos-filtro", bancos);
 
         renderizarTabela(todasTransacoes);
 
     } catch (erro) {
         console.error("Erro ao buscar transações: ", erro);
-        corpoTabela.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Erro ao carregar dados. Verifique o console.</td></tr>";
+        corpoTabela.innerHTML = "<tr><td colspan='6' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
     }
 }
 
 document.getElementById("btn-filtrar").addEventListener("click", () => {
-    const dataInicio = document.getElementById("filtro-data-inicio").value;
-    const dataFim = document.getElementById("filtro-data-fim").value;
+    const dataInicioISO = brParaISO(document.getElementById("filtro-data-inicio").value);
+    const dataFimISO = brParaISO(document.getElementById("filtro-data-fim").value);
     const bancoFiltro = document.getElementById("filtro-banco").value.toUpperCase();
     const movFiltro = document.getElementById("filtro-movimentacao").value;
 
     let listaFiltrada = todasTransacoes;
 
-    if (dataInicio !== "") {
-        listaFiltrada = listaFiltrada.filter(t => t.data >= dataInicio);
-    }
-    if (dataFim !== "") {
-        listaFiltrada = listaFiltrada.filter(t => t.data <= dataFim);
-    }
-    if (bancoFiltro !== "") {
-        listaFiltrada = listaFiltrada.filter(t => (t.banco ?? "").includes(bancoFiltro));
-    }
-    if (movFiltro !== "") {
-        listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
-    }
+    if (dataInicioISO) listaFiltrada = listaFiltrada.filter(t => t.data >= dataInicioISO);
+    if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
+    if (bancoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.banco ?? "").includes(bancoFiltro));
+    if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
 
     renderizarTabela(listaFiltrada);
 });

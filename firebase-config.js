@@ -1,9 +1,7 @@
 // firebase-config.js
 // Configuração compartilhada do Firebase.
-// A apiKey do Firebase NÃO é um segredo (ela só identifica o projeto).
-// A segurança de verdade vem de duas coisas, que este sistema já implementa:
-//   1) Firebase Authentication (login obrigatório)
-//   2) Regras do Firestore (firestore.rules) que restringem cada usuário aos próprios dados
+// A apiKey do Firebase NÃO é um segredo — só identifica o projeto.
+// A segurança de verdade vem do Firebase Authentication (login) + Firestore Rules (firestore.rules).
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";

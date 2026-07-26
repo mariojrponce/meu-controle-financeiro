@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard · Meu Financeiro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="pagina">
+    <h2>Dashboard</h2>
+    <p class="subtitulo" id="subtitulo-mes">Visão geral das suas finanças</p>
+
+    <div class="grade-resumo">
+        <div class="cartao-metrica metrica-saldo-pos" id="cartao-saldo-geral">
+            <div class="rotulo">Saldo total (todas as carteiras)</div>
+            <div class="valor" id="saldo-geral">R$ 0,00</div>
+        </div>
+        <div class="cartao-metrica metrica-entrada">
+            <div class="rotulo">Recebido este mês</div>
+            <div class="valor" id="entradas-mes">R$ 0,00</div>
+        </div>
+        <div class="cartao-metrica metrica-saida">
+            <div class="rotulo">Gasto este mês</div>
+            <div class="valor" id="saidas-mes">R$ 0,00</div>
+        </div>
+        <div class="cartao-metrica metrica-neutra" id="cartao-saldo-mes">
+            <div class="rotulo">Saldo este mês</div>
+            <div class="valor" id="saldo-mes">R$ 0,00</div>
+        </div>
+    </div>
+
+    <div class="secao cartao">
+        <div class="secao-titulo">
+            <h3>💳 Saldo por carteira / banco</h3>
+        </div>
+        <div class="grade-carteiras" id="grade-carteiras">
+            <p class="vazio">Carregando...</p>
+        </div>
+    </div>
+
+    <div class="secao cartao">
+        <div class="secao-titulo">
+            <h3>📌 Maiores gastos do mês por classificação</h3>
+        </div>
+        <div class="lista-barras" id="lista-classificacoes">
+            <p class="vazio">Carregando...</p>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="dashboard.js"></script>
+
+</body>
+</html>

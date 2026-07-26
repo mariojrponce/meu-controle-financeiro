@@ -3,32 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar - Controle Financeiro</title>
+    <title>Entrar · Meu Financeiro</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .container { max-width: 380px; margin: 80px auto 0; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-top: 0; }
-        label { font-weight: bold; display: block; margin-top: 10px; }
-        input, button { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px; margin-top: 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        button:hover { background-color: #0056b3; }
-        #erro { color: #dc3545; font-size: 14px; margin-top: 10px; min-height: 18px; text-align: center; }
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-caixa { width: 100%; max-width: 380px; padding: 32px; text-align: center; }
+        .login-logo { font-size: 34px; margin-bottom: 4px; }
+        .login-caixa h1 { font-size: 20px; }
+        #erro { color: var(--cor-perigo); font-size: 13px; margin-top: 10px; min-height: 18px; text-align: left; }
+        form { text-align: left; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🔒 Controle Financeiro</h2>
-    <form id="form-login">
-        <label>E-mail:</label>
-        <input type="email" id="email" required autocomplete="username">
+<div class="cartao login-caixa">
+    <div class="login-logo">💰</div>
+    <h1>Meu Financeiro</h1>
+    <p class="subtitulo">Entre para continuar</p>
 
-        <label>Senha:</label>
-        <input type="password" id="senha" required autocomplete="current-password">
+    <form id="form-login">
+        <label>E-mail</label>
+        <input type="email" id="email" required autocomplete="username" placeholder="voce@email.com">
+
+        <label>Senha</label>
+        <input type="password" id="senha" required autocomplete="current-password" placeholder="••••••••">
 
         <div id="erro"></div>
 
-        <button type="submit">Entrar</button>
+        <button type="submit" class="botao botao-primario">Entrar</button>
     </form>
 </div>
 

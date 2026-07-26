@@ -3,9 +3,7 @@ import { auth } from "./firebase-config.js";
 
 // Se já estiver logado, pula direto para o app
 onAuthStateChanged(auth, (usuario) => {
-    if (usuario) {
-        window.location.href = "index.html";
-    }
+    if (usuario) window.location.href = "index.html";
 });
 
 const formulario = document.getElementById("form-login");
@@ -20,7 +18,7 @@ formulario.addEventListener("submit", async (evento) => {
 
     const botao = formulario.querySelector("button");
     botao.disabled = true;
-    botao.innerText = "Entrando...";
+    botao.textContent = "Entrando...";
 
     try {
         await signInWithEmailAndPassword(auth, email, senha);
@@ -29,6 +27,6 @@ formulario.addEventListener("submit", async (evento) => {
         console.error("Erro de login:", erro.code);
         divErro.textContent = "E-mail ou senha inválidos.";
         botao.disabled = false;
-        botao.innerText = "Entrar";
+        botao.textContent = "Entrar";
     }
 });
