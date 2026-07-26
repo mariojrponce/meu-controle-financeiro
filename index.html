@@ -3,53 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Lançamento · Meu Financeiro</title>
+    <title>Novo Lançamento · Despesas Mensais</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="pagina pagina-estreita">
-    <h2>Nova transação</h2>
-    <p class="subtitulo">Preencha os dados abaixo. Bancos e classificações já usados aparecem como sugestão.</p>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-marca">💰 Despesas Mensais</div>
+        <nav class="sidebar-links">
+            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+        </nav>
+        <div class="sidebar-rodape">
+            <div class="sidebar-email"></div>
+            <button id="btn-sair" class="botao-sair">🚪 Sair</button>
+        </div>
+    </aside>
 
-    <div class="cartao">
-        <form id="form-transacao">
-            <label>Valor (R$)</label>
-            <input type="number" id="valor" step="0.01" min="0.01" required placeholder="0,00">
+    <main class="conteudo-principal">
+        <div class="pagina pagina-estreita">
+            <h2>Nova transação</h2>
+            <p class="subtitulo">Preencha os dados abaixo. Bancos e classificações já usados aparecem como sugestão.</p>
 
-            <label>Data</label>
-            <input type="text" id="data" required placeholder="dd/mm/aaaa">
-            <div class="dica-campo">Você pode colar uma data copiada de um extrato — o sistema reconhece o formato sozinho.</div>
+            <div class="cartao">
+                <form id="form-transacao">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="valor" step="0.01" min="0.01" required placeholder="0,00">
 
-            <label>Descrição</label>
-            <input type="text" id="descricao" required maxlength="120" placeholder="Ex: Compra no mercado">
+                    <label>Data</label>
+                    <input type="text" id="data" required placeholder="dd/mm/aaaa">
+                    <div class="dica-campo">Você pode colar uma data copiada de um extrato — o sistema reconhece o formato sozinho.</div>
 
-            <label>Detalhe (onde gastou / de onde recebeu)</label>
-            <input type="text" id="saida" maxlength="120" placeholder="Ex: Mercado Extra, Salário Empresa X">
+                    <label>Descrição</label>
+                    <input type="text" id="descricao" required maxlength="120" placeholder="Ex: Compra no mercado">
 
-            <label>Banco</label>
-            <input type="text" id="banco" required maxlength="60" list="lista-bancos" placeholder="Digite para pesquisar...">
-            <datalist id="lista-bancos"></datalist>
+                    <label>Detalhe (onde gastou / de onde recebeu)</label>
+                    <input type="text" id="saida" maxlength="120" placeholder="Ex: Mercado Extra, Salário Empresa X">
 
-            <label>Tipo</label>
-            <select id="tipo">
-                <option value="SAIDA">Saída</option>
-                <option value="ENTRADA">Entrada</option>
-            </select>
+                    <label>Banco</label>
+                    <input type="text" id="banco" required maxlength="60" list="lista-bancos" placeholder="Digite para pesquisar...">
+                    <datalist id="lista-bancos"></datalist>
 
-            <label>Movimentação</label>
-            <select id="tipo_mov">
-                <option value="EXTERNO">Externo (Gasto/Receita real)</option>
-                <option value="INTERNO">Interno (Transferência)</option>
-            </select>
+                    <label>Tipo</label>
+                    <select id="tipo">
+                        <option value="SAIDA">Saída</option>
+                        <option value="ENTRADA">Entrada</option>
+                    </select>
 
-            <label>Classificação</label>
-            <input type="text" id="classificacao_saida" required maxlength="60" list="lista-classificacoes" placeholder="Digite para pesquisar...">
-            <datalist id="lista-classificacoes"></datalist>
+                    <label>Movimentação</label>
+                    <select id="tipo_mov">
+                        <option value="EXTERNO">Externo (Gasto/Receita real)</option>
+                        <option value="INTERNO">Interno (Transferência)</option>
+                    </select>
 
-            <button type="submit" class="botao botao-primario">Salvar transação</button>
-        </form>
-    </div>
+                    <label>Classificação</label>
+                    <input type="text" id="classificacao_saida" required maxlength="60" list="lista-classificacoes" placeholder="Digite para pesquisar...">
+                    <datalist id="lista-classificacoes"></datalist>
+
+                    <button type="submit" class="botao botao-primario">Salvar transação</button>
+                </form>
+            </div>
+
+            <div class="secao">
+                <div class="secao-titulo">
+                    <h3>Últimos lançamentos</h3>
+                </div>
+                <div class="cartao">
+                    <div class="tabela-scroll">
+                        <table id="tabela-ultimos">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Banco</th>
+                                    <th>Valor (R$)</th>
+                                    <th class="col-acoes">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" class="vazio">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 
 <script type="module" src="app.js"></script>

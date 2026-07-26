@@ -2,95 +2,66 @@ import { collection, getDocs, query, where } from "https://www.gstatic.com/fireb
 import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { formatarMoeda } from "./utils.js";
+import {
+    formatarMoeda, isoParaBR, brParaISO, normalizarDataDigitada,
+    ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
+} from "./utils.js";
+import { preencherDatalist } from "./dados-comuns.js";
 
 const NOME_COLECAO = "carteira";
 
 const usuario = await exigirLogin();
 renderizarNav("dashboard", usuario.email);
 
-const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const campoAno = document.getElementById("filtro-ano");
+const campoMes = document.getElementById("filtro-mes");
+const campoInicio = document.getElementById("filtro-data-inicio");
+const campoFim = document.getElementById("filtro-data-fim");
+const campoBanco = document.getElementById("filtro-banco");
+const campoMov = document.getElementById("filtro-movimentacao");
 
-function chaveAnoMes(data) {
-    return (data ?? "").slice(0, 7); // "aaaa-mm-dd" -> "aaaa-mm"
+ligarCampoDataInteligente(campoInicio);
+ligarCampoDataInteligente(campoFim);
+
+let todasTransacoes = [];
+
+function popularSeletorAno(anoSelecionado) {
+    const anoAtual = new Date().getFullYear();
+    const anosDosDados = todasTransacoes.map(t => Number((t.data ?? "").slice(0, 4))).filter(Boolean);
+    const anos = new Set([anoAtual, ...anosDosDados]);
+    const listaOrdenada = Array.from(anos).sort((a, b) => b - a);
+
+    campoAno.innerHTML = "";
+    listaOrdenada.forEach((ano) => {
+        const opcao = document.createElement("option");
+        opcao.value = String(ano);
+        opcao.textContent = String(ano);
+        campoAno.appendChild(opcao);
+    });
+    campoAno.value = String(anoSelecionado);
 }
 
-async function carregarDashboard() {
-    const hoje = new Date();
-    const chaveMesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
-    document.getElementById("subtitulo-mes").textContent =
-        `Visão geral das suas finanças — ${NOMES_MES[hoje.getMonth()]} de ${hoje.getFullYear()}`;
-
-    try {
-        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
-        const snapshot = await getDocs(consulta);
-
-        const transacoes = [];
-        snapshot.forEach((doc) => transacoes.push(doc.data()));
-
-        // ---- Por banco: saldo, entradas e saídas separadas (todo o período) ----
-        const porBanco = {}; // { NUBANK: { saldo, entradas, saidas } }
-        let saldoGeral = 0;
-
-        transacoes.forEach((t) => {
-            if (typeof t.valor !== "number" || !t.banco) return;
-
-            if (!porBanco[t.banco]) porBanco[t.banco] = { saldo: 0, entradas: 0, saidas: 0 };
-
-            if (t.tipo === "ENTRADA") {
-                porBanco[t.banco].entradas += t.valor;
-                porBanco[t.banco].saldo += t.valor;
-                saldoGeral += t.valor;
-            } else {
-                porBanco[t.banco].saidas += t.valor;
-                porBanco[t.banco].saldo -= t.valor;
-                saldoGeral -= t.valor;
-            }
-        });
-
-        // ---- Totais do mês atual ----
-        let entradasMes = 0;
-        let saidasMes = 0;
-        const gastoPorClassificacaoMes = {};
-
-        transacoes.forEach((t) => {
-            if (typeof t.valor !== "number") return;
-            if (chaveAnoMes(t.data) !== chaveMesAtual) return;
-
-            if (t.tipo === "ENTRADA") {
-                entradasMes += t.valor;
-            } else {
-                saidasMes += t.valor;
-                const chave = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
-                gastoPorClassificacaoMes[chave] = (gastoPorClassificacaoMes[chave] ?? 0) + t.valor;
-            }
-        });
-
-        const saldoMes = entradasMes - saidasMes;
-
-        // ---- Cartões principais ----
-        document.getElementById("saldo-geral").textContent = `R$ ${formatarMoeda(saldoGeral)}`;
-        document.getElementById("entradas-mes").textContent = `R$ ${formatarMoeda(entradasMes)}`;
-        document.getElementById("saidas-mes").textContent = `R$ ${formatarMoeda(saidasMes)}`;
-        document.getElementById("saldo-mes").textContent = `R$ ${formatarMoeda(saldoMes)}`;
-
-        const cartaoSaldoGeral = document.getElementById("cartao-saldo-geral");
-        cartaoSaldoGeral.classList.toggle("metrica-saldo-neg", saldoGeral < 0);
-        cartaoSaldoGeral.classList.toggle("metrica-saldo-pos", saldoGeral >= 0);
-
-        const cartaoSaldoMes = document.getElementById("cartao-saldo-mes");
-        cartaoSaldoMes.classList.toggle("metrica-saldo-neg", saldoMes < 0);
-        cartaoSaldoMes.classList.toggle("metrica-neutra", saldoMes >= 0);
-
-        renderizarCarteiras(porBanco);
-        renderizarClassificacoes(gastoPorClassificacaoMes);
-
-    } catch (erro) {
-        console.error("Erro ao carregar dashboard:", erro);
-        document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
-        document.getElementById("lista-classificacoes").innerHTML = "";
-    }
+function aplicarAnoMesNosCampos() {
+    const { inicioISO, fimISO } = intervaloParaAnoMes(campoAno.value, campoMes.value);
+    campoInicio.value = isoParaBR(inicioISO);
+    campoFim.value = isoParaBR(fimISO);
 }
+
+campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
+campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
+campoBanco.addEventListener("change", aplicarFiltros);
+campoMov.addEventListener("change", aplicarFiltros);
+document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
+
+document.getElementById("btn-limpar").addEventListener("click", () => {
+    const { ano, mes } = intervaloMesAtual();
+    campoAno.value = String(ano);
+    campoMes.value = String(mes).padStart(2, "0");
+    aplicarAnoMesNosCampos();
+    campoBanco.value = "";
+    campoMov.value = "";
+    aplicarFiltros();
+});
 
 function linhaCarteira(rotulo, valor, classeExtra = "") {
     const linha = document.createElement("div");
@@ -119,13 +90,12 @@ function renderizarCarteiras(porBanco) {
     const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saldo - porBanco[a].saldo);
 
     if (bancos.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhuma transação cadastrada ainda.</p>";
+        container.innerHTML = "<p class='vazio'>Nenhuma transação neste período.</p>";
         return;
     }
 
     bancos.forEach((banco) => {
         const dados = porBanco[banco];
-
         const cartao = document.createElement("div");
         cartao.className = "cartao-carteira";
 
@@ -149,7 +119,7 @@ function renderizarClassificacoes(gastoPorClassificacao) {
     const classificacoes = Object.entries(gastoPorClassificacao).sort((a, b) => b[1] - a[1]);
 
     if (classificacoes.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhuma saída registrada neste mês ainda.</p>";
+        container.innerHTML = "<p class='vazio'>Nenhuma saída registrada neste período.</p>";
         return;
     }
 
@@ -184,6 +154,82 @@ function renderizarClassificacoes(gastoPorClassificacao) {
         item.appendChild(trilha);
         container.appendChild(item);
     });
+}
+
+function aplicarFiltros() {
+    const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
+    const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
+    const bancoFiltro = campoBanco.value.toUpperCase();
+    const movFiltro = campoMov.value;
+
+    let lista = todasTransacoes;
+    if (dataInicioISO) lista = lista.filter(t => t.data >= dataInicioISO);
+    if (dataFimISO) lista = lista.filter(t => t.data <= dataFimISO);
+    if (bancoFiltro !== "") lista = lista.filter(t => (t.banco ?? "").includes(bancoFiltro));
+    if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
+
+    let saldoGeral = 0;
+    let entradasPeriodo = 0;
+    let saidasPeriodo = 0;
+    const porBanco = {};
+    const gastoPorClassificacao = {};
+
+    lista.forEach((t) => {
+        if (typeof t.valor !== "number" || !t.banco) return;
+
+        if (!porBanco[t.banco]) porBanco[t.banco] = { saldo: 0, entradas: 0, saidas: 0 };
+
+        if (t.tipo === "ENTRADA") {
+            porBanco[t.banco].entradas += t.valor;
+            porBanco[t.banco].saldo += t.valor;
+            saldoGeral += t.valor;
+            entradasPeriodo += t.valor;
+        } else {
+            porBanco[t.banco].saidas += t.valor;
+            porBanco[t.banco].saldo -= t.valor;
+            saldoGeral -= t.valor;
+            saidasPeriodo += t.valor;
+            const chave = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
+            gastoPorClassificacao[chave] = (gastoPorClassificacao[chave] ?? 0) + t.valor;
+        }
+    });
+
+    document.getElementById("saldo-geral").textContent = `R$ ${formatarMoeda(saldoGeral)}`;
+    document.getElementById("entradas-periodo").textContent = `R$ ${formatarMoeda(entradasPeriodo)}`;
+    document.getElementById("saidas-periodo").textContent = `R$ ${formatarMoeda(saidasPeriodo)}`;
+
+    const cartaoSaldoGeral = document.getElementById("cartao-saldo-geral");
+    cartaoSaldoGeral.classList.toggle("metrica-saldo-neg", saldoGeral < 0);
+    cartaoSaldoGeral.classList.toggle("metrica-saldo-pos", saldoGeral >= 0);
+
+    renderizarCarteiras(porBanco);
+    renderizarClassificacoes(gastoPorClassificacao);
+}
+
+async function carregarDashboard() {
+    try {
+        const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
+        const snapshot = await getDocs(consulta);
+
+        todasTransacoes = [];
+        snapshot.forEach((doc) => todasTransacoes.push(doc.data()));
+
+        const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
+        preencherDatalist("lista-bancos-filtro", bancos);
+
+        const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
+        popularSeletorAno(ano);
+        campoMes.value = String(mes).padStart(2, "0");
+        campoInicio.value = isoParaBR(inicioISO);
+        campoFim.value = isoParaBR(fimISO);
+
+        aplicarFiltros();
+
+    } catch (erro) {
+        console.error("Erro ao carregar dashboard:", erro);
+        document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
+        document.getElementById("lista-classificacoes").innerHTML = "";
+    }
 }
 
 carregarDashboard();

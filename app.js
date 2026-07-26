@@ -1,12 +1,13 @@
-import { collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, where, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast } from "./ui.js";
+import { mostrarToast, confirmarAcao } from "./ui.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes, preencherDatalist } from "./dados-comuns.js";
-import { brParaISO, normalizarDataDigitada, ligarCampoDataInteligente } from "./utils.js";
+import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarMoeda } from "./utils.js";
 
 const NOME_COLECAO = "carteira";
+const QTD_ULTIMOS = 10;
 
 const usuario = await exigirLogin();
 renderizarNav("lancar", usuario.email);
@@ -14,37 +15,111 @@ renderizarNav("lancar", usuario.email);
 const campoData = document.getElementById("data");
 ligarCampoDataInteligente(campoData);
 
-// Busca as transações já cadastradas por este usuário só para extrair
-// os bancos e classificações que ele já usou, e sugeri-los de novo.
-async function carregarSugestoes() {
+function milissegundosCriacao(transacao) {
+    // criadoEm é um Timestamp do Firestore; se faltar (ex: importado sem esse campo), vai para o final
+    return transacao.criadoEm?.toMillis ? transacao.criadoEm.toMillis() : 0;
+}
+
+// Uma única busca serve tanto para preencher as sugestões de Banco/Classificação
+// quanto para mostrar os últimos lançamentos.
+async function carregarDadosAuxiliares() {
     try {
         const consulta = query(collection(db, NOME_COLECAO), where("userId", "==", usuario.uid));
         const snapshot = await getDocs(consulta);
 
-        const bancosUsados = [];
-        const classificacoesUsadas = [];
-        snapshot.forEach((doc) => {
-            const dado = doc.data();
-            if (dado.banco) bancosUsados.push(dado.banco);
-            if (dado.classificacao_saida) classificacoesUsadas.push(dado.classificacao_saida);
-        });
+        const transacoes = [];
+        snapshot.forEach((doc) => transacoes.push({ id: doc.id, ...doc.data() }));
 
+        const bancosUsados = transacoes.map(t => t.banco).filter(Boolean);
+        const classificacoesUsadas = transacoes.map(t => t.classificacao_saida).filter(Boolean);
         preencherDatalist("lista-bancos", mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados));
         preencherDatalist("lista-classificacoes", mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
+
+        const ultimos = [...transacoes]
+            .sort((a, b) => milissegundosCriacao(b) - milissegundosCriacao(a))
+            .slice(0, QTD_ULTIMOS);
+        renderizarUltimos(ultimos);
+
     } catch (erro) {
-        console.error("Não foi possível carregar sugestões:", erro);
+        console.error("Não foi possível carregar dados auxiliares:", erro);
         preencherDatalist("lista-bancos", BANCOS_SUGERIDOS);
         preencherDatalist("lista-classificacoes", CLASSIFICACOES_SUGERIDAS);
+        document.querySelector("#tabela-ultimos tbody").innerHTML =
+            "<tr><td colspan='5' class='vazio'>Erro ao carregar. Verifique o console (F12).</td></tr>";
     }
 }
-carregarSugestoes();
+
+function celulaTexto(texto) {
+    const td = document.createElement("td");
+    td.textContent = texto;
+    return td;
+}
+
+function renderizarUltimos(lista) {
+    const corpo = document.querySelector("#tabela-ultimos tbody");
+    corpo.innerHTML = "";
+
+    if (lista.length === 0) {
+        corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhum lançamento ainda.</td></tr>";
+        return;
+    }
+
+    lista.forEach((transacao) => {
+        const linha = document.createElement("tr");
+        const classeCor = transacao.tipo === "SAIDA" ? "saida" : "entrada";
+        const sinal = transacao.tipo === "SAIDA" ? "-" : "+";
+
+        linha.appendChild(celulaTexto(isoParaBR(transacao.data)));
+        linha.appendChild(celulaTexto(transacao.descricao ?? ""));
+        linha.appendChild(celulaTexto(transacao.banco ?? ""));
+
+        const tdValor = document.createElement("td");
+        tdValor.className = classeCor;
+        const b = document.createElement("b");
+        b.textContent = `${sinal} R$ ${formatarMoeda(transacao.valor)}`;
+        tdValor.appendChild(b);
+        linha.appendChild(tdValor);
+
+        const tdAcoes = document.createElement("td");
+        tdAcoes.className = "col-acoes";
+        const botaoExcluir = document.createElement("button");
+        botaoExcluir.className = "botao-icone-perigo";
+        botaoExcluir.title = "Excluir lançamento";
+        botaoExcluir.textContent = "🗑";
+        botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
+        tdAcoes.appendChild(botaoExcluir);
+        linha.appendChild(tdAcoes);
+
+        corpo.appendChild(linha);
+    });
+}
+
+async function excluirTransacao(transacao) {
+    const confirmou = await confirmarAcao({
+        titulo: "Excluir lançamento?",
+        mensagem: `Tem certeza que quer apagar "${transacao.descricao ?? "esta transação"}" no valor de R$ ${formatarMoeda(transacao.valor)}? Essa ação não pode ser desfeita.`,
+        textoConfirmar: "Excluir",
+        textoCancelar: "Cancelar"
+    });
+    if (!confirmou) return;
+
+    try {
+        await deleteDoc(doc(db, NOME_COLECAO, transacao.id));
+        mostrarToast("Lançamento excluído.", "sucesso");
+        carregarDadosAuxiliares();
+    } catch (erro) {
+        console.error("Erro ao excluir:", erro);
+        mostrarToast("Erro ao excluir. Tente novamente.", "erro");
+    }
+}
+
+carregarDadosAuxiliares();
 
 const formulario = document.getElementById("form-transacao");
 
 formulario.addEventListener("submit", async function (evento) {
     evento.preventDefault();
 
-    // Garante que a data foi reconhecida antes de tentar salvar
     const dataNormalizada = normalizarDataDigitada(campoData.value);
     if (dataNormalizada) campoData.value = dataNormalizada;
 
@@ -88,7 +163,7 @@ formulario.addEventListener("submit", async function (evento) {
 
         mostrarToast("Salvo!", "sucesso");
         formulario.reset();
-        carregarSugestoes();
+        carregarDadosAuxiliares();
     } catch (erro) {
         console.error("Erro ao salvar: ", erro);
         mostrarToast("Erro ao salvar. Tente novamente.", "erro");

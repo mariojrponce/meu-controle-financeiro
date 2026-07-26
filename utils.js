@@ -59,6 +59,51 @@ export function formatarMoeda(valor) {
   return (valor ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// ---------- Intervalos de data (usados nos filtros de Extrato e Dashboard) ----------
+
+function doisDigitos(numero) {
+  return String(numero).padStart(2, "0");
+}
+
+export function hojeISO() {
+  const hoje = new Date();
+  return `${hoje.getFullYear()}-${doisDigitos(hoje.getMonth() + 1)}-${doisDigitos(hoje.getDate())}`;
+}
+
+export function ultimoDiaDoMes(ano, mes) {
+  return new Date(Number(ano), Number(mes), 0).getDate();
+}
+
+// Intervalo padrão ao abrir as telas: do dia 1 até hoje, no mês atual.
+export function intervaloMesAtual() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = hoje.getMonth() + 1;
+  return {
+    ano,
+    mes,
+    inicioISO: `${ano}-${doisDigitos(mes)}-01`,
+    fimISO: hojeISO()
+  };
+}
+
+// Calcula o intervalo para um ano/mês escolhidos nos filtros.
+// mes === "" significa "todos os meses" daquele ano.
+export function intervaloParaAnoMes(ano, mes) {
+  const hoje = new Date();
+  const anoNum = Number(ano);
+
+  if (!mes) {
+    const fimISO = anoNum === hoje.getFullYear() ? hojeISO() : `${anoNum}-12-31`;
+    return { inicioISO: `${anoNum}-01-01`, fimISO };
+  }
+
+  const mesNum = Number(mes);
+  const ehMesAtual = anoNum === hoje.getFullYear() && mesNum === hoje.getMonth() + 1;
+  const fimISO = ehMesAtual ? hojeISO() : `${anoNum}-${doisDigitos(mesNum)}-${doisDigitos(ultimoDiaDoMes(anoNum, mesNum))}`;
+  return { inicioISO: `${anoNum}-${doisDigitos(mesNum)}-01`, fimISO };
+}
+
 // ---------- Conversores usados na importação de arquivos (CSV/TXT/XLSX) ----------
 
 // Converte o valor de uma célula (Date do Excel, número serial ou texto) para "aaaa-mm-dd".

@@ -2,7 +2,10 @@ import { collection, getDocs, query, where, doc, deleteDoc } from "https://www.g
 import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { isoParaBR, brParaISO, normalizarDataDigitada, formatarMoeda, ligarCampoDataInteligente } from "./utils.js";
+import {
+    isoParaBR, brParaISO, normalizarDataDigitada, formatarMoeda,
+    ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
+} from "./utils.js";
 import { preencherDatalist } from "./dados-comuns.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 
@@ -11,8 +14,15 @@ const NOME_COLECAO = "carteira";
 const usuario = await exigirLogin();
 renderizarNav("extrato", usuario.email);
 
-ligarCampoDataInteligente(document.getElementById("filtro-data-inicio"));
-ligarCampoDataInteligente(document.getElementById("filtro-data-fim"));
+const campoAno = document.getElementById("filtro-ano");
+const campoMes = document.getElementById("filtro-mes");
+const campoInicio = document.getElementById("filtro-data-inicio");
+const campoFim = document.getElementById("filtro-data-fim");
+const campoBanco = document.getElementById("filtro-banco");
+const campoMov = document.getElementById("filtro-movimentacao");
+
+ligarCampoDataInteligente(campoInicio);
+ligarCampoDataInteligente(campoFim);
 
 let todasTransacoes = [];
 
@@ -22,6 +32,36 @@ function celulaTexto(texto) {
     return td;
 }
 
+// ---------- Seletor de Ano ----------
+function popularSeletorAno(anoSelecionado) {
+    const anoAtual = new Date().getFullYear();
+    const anosDosDados = todasTransacoes.map(t => Number((t.data ?? "").slice(0, 4))).filter(Boolean);
+    const anos = new Set([anoAtual, ...anosDosDados]);
+    const listaOrdenada = Array.from(anos).sort((a, b) => b - a);
+
+    campoAno.innerHTML = "";
+    listaOrdenada.forEach((ano) => {
+        const opcao = document.createElement("option");
+        opcao.value = String(ano);
+        opcao.textContent = String(ano);
+        campoAno.appendChild(opcao);
+    });
+    campoAno.value = String(anoSelecionado);
+}
+
+// Ano/Mês escolhidos preenchem automaticamente os campos de data
+function aplicarAnoMesNosCampos() {
+    const { inicioISO, fimISO } = intervaloParaAnoMes(campoAno.value, campoMes.value);
+    campoInicio.value = isoParaBR(inicioISO);
+    campoFim.value = isoParaBR(fimISO);
+}
+
+campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
+campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
+campoBanco.addEventListener("change", aplicarFiltros);
+campoMov.addEventListener("change", aplicarFiltros);
+
+// ---------- Resumo e tabela ----------
 function renderizarResumo(lista) {
     let entradas = 0;
     let saidas = 0;
@@ -50,13 +90,12 @@ async function excluirTransacao(transacao) {
         textoConfirmar: "Excluir",
         textoCancelar: "Cancelar"
     });
-
     if (!confirmou) return;
 
     try {
         await deleteDoc(doc(db, NOME_COLECAO, transacao.id));
         todasTransacoes = todasTransacoes.filter((t) => t.id !== transacao.id);
-        renderizarTabela(todasTransacoes);
+        aplicarFiltros();
         mostrarToast("Lançamento excluído.", "sucesso");
     } catch (erro) {
         console.error("Erro ao excluir:", erro);
@@ -75,7 +114,7 @@ function renderizarTabela(lista) {
         const td = document.createElement("td");
         td.colSpan = 8;
         td.className = "vazio";
-        td.textContent = "Nenhuma transação encontrada.";
+        td.textContent = "Nenhuma transação encontrada neste período.";
         linha.appendChild(td);
         corpoTabela.appendChild(linha);
         return;
@@ -116,6 +155,34 @@ function renderizarTabela(lista) {
     });
 }
 
+function aplicarFiltros() {
+    const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
+    const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
+    const bancoFiltro = campoBanco.value.toUpperCase();
+    const movFiltro = campoMov.value;
+
+    let listaFiltrada = todasTransacoes;
+
+    if (dataInicioISO) listaFiltrada = listaFiltrada.filter(t => t.data >= dataInicioISO);
+    if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
+    if (bancoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.banco ?? "").includes(bancoFiltro));
+    if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
+
+    renderizarTabela(listaFiltrada);
+}
+
+document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
+
+document.getElementById("btn-limpar").addEventListener("click", () => {
+    const { ano, mes } = intervaloMesAtual();
+    campoAno.value = String(ano);
+    campoMes.value = String(mes).padStart(2, "0");
+    aplicarAnoMesNosCampos();
+    campoBanco.value = "";
+    campoMov.value = "";
+    aplicarFiltros();
+});
+
 async function carregarTransacoesDoBanco() {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
     corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Carregando dados...</td></tr>";
@@ -134,39 +201,19 @@ async function carregarTransacoesDoBanco() {
         const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
         preencherDatalist("lista-bancos-filtro", bancos);
 
-        renderizarTabela(todasTransacoes);
+        // Padrão ao abrir: mês atual, do dia 1 até hoje
+        const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
+        popularSeletorAno(ano);
+        campoMes.value = String(mes).padStart(2, "0");
+        campoInicio.value = isoParaBR(inicioISO);
+        campoFim.value = isoParaBR(fimISO);
+
+        aplicarFiltros();
 
     } catch (erro) {
         console.error("Erro ao buscar transações: ", erro);
         corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
     }
 }
-
-document.getElementById("btn-filtrar").addEventListener("click", () => {
-    const inicioDigitado = document.getElementById("filtro-data-inicio").value;
-    const fimDigitado = document.getElementById("filtro-data-fim").value;
-
-    const dataInicioISO = brParaISO(normalizarDataDigitada(inicioDigitado) ?? "");
-    const dataFimISO = brParaISO(normalizarDataDigitada(fimDigitado) ?? "");
-    const bancoFiltro = document.getElementById("filtro-banco").value.toUpperCase();
-    const movFiltro = document.getElementById("filtro-movimentacao").value;
-
-    let listaFiltrada = todasTransacoes;
-
-    if (dataInicioISO) listaFiltrada = listaFiltrada.filter(t => t.data >= dataInicioISO);
-    if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
-    if (bancoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.banco ?? "").includes(bancoFiltro));
-    if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
-
-    renderizarTabela(listaFiltrada);
-});
-
-document.getElementById("btn-limpar").addEventListener("click", () => {
-    document.getElementById("filtro-data-inicio").value = "";
-    document.getElementById("filtro-data-fim").value = "";
-    document.getElementById("filtro-banco").value = "";
-    document.getElementById("filtro-movimentacao").value = "";
-    renderizarTabela(todasTransacoes);
-});
 
 carregarTransacoesDoBanco();

@@ -3,51 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard · Meu Financeiro</title>
+    <title>Dashboard · Despesas Mensais</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="pagina">
-    <h2>Dashboard</h2>
-    <p class="subtitulo" id="subtitulo-mes">Visão geral das suas finanças</p>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-marca">💰 Despesas Mensais</div>
+        <nav class="sidebar-links">
+            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+        </nav>
+        <div class="sidebar-rodape">
+            <div class="sidebar-email"></div>
+            <button id="btn-sair" class="botao-sair">🚪 Sair</button>
+        </div>
+    </aside>
 
-    <div class="grade-resumo">
-        <div class="cartao-metrica metrica-saldo-pos" id="cartao-saldo-geral">
-            <div class="rotulo">Saldo total (todas as carteiras)</div>
-            <div class="valor" id="saldo-geral">R$ 0,00</div>
-        </div>
-        <div class="cartao-metrica metrica-entrada">
-            <div class="rotulo">Recebido este mês</div>
-            <div class="valor" id="entradas-mes">R$ 0,00</div>
-        </div>
-        <div class="cartao-metrica metrica-saida">
-            <div class="rotulo">Gasto este mês</div>
-            <div class="valor" id="saidas-mes">R$ 0,00</div>
-        </div>
-        <div class="cartao-metrica metrica-neutra" id="cartao-saldo-mes">
-            <div class="rotulo">Saldo este mês</div>
-            <div class="valor" id="saldo-mes">R$ 0,00</div>
-        </div>
-    </div>
+    <main class="conteudo-principal">
+        <div class="pagina">
+            <h2>Dashboard</h2>
+            <p class="subtitulo" id="subtitulo-periodo">Mostrando o mês atual por padrão. Ajuste os filtros para ver outro período.</p>
 
-    <div class="secao cartao">
-        <div class="secao-titulo">
-            <h3>💳 Saldo por carteira / banco</h3>
-        </div>
-        <div class="grade-carteiras" id="grade-carteiras">
-            <p class="vazio">Carregando...</p>
-        </div>
-    </div>
+            <div class="cartao" style="margin-bottom:20px;">
+                <div class="filtros">
+                    <div class="campo-filtro">
+                        <label>Ano</label>
+                        <select id="filtro-ano"></select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Mês</label>
+                        <select id="filtro-mes">
+                            <option value="">Todos</option>
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Data início</label>
+                        <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Data fim</label>
+                        <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Banco</label>
+                        <input type="text" id="filtro-banco" placeholder="Todos" list="lista-bancos-filtro">
+                        <datalist id="lista-bancos-filtro"></datalist>
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Movimentação</label>
+                        <select id="filtro-movimentacao">
+                            <option value="">Todas</option>
+                            <option value="EXTERNO">Externo</option>
+                            <option value="INTERNO">Interno</option>
+                        </select>
+                    </div>
+                    <button id="btn-filtrar" class="botao botao-primario" style="margin:0;width:auto;">Pesquisar</button>
+                    <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
+                </div>
+            </div>
 
-    <div class="secao cartao">
-        <div class="secao-titulo">
-            <h3>📌 Maiores gastos do mês por classificação</h3>
+            <div class="grade-resumo">
+                <div class="cartao-metrica metrica-saldo-pos" id="cartao-saldo-geral">
+                    <div class="rotulo">Saldo do período</div>
+                    <div class="valor" id="saldo-geral">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-entrada">
+                    <div class="rotulo">Entradas no período</div>
+                    <div class="valor" id="entradas-periodo">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-saida">
+                    <div class="rotulo">Saídas no período</div>
+                    <div class="valor" id="saidas-periodo">R$ 0,00</div>
+                </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>💳 Saldo por carteira / banco (no período)</h3>
+                </div>
+                <div class="grade-carteiras" id="grade-carteiras">
+                    <p class="vazio">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>📌 Maiores gastos do período por classificação</h3>
+                </div>
+                <div class="lista-barras" id="lista-classificacoes">
+                    <p class="vazio">Carregando...</p>
+                </div>
+            </div>
         </div>
-        <div class="lista-barras" id="lista-classificacoes">
-            <p class="vazio">Carregando...</p>
-        </div>
-    </div>
+    </main>
 </div>
 
 <script type="module" src="dashboard.js"></script>
