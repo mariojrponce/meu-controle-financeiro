@@ -3,8 +3,9 @@ import { db } from "./firebase-config.js";
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes, preencherDatalist } from "./dados-comuns.js";
+import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarMoeda } from "./utils.js";
+import { criarComboboxTexto } from "./combobox.js";
 
 const NOME_COLECAO = "carteira";
 const QTD_ULTIMOS = 10;
@@ -14,6 +15,9 @@ renderizarNav("lancar", usuario.email);
 
 const campoData = document.getElementById("data");
 ligarCampoDataInteligente(campoData);
+
+const comboboxBanco = criarComboboxTexto(document.getElementById("banco"), BANCOS_SUGERIDOS);
+const comboboxClassificacao = criarComboboxTexto(document.getElementById("classificacao_saida"), CLASSIFICACOES_SUGERIDAS);
 
 function milissegundosCriacao(transacao) {
     // criadoEm é um Timestamp do Firestore; se faltar (ex: importado sem esse campo), vai para o final
@@ -32,8 +36,8 @@ async function carregarDadosAuxiliares() {
 
         const bancosUsados = transacoes.map(t => t.banco).filter(Boolean);
         const classificacoesUsadas = transacoes.map(t => t.classificacao_saida).filter(Boolean);
-        preencherDatalist("lista-bancos", mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados));
-        preencherDatalist("lista-classificacoes", mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
+        comboboxBanco.atualizarOpcoes(mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados));
+        comboboxClassificacao.atualizarOpcoes(mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
 
         const ultimos = [...transacoes]
             .sort((a, b) => milissegundosCriacao(b) - milissegundosCriacao(a))
@@ -42,8 +46,8 @@ async function carregarDadosAuxiliares() {
 
     } catch (erro) {
         console.error("Não foi possível carregar dados auxiliares:", erro);
-        preencherDatalist("lista-bancos", BANCOS_SUGERIDOS);
-        preencherDatalist("lista-classificacoes", CLASSIFICACOES_SUGERIDAS);
+        comboboxBanco.atualizarOpcoes(BANCOS_SUGERIDOS);
+        comboboxClassificacao.atualizarOpcoes(CLASSIFICACOES_SUGERIDAS);
         document.querySelector("#tabela-ultimos tbody").innerHTML =
             "<tr><td colspan='5' class='vazio'>Erro ao carregar. Verifique o console (F12).</td></tr>";
     }

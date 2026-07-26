@@ -293,6 +293,80 @@ tr:hover td { background: var(--cor-fundo); }
 .modal-acoes { display: flex; gap: 10px; justify-content: flex-end; }
 .modal-acoes .botao { margin: 0; width: auto; }
 
+/* ---------- Combobox de texto (Banco/Classificação no formulário) ---------- */
+.combobox-wrap { position: relative; }
+.combobox-painel {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pequeno);
+  box-shadow: var(--sombra-hover);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 80;
+  display: none;
+}
+.combobox-painel.aberto { display: block; }
+.combobox-item { padding: 9px 12px; font-size: 14px; cursor: pointer; }
+.combobox-item:hover { background: var(--cor-primaria-suave); }
+.combobox-vazio { padding: 9px 12px; font-size: 13px; color: var(--cor-texto-suave); }
+
+/* ---------- Seletor múltiplo (filtros) ---------- */
+.seletor-multiplo { position: relative; }
+.seletor-multiplo-botao {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  text-align: left;
+  background: var(--cor-superficie);
+  border: 1.5px solid var(--cor-borda);
+  border-radius: var(--raio-pequeno);
+  padding: 11px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--cor-texto);
+}
+.seletor-multiplo-botao:hover { border-color: var(--cor-primaria); }
+.seletor-multiplo-painel {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; min-width: 220px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-pequeno);
+  box-shadow: var(--sombra-hover);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 90;
+  display: none;
+  padding: 6px;
+}
+.seletor-multiplo-painel.aberto { display: block; }
+.seletor-multiplo-acoes {
+  display: flex; justify-content: space-between;
+  padding: 4px 6px 8px; margin-bottom: 4px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+.seletor-multiplo-acoes button {
+  background: none; border: none; color: var(--cor-primaria);
+  font-size: 12px; font-weight: 700; cursor: pointer; padding: 2px 4px;
+}
+.seletor-multiplo-acoes button:hover { text-decoration: underline; }
+.seletor-multiplo-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px; border-radius: 8px; cursor: pointer; font-size: 14px;
+}
+.seletor-multiplo-item:hover { background: var(--cor-fundo); }
+.seletor-multiplo-item input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--cor-primaria); }
+
+/* ---------- Grade de duas colunas (tela Lançar) ---------- */
+.grade-lancar { display: grid; grid-template-columns: minmax(320px, 440px) 1fr; gap: 22px; align-items: start; }
+@media (max-width: 900px) {
+  .grade-lancar { grid-template-columns: 1fr; }
+}
+
+/* ---------- Cor por banco (dashboard) ---------- */
+.cartao-carteira { border-top: 4px solid var(--cor-primaria); }
+.ponto-banco { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+.nome-banco { display: flex; align-items: center; }
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 760px) {
   .layout { flex-direction: column; }

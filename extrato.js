@@ -6,7 +6,7 @@ import {
     isoParaBR, brParaISO, normalizarDataDigitada, formatarMoeda,
     ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
 } from "./utils.js";
-import { preencherDatalist } from "./dados-comuns.js";
+import { criarSeletorMultiplo } from "./combobox.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 
 const NOME_COLECAO = "carteira";
@@ -18,11 +18,17 @@ const campoAno = document.getElementById("filtro-ano");
 const campoMes = document.getElementById("filtro-mes");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
-const campoBanco = document.getElementById("filtro-banco");
 const campoMov = document.getElementById("filtro-movimentacao");
 
 ligarCampoDataInteligente(campoInicio);
 ligarCampoDataInteligente(campoFim);
+
+const seletorBanco = criarSeletorMultiplo({
+    container: document.getElementById("filtro-banco"),
+    opcoes: [],
+    rotuloTodos: "Todos os bancos",
+    aoMudar: aplicarFiltros
+});
 
 let todasTransacoes = [];
 
@@ -58,7 +64,6 @@ function aplicarAnoMesNosCampos() {
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
-campoBanco.addEventListener("change", aplicarFiltros);
 campoMov.addEventListener("change", aplicarFiltros);
 
 // ---------- Resumo e tabela ----------
@@ -158,14 +163,14 @@ function renderizarTabela(lista) {
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
-    const bancoFiltro = campoBanco.value.toUpperCase();
+    const bancosFiltro = seletorBanco.obterSelecionados();
     const movFiltro = campoMov.value;
 
     let listaFiltrada = todasTransacoes;
 
     if (dataInicioISO) listaFiltrada = listaFiltrada.filter(t => t.data >= dataInicioISO);
     if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
-    if (bancoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.banco ?? "").includes(bancoFiltro));
+    if (bancosFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
 
     renderizarTabela(listaFiltrada);
@@ -178,7 +183,7 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     campoAno.value = String(ano);
     campoMes.value = String(mes).padStart(2, "0");
     aplicarAnoMesNosCampos();
-    campoBanco.value = "";
+    seletorBanco.definirSelecionados([]);
     campoMov.value = "";
     aplicarFiltros();
 });
@@ -199,7 +204,7 @@ async function carregarTransacoesDoBanco() {
         todasTransacoes.sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""));
 
         const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
-        preencherDatalist("lista-bancos-filtro", bancos);
+        seletorBanco.definirOpcoes(bancos);
 
         // Padrão ao abrir: mês atual, do dia 1 até hoje
         const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();

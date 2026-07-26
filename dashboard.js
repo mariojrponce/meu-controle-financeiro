@@ -6,9 +6,11 @@ import {
     formatarMoeda, isoParaBR, brParaISO, normalizarDataDigitada,
     ligarCampoDataInteligente, intervaloMesAtual, intervaloParaAnoMes
 } from "./utils.js";
-import { preencherDatalist } from "./dados-comuns.js";
+import { criarSeletorMultiplo } from "./combobox.js";
+import { obterCorBanco } from "./cores-bancos.js";
 
 const NOME_COLECAO = "carteira";
+const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 const usuario = await exigirLogin();
 renderizarNav("dashboard", usuario.email);
@@ -17,11 +19,17 @@ const campoAno = document.getElementById("filtro-ano");
 const campoMes = document.getElementById("filtro-mes");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
-const campoBanco = document.getElementById("filtro-banco");
 const campoMov = document.getElementById("filtro-movimentacao");
 
 ligarCampoDataInteligente(campoInicio);
 ligarCampoDataInteligente(campoFim);
+
+const seletorBanco = criarSeletorMultiplo({
+    container: document.getElementById("filtro-banco"),
+    opcoes: [],
+    rotuloTodos: "Todos os bancos",
+    aoMudar: aplicarFiltros
+});
 
 let todasTransacoes = [];
 
@@ -49,7 +57,6 @@ function aplicarAnoMesNosCampos() {
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMes.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
-campoBanco.addEventListener("change", aplicarFiltros);
 campoMov.addEventListener("change", aplicarFiltros);
 document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
 
@@ -58,10 +65,22 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     campoAno.value = String(ano);
     campoMes.value = String(mes).padStart(2, "0");
     aplicarAnoMesNosCampos();
-    campoBanco.value = "";
+    seletorBanco.definirSelecionados([]);
     campoMov.value = "";
     aplicarFiltros();
 });
+
+function rotuloDoPeriodo(inicioISO, fimISO) {
+    if (!inicioISO || !fimISO) return "";
+    const [anoI, mesI] = inicioISO.split("-");
+    const [anoF, mesF] = fimISO.split("-");
+    if (anoI === anoF && mesI === mesF) {
+        const nomeMes = NOMES_MES[Number(mesI) - 1];
+        const nomeCapitalizado = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+        return `${nomeCapitalizado}/${anoI.slice(2)}`;
+    }
+    return `${isoParaBR(inicioISO)} a ${isoParaBR(fimISO)}`;
+}
 
 function linhaCarteira(rotulo, valor, classeExtra = "") {
     const linha = document.createElement("div");
@@ -96,12 +115,21 @@ function renderizarCarteiras(porBanco) {
 
     bancos.forEach((banco) => {
         const dados = porBanco[banco];
+        const cor = obterCorBanco(banco);
+
         const cartao = document.createElement("div");
         cartao.className = "cartao-carteira";
+        cartao.style.borderTopColor = cor;
 
         const nome = document.createElement("div");
         nome.className = "nome-banco";
-        nome.textContent = banco;
+
+        const ponto = document.createElement("span");
+        ponto.className = "ponto-banco";
+        ponto.style.background = cor;
+
+        nome.appendChild(ponto);
+        nome.appendChild(document.createTextNode(banco));
         cartao.appendChild(nome);
 
         cartao.appendChild(linhaCarteira("Entradas", dados.entradas));
@@ -112,20 +140,20 @@ function renderizarCarteiras(porBanco) {
     });
 }
 
-function renderizarClassificacoes(gastoPorClassificacao) {
-    const container = document.getElementById("lista-classificacoes");
+function renderizarListaBarras(idContainer, dados, textoVazio) {
+    const container = document.getElementById(idContainer);
     container.innerHTML = "";
 
-    const classificacoes = Object.entries(gastoPorClassificacao).sort((a, b) => b[1] - a[1]);
+    const itens = Object.entries(dados).sort((a, b) => b[1] - a[1]);
 
-    if (classificacoes.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhuma saída registrada neste período.</p>";
+    if (itens.length === 0) {
+        container.innerHTML = `<p class="vazio">${textoVazio}</p>`;
         return;
     }
 
-    const maiorValor = classificacoes[0][1];
+    const maiorValor = itens[0][1];
 
-    classificacoes.forEach(([nome, valor]) => {
+    itens.forEach(([nome, valor]) => {
         const percentual = maiorValor > 0 ? Math.round((valor / maiorValor) * 100) : 0;
 
         const item = document.createElement("div");
@@ -159,13 +187,13 @@ function renderizarClassificacoes(gastoPorClassificacao) {
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
-    const bancoFiltro = campoBanco.value.toUpperCase();
+    const bancosFiltro = seletorBanco.obterSelecionados();
     const movFiltro = campoMov.value;
 
     let lista = todasTransacoes;
     if (dataInicioISO) lista = lista.filter(t => t.data >= dataInicioISO);
     if (dataFimISO) lista = lista.filter(t => t.data <= dataFimISO);
-    if (bancoFiltro !== "") lista = lista.filter(t => (t.banco ?? "").includes(bancoFiltro));
+    if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
 
     let saldoGeral = 0;
@@ -173,6 +201,7 @@ function aplicarFiltros() {
     let saidasPeriodo = 0;
     const porBanco = {};
     const gastoPorClassificacao = {};
+    const entradaPorClassificacao = {};
 
     lista.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco) return;
@@ -184,6 +213,8 @@ function aplicarFiltros() {
             porBanco[t.banco].saldo += t.valor;
             saldoGeral += t.valor;
             entradasPeriodo += t.valor;
+            const chaveEntrada = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
+            entradaPorClassificacao[chaveEntrada] = (entradaPorClassificacao[chaveEntrada] ?? 0) + t.valor;
         } else {
             porBanco[t.banco].saidas += t.valor;
             porBanco[t.banco].saldo -= t.valor;
@@ -202,8 +233,13 @@ function aplicarFiltros() {
     cartaoSaldoGeral.classList.toggle("metrica-saldo-neg", saldoGeral < 0);
     cartaoSaldoGeral.classList.toggle("metrica-saldo-pos", saldoGeral >= 0);
 
+    const rotulo = rotuloDoPeriodo(dataInicioISO, dataFimISO);
+    document.getElementById("subtitulo-periodo").textContent = rotulo ? `Mostrando: ${rotulo}` : "Selecione um período nos filtros abaixo.";
+    document.getElementById("rotulo-periodo-entradas").textContent = rotulo ? `— ${rotulo}` : "";
+
     renderizarCarteiras(porBanco);
-    renderizarClassificacoes(gastoPorClassificacao);
+    renderizarListaBarras("lista-entradas-categoria", entradaPorClassificacao, "Nenhuma entrada registrada neste período.");
+    renderizarListaBarras("lista-classificacoes", gastoPorClassificacao, "Nenhuma saída registrada neste período.");
 }
 
 async function carregarDashboard() {
@@ -215,7 +251,7 @@ async function carregarDashboard() {
         snapshot.forEach((doc) => todasTransacoes.push(doc.data()));
 
         const bancos = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
-        preencherDatalist("lista-bancos-filtro", bancos);
+        seletorBanco.definirOpcoes(bancos);
 
         const { ano, mes, inicioISO, fimISO } = intervaloMesAtual();
         popularSeletorAno(ano);
@@ -229,6 +265,7 @@ async function carregarDashboard() {
         console.error("Erro ao carregar dashboard:", erro);
         document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
         document.getElementById("lista-classificacoes").innerHTML = "";
+        document.getElementById("lista-entradas-categoria").innerHTML = "";
     }
 }
 

@@ -62,8 +62,7 @@
                     </div>
                     <div class="campo-filtro">
                         <label>Banco</label>
-                        <input type="text" id="filtro-banco" placeholder="Todos" list="lista-bancos-filtro">
-                        <datalist id="lista-bancos-filtro"></datalist>
+                        <div id="filtro-banco"></div>
                     </div>
                     <div class="campo-filtro">
                         <label>Movimentação</label>
@@ -98,6 +97,15 @@
                     <h3>💳 Saldo por carteira / banco (no período)</h3>
                 </div>
                 <div class="grade-carteiras" id="grade-carteiras">
+                    <p class="vazio">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>💵 Entradas por categoria <span id="rotulo-periodo-entradas" style="font-weight:600;color:var(--cor-texto-suave);font-size:13px;"></span></h3>
+                </div>
+                <div class="lista-barras" id="lista-entradas-categoria">
                     <p class="vazio">Carregando...</p>
                 </div>
             </div>
