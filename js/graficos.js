@@ -6,6 +6,8 @@
 // verde/vermelho falha a checagem de daltonismo (ΔE 5.0, abaixo do piso).
 import { formatarReais } from "./utils.js";
 
+Chart.register(ChartDataLabels);
+
 const instancias = new Map();
 
 function destruir(idCanvas) {
@@ -30,6 +32,23 @@ const TOOLTIP_BASE = {
     cornerRadius: 8,
     displayColors: false
 };
+
+// Rótulo com o valor direto na barra/ponto, sem precisar passar o mouse.
+const RODULO_VALOR = {
+    color: "#0f172a",
+    anchor: "end",
+    align: "end",
+    clamp: true,
+    font: { size: 11, weight: "600" },
+    formatter: (valor) => formatarReais(valor)
+};
+
+// Dá espaço extra no eixo de valor para o rótulo do maior item não cortar
+// na borda do gráfico (padrão comum ao usar chartjs-plugin-datalabels).
+function maiorValorComFolga(valores) {
+    const maior = Math.max(0, ...valores);
+    return maior > 0 ? maior * 1.18 : undefined;
+}
 
 // Mostra o gráfico (e esconde a mensagem de "sem dados"), ou o contrário.
 export function alternarEstadoVazio(idCanvas, idVazio, temDados) {
@@ -64,13 +83,20 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
+            layout: { padding: { right: 12 } },
             scales: {
-                x: { beginAtZero: true, grid: { color: "#e2e8f0" }, ticks: { color: "#64748b", font: { size: 11 } } },
+                x: {
+                    beginAtZero: true,
+                    suggestedMax: maiorValorComFolga(itens.map(([, valor]) => valor)),
+                    grid: { color: "#e2e8f0" },
+                    ticks: { color: "#64748b", font: { size: 11 } }
+                },
                 y: { grid: { display: false }, ticks: { color: "#0f172a", font: { size: 12 } } }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => formatarReais(ctx.parsed.x) } }
+                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => formatarReais(ctx.parsed.x) } },
+                datalabels: RODULO_VALOR
             }
         }
     });
@@ -84,6 +110,7 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
     if (!canvas) return;
 
     ajustarAltura(idCanvas, categorias.length, 46, 180, 420);
+    const todosValores = series.flatMap((s) => s.valores);
 
     const grafico = new Chart(canvas, {
         type: "bar",
@@ -103,8 +130,14 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
+            layout: { padding: { right: 12 } },
             scales: {
-                x: { beginAtZero: true, grid: { color: "#e2e8f0" }, ticks: { color: "#64748b", font: { size: 11 } } },
+                x: {
+                    beginAtZero: true,
+                    suggestedMax: maiorValorComFolga(todosValores),
+                    grid: { color: "#e2e8f0" },
+                    ticks: { color: "#64748b", font: { size: 11 } }
+                },
                 y: { grid: { display: false }, ticks: { color: "#0f172a", font: { size: 12 } } }
             },
             plugins: {
@@ -114,7 +147,8 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
                     align: "start",
                     labels: { color: "#0f172a", boxWidth: 12, boxHeight: 12, font: { size: 12 }, usePointStyle: true, pointStyle: "circle" }
                 },
-                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatarReais(ctx.parsed.x)}` } }
+                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatarReais(ctx.parsed.x)}` } },
+                datalabels: RODULO_VALOR
             }
         }
     });
@@ -147,13 +181,28 @@ export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#dc2
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 24, left: 8, right: 36 } },
             scales: {
                 x: { grid: { display: false }, ticks: { color: "#64748b", font: { size: 11 } } },
-                y: { beginAtZero: true, grid: { color: "#e2e8f0" }, ticks: { color: "#64748b", font: { size: 11 } } }
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: maiorValorComFolga(valores),
+                    grid: { color: "#e2e8f0" },
+                    ticks: { color: "#64748b", font: { size: 11 } }
+                }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => formatarReais(ctx.parsed.y) } }
+                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => formatarReais(ctx.parsed.y) } },
+                datalabels: {
+                    ...RODULO_VALOR,
+                    anchor: "center",
+                    align: (ctx) => {
+                        if (ctx.dataIndex === 0) return "right";
+                        if (ctx.dataIndex === ctx.dataset.data.length - 1) return "left";
+                        return "top";
+                    }
+                }
             }
         }
     });
