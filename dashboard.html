@@ -146,24 +146,38 @@
                 <div class="grade-carteiras" id="grade-categorias-separadas">
                     <p class="vazio">Nenhuma categoria configurada como "à parte" ainda.</p>
                 </div>
+
+                <h4 style="font-size:14px; margin:20px 0 8px; color:var(--cor-texto-suave);">📅 Previsto (futuro) por categoria à parte</h4>
+                <div class="grafico-container" style="display:none;">
+                    <canvas id="grafico-categorias-separadas-futuro"></canvas>
+                </div>
+                <p class="vazio" id="vazio-categorias-separadas-futuro">Nenhum lançamento futuro nas categorias à parte, neste período.</p>
             </div>
 
             <div class="secao cartao">
                 <div class="secao-titulo">
                     <h3>💵 Entradas por categoria <span id="rotulo-periodo-entradas" style="font-weight:600;color:var(--cor-texto-suave);font-size:13px;"></span></h3>
                 </div>
-                <div class="lista-barras" id="lista-entradas-categoria">
-                    <p class="vazio">Carregando...</p>
+                <div class="grafico-container" style="display:none;">
+                    <canvas id="grafico-entradas-categoria"></canvas>
                 </div>
+                <p class="vazio" id="vazio-entradas-categoria">Carregando...</p>
             </div>
 
             <div class="secao cartao">
                 <div class="secao-titulo">
                     <h3>📌 Maiores gastos do período por classificação</h3>
                 </div>
-                <div class="lista-barras" id="lista-classificacoes">
-                    <p class="vazio">Carregando...</p>
+                <div class="grafico-container" style="display:none;">
+                    <canvas id="grafico-classificacoes"></canvas>
                 </div>
+                <p class="vazio" id="vazio-classificacoes">Carregando...</p>
+
+                <h4 style="font-size:14px; margin:20px 0 8px; color:var(--cor-texto-suave);">📈 Evolução mensal de gastos no período</h4>
+                <div class="grafico-container" style="display:none;">
+                    <canvas id="grafico-tendencia-gastos"></canvas>
+                </div>
+                <p class="vazio" id="vazio-tendencia-gastos">Carregando...</p>
             </div>
 
             <div class="secao cartao">
@@ -218,6 +232,9 @@
     </main>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"
+        integrity="sha512-Y51n9mtKTVBh3Jbx5pZSJNDDMyY+yGe77DGtBPzRlgsf/YLCh13kSZ3JmfHGzYFCmOndraf0sQgfM654b7dJ3w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script type="module" src="js/dashboard.js"></script>
 
 </body>

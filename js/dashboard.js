@@ -14,6 +14,9 @@ import {
     obterCategoriasSeparadas, salvarCategoriasSeparadas,
     obterVisoesPersonalizadas, salvarVisoesPersonalizadas
 } from "./preferencias-dashboard.js";
+import {
+    renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio
+} from "./graficos.js";
 
 const NOME_PAGINA = "dashboard";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -221,43 +224,10 @@ function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
     });
 }
 
-function renderizarListaBarras(idContainer, dados, textoVazio) {
-    const container = document.getElementById(idContainer);
-    container.innerHTML = "";
-
-    const itens = Object.entries(dados).sort((a, b) => b[1] - a[1]);
-    if (itens.length === 0) {
-        container.innerHTML = `<p class="vazio">${textoVazio}</p>`;
-        return;
-    }
-
-    const maiorValor = itens[0][1];
-    itens.forEach(([nome, valor]) => {
-        const percentual = maiorValor > 0 ? Math.round((valor / maiorValor) * 100) : 0;
-
-        const item = document.createElement("div");
-        item.className = "item-barra";
-
-        const cabecalho = document.createElement("div");
-        cabecalho.className = "cabecalho-barra";
-        const spanNome = document.createElement("span");
-        spanNome.textContent = nome;
-        const spanValor = document.createElement("span");
-        spanValor.textContent = formatarReais(valor);
-        cabecalho.appendChild(spanNome);
-        cabecalho.appendChild(spanValor);
-
-        const trilha = document.createElement("div");
-        trilha.className = "trilha-barra";
-        const preenchimento = document.createElement("div");
-        preenchimento.className = "preenchimento-barra";
-        preenchimento.style.width = `${percentual}%`;
-        trilha.appendChild(preenchimento);
-
-        item.appendChild(cabecalho);
-        item.appendChild(trilha);
-        container.appendChild(item);
-    });
+function rotuloMesCurto(chaveMesISO) {
+    const [ano, mes] = chaveMesISO.split("-");
+    const nomeMes = NOMES_MES[Number(mes) - 1] ?? "";
+    return `${nomeMes.charAt(0).toUpperCase()}${nomeMes.slice(1, 3)}/${ano.slice(2)}`;
 }
 
 // ---------- Configuração de categorias "à parte" ----------
@@ -376,16 +346,28 @@ function renderizarVisoesPersonalizadas(lista) {
         titulo.appendChild(botaoRemover);
         bloco.appendChild(titulo);
 
-        const areaBarras = document.createElement("div");
-        areaBarras.className = "lista-barras";
-        bloco.appendChild(areaBarras);
+        const idCanvas = `grafico-visao-${visao.id}`;
+        const idVazio = `vazio-visao-${visao.id}`;
+
+        const areaGrafico = document.createElement("div");
+        areaGrafico.className = "grafico-container";
+        const canvas = document.createElement("canvas");
+        canvas.id = idCanvas;
+        areaGrafico.appendChild(canvas);
+        bloco.appendChild(areaGrafico);
+
+        const vazio = document.createElement("p");
+        vazio.className = "vazio";
+        vazio.id = idVazio;
+        vazio.textContent = "Nenhum dado encontrado para essa visão neste período.";
+        bloco.appendChild(vazio);
 
         container.appendChild(bloco);
 
         const dados = calcularVisaoPersonalizada(lista, visao);
-        const idTemporario = `visao-barras-${visao.id}`;
-        areaBarras.id = idTemporario;
-        renderizarListaBarras(idTemporario, dados, "Nenhum dado encontrado para essa visão neste período.");
+        const temDados = Object.keys(dados).length > 0;
+        alternarEstadoVazio(idCanvas, idVazio, temDados);
+        if (temDados) renderizarGraficoBarras(idCanvas, dados, { cor: "#059669" });
     });
 }
 
@@ -484,6 +466,7 @@ function aplicarFiltros() {
     const gastoPorClassificacao = {};
     const entradaPorClassificacao = {};
     const porCategoriaSeparada = {};
+    const gastoPorMes = {};
 
     listaRealizada.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco) return;
@@ -527,7 +510,22 @@ function aplicarFiltros() {
             saidasPeriodo += t.valor;
             const chave = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
             gastoPorClassificacao[chave] = (gastoPorClassificacao[chave] ?? 0) + t.valor;
+            const chaveMes = (t.data ?? "").slice(0, 7);
+            if (chaveMes) gastoPorMes[chaveMes] = (gastoPorMes[chaveMes] ?? 0) + t.valor;
         }
+    });
+
+    // Lançamentos futuros das categorias "à parte" — não entram no saldo
+    // previsto geral (são tratados à parte), mas ainda assim vale visualizar
+    // o que está agendado para elas.
+    const porCategoriaSeparadaFutura = {};
+    listaFutura.forEach((t) => {
+        if (typeof t.valor !== "number") return;
+        if (!categoriasSeparadas.has(t.classificacao_saida)) return;
+        const chave = t.classificacao_saida;
+        if (!porCategoriaSeparadaFutura[chave]) porCategoriaSeparadaFutura[chave] = { entradas: 0, saidas: 0 };
+        if (t.tipo === "ENTRADA") porCategoriaSeparadaFutura[chave].entradas += t.valor;
+        else porCategoriaSeparadaFutura[chave].saidas += t.valor;
     });
 
     document.getElementById("saldo-geral").textContent = formatarReais(saldoGeral);
@@ -559,8 +557,37 @@ function aplicarFiltros() {
 
     renderizarCarteiras(porBanco);
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
-    renderizarListaBarras("lista-entradas-categoria", entradaPorClassificacao, "Nenhuma entrada registrada neste período.");
-    renderizarListaBarras("lista-classificacoes", gastoPorClassificacao, "Nenhuma saída registrada neste período.");
+
+    const temEntradas = Object.keys(entradaPorClassificacao).length > 0;
+    alternarEstadoVazio("grafico-entradas-categoria", "vazio-entradas-categoria", temEntradas);
+    if (temEntradas) renderizarGraficoBarras("grafico-entradas-categoria", entradaPorClassificacao, { cor: "#059669" });
+
+    const temGastos = Object.keys(gastoPorClassificacao).length > 0;
+    alternarEstadoVazio("grafico-classificacoes", "vazio-classificacoes", temGastos);
+    if (temGastos) renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, { cor: "#dc2626" });
+
+    const mesesOrdenados = Object.keys(gastoPorMes).sort();
+    const temTendencia = mesesOrdenados.length > 0;
+    alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia);
+    if (temTendencia) {
+        renderizarGraficoLinha(
+            "grafico-tendencia-gastos",
+            mesesOrdenados.map(rotuloMesCurto),
+            mesesOrdenados.map((m) => gastoPorMes[m]),
+            { cor: "#dc2626" }
+        );
+    }
+
+    const categoriasFuturas = Object.keys(porCategoriaSeparadaFutura);
+    const temFuturoSeparado = categoriasFuturas.length > 0;
+    alternarEstadoVazio("grafico-categorias-separadas-futuro", "vazio-categorias-separadas-futuro", temFuturoSeparado);
+    if (temFuturoSeparado) {
+        renderizarGraficoBarrasAgrupadas("grafico-categorias-separadas-futuro", categoriasFuturas, [
+            { nome: "Entradas previstas", valores: categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].entradas), cor: "#2a78d6" },
+            { nome: "Saídas previstas", valores: categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].saidas), cor: "#eb6834" }
+        ]);
+    }
+
     renderizarPrevistos(listaFutura);
     renderizarVisoesPersonalizadas(listaRealizada);
 
@@ -604,9 +631,13 @@ async function carregarDashboard(forcarAtualizacao = false) {
     } catch (erro) {
         console.error("Erro ao carregar dashboard:", erro);
         document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
-        document.getElementById("lista-classificacoes").innerHTML = "";
-        document.getElementById("lista-entradas-categoria").innerHTML = "";
         document.querySelector("#tabela-previstos tbody").innerHTML = "<tr><td colspan='5' class='vazio'>Erro ao carregar dados.</td></tr>";
+        ["grafico-entradas-categoria", "grafico-classificacoes", "grafico-tendencia-gastos", "grafico-categorias-separadas-futuro"].forEach((idCanvas) => {
+            const idVazio = idCanvas.replace("grafico-", "vazio-");
+            alternarEstadoVazio(idCanvas, idVazio, false);
+            const vazio = document.getElementById(idVazio);
+            if (vazio) vazio.textContent = "Erro ao carregar dados.";
+        });
     }
 }
 

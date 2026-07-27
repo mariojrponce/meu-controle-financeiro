@@ -252,11 +252,8 @@ tr:hover td { background: var(--cor-fundo); }
 .valor-positivo { color: var(--cor-sucesso); }
 .valor-negativo { color: var(--cor-perigo); }
 
-/* ---------- Barras de categoria ---------- */
-.lista-barras { display: flex; flex-direction: column; gap: 12px; }
-.item-barra .cabecalho-barra { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; font-weight: 600; }
-.trilha-barra { background: var(--cor-fundo); border-radius: 999px; height: 8px; overflow: hidden; }
-.preenchimento-barra { height: 100%; border-radius: 999px; background: var(--cor-primaria); }
+/* ---------- Gráficos (Chart.js) ---------- */
+.grafico-container { position: relative; width: 100%; height: 220px; margin-top: 4px; }
 
 .secao { margin-top: 26px; }
 .secao-titulo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
