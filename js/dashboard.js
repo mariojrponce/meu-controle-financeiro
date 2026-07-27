@@ -503,12 +503,26 @@ function aplicarFiltros() {
         if (t.tipo === "ENTRADA") {
             saldoGeral += t.valor;
             entradasPeriodo += t.valor;
-            const chaveEntrada = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
-            entradaPorClassificacao[chaveEntrada] = (entradaPorClassificacao[chaveEntrada] ?? 0) + t.valor;
         } else {
             saldoGeral -= t.valor;
             saidasPeriodo += t.valor;
-            const chave = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
+        }
+    });
+
+    // Entradas/gastos por classificação e a evolução mensal consideram TODO o
+    // período filtrado (realizado + previsto) — diferente do saldo/KPIs acima,
+    // que só contam o que já aconteceu. Sem isso, filtrar um período
+    // inteiramente futuro (ex: Agosto/26) deixava esses gráficos vazios, já
+    // que nada nele seria "realizado" ainda.
+    lista.forEach((t) => {
+        if (typeof t.valor !== "number") return;
+        if (categoriasSeparadas.has(t.classificacao_saida)) return;
+        if (t.tipo_mov === "INTERNO") return;
+
+        const chave = t.classificacao_saida || "SEM CLASSIFICAÇÃO";
+        if (t.tipo === "ENTRADA") {
+            entradaPorClassificacao[chave] = (entradaPorClassificacao[chave] ?? 0) + t.valor;
+        } else {
             gastoPorClassificacao[chave] = (gastoPorClassificacao[chave] ?? 0) + t.valor;
             const chaveMes = (t.data ?? "").slice(0, 7);
             if (chaveMes) gastoPorMes[chaveMes] = (gastoPorMes[chaveMes] ?? 0) + t.valor;
@@ -589,7 +603,7 @@ function aplicarFiltros() {
     }
 
     renderizarPrevistos(listaFutura);
-    renderizarVisoesPersonalizadas(listaRealizada);
+    renderizarVisoesPersonalizadas(lista);
 
     salvarEstadoFiltro();
 }
