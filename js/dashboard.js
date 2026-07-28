@@ -573,16 +573,16 @@ function aplicarFiltros() {
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
 
     const temEntradas = Object.keys(entradaPorClassificacao).length > 0;
-    alternarEstadoVazio("grafico-entradas-categoria", "vazio-entradas-categoria", temEntradas);
+    alternarEstadoVazio("grafico-entradas-categoria", "vazio-entradas-categoria", temEntradas, "Nenhuma entrada classificada neste período.");
     if (temEntradas) renderizarGraficoBarras("grafico-entradas-categoria", entradaPorClassificacao, { cor: "#059669" });
 
     const temGastos = Object.keys(gastoPorClassificacao).length > 0;
-    alternarEstadoVazio("grafico-classificacoes", "vazio-classificacoes", temGastos);
+    alternarEstadoVazio("grafico-classificacoes", "vazio-classificacoes", temGastos, "Nenhum gasto classificado neste período.");
     if (temGastos) renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, { cor: "#dc2626" });
 
     const mesesOrdenados = Object.keys(gastoPorMes).sort();
     const temTendencia = mesesOrdenados.length > 0;
-    alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia);
+    alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia, "Sem gastos para montar a evolução mensal neste período.");
     if (temTendencia) {
         renderizarGraficoLinha(
             "grafico-tendencia-gastos",
@@ -594,7 +594,7 @@ function aplicarFiltros() {
 
     const categoriasFuturas = Object.keys(porCategoriaSeparadaFutura);
     const temFuturoSeparado = categoriasFuturas.length > 0;
-    alternarEstadoVazio("grafico-categorias-separadas-futuro", "vazio-categorias-separadas-futuro", temFuturoSeparado);
+    alternarEstadoVazio("grafico-categorias-separadas-futuro", "vazio-categorias-separadas-futuro", temFuturoSeparado, "Nenhum lançamento futuro nas categorias à parte, neste período.");
     if (temFuturoSeparado) {
         renderizarGraficoBarrasAgrupadas("grafico-categorias-separadas-futuro", categoriasFuturas, [
             { nome: "Entradas previstas", valores: categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].entradas), cor: "#2a78d6" },

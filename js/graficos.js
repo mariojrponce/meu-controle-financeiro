@@ -51,11 +51,16 @@ function maiorValorComFolga(valores) {
 }
 
 // Mostra o gráfico (e esconde a mensagem de "sem dados"), ou o contrário.
-export function alternarEstadoVazio(idCanvas, idVazio, temDados) {
+// Quando não há dados, `mensagemVazia` substitui o texto do parágrafo — sem
+// isso, ele fica preso no "Carregando..." inicial do HTML para sempre.
+export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) {
     const canvas = document.getElementById(idCanvas);
     const vazio = document.getElementById(idVazio);
     if (canvas) canvas.parentElement.style.display = temDados ? "" : "none";
-    if (vazio) vazio.style.display = temDados ? "none" : "";
+    if (vazio) {
+        vazio.style.display = temDados ? "none" : "";
+        if (!temDados && mensagemVazia) vazio.textContent = mensagemVazia;
+    }
 }
 
 // Barras horizontais, uma só série — comparação de magnitude (ex: gasto por classificação).
