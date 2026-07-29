@@ -45,9 +45,9 @@
   longo:
 
     Crie um guia de base de conhecimento em Markdown sobre [TÓPICO], com
-  fundamentação em pesquisas/normas científicas, regras práticas (do's & don'ts),
-  snippets de código/exemplos, uma tabela matriz de decisão e referências
-  bibliográficas. Foco em linguagem direta e de alta densidade técnica.
+    fundamentação em pesquisas/normas científicas, regras práticas (do's & don'ts),
+    snippets de código/exemplos, uma tabela matriz de decisão e referências
+    bibliográficas. Foco em linguagem direta e de alta densidade técnica.
     ──────
   ### 3. Exemplos Práticos de Uso (Prontos para Rodar)
 
