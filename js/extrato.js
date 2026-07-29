@@ -215,7 +215,14 @@ function renderizarTabela(lista) {
 
         linha.appendChild(celulaTexto(transacao.descricao ?? ""));
         linha.appendChild(celulaTexto(transacao.saida ?? ""));
-        linha.appendChild(celulaTexto(transacao.tipo_mov ?? ""));
+
+        const tdMov = document.createElement("td");
+        const seloMov = document.createElement("span");
+        seloMov.className = `selo-mov ${transacao.tipo_mov === "INTERNO" ? "selo-interno" : "selo-externo"}`;
+        seloMov.textContent = transacao.tipo_mov === "INTERNO" ? "🔁 Interno" : "🌐 Externo";
+        tdMov.appendChild(seloMov);
+        linha.appendChild(tdMov);
+
         linha.appendChild(celulaTexto(transacao.banco ?? ""));
         linha.appendChild(celulaTexto(transacao.classificacao_saida ?? ""));
 

@@ -15,7 +15,7 @@ import {
     obterVisoesPersonalizadas, salvarVisoesPersonalizadas
 } from "./preferencias-dashboard.js";
 import {
-    renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio
+    renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema
 } from "./graficos.js";
 
 const NOME_PAGINA = "dashboard";
@@ -58,6 +58,10 @@ const seletorBanco = criarSeletorMultiplo({
 let todasTransacoes = [];
 let seletorCategoriasSeparadas = null;
 let carregando = true;
+
+aoMudarTema(() => {
+    if (!carregando) aplicarFiltros();
+});
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);

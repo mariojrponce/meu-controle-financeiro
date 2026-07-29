@@ -663,7 +663,8 @@ tr:hover td {
 }
 
 /* Alinhamento decimal/monetário à direita (Skill: alinhamento_paginas_ux_ui.md) */
-td.saida, td.entrada, th[data-tipo="numero"] {
+td.saida, td.entrada, th[data-tipo="numero"], td.col-valor, th.col-valor {
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
@@ -675,6 +676,66 @@ td.saida {
 td.entrada {
   color: var(--cor-sucesso);
   font-weight: 700;
+}
+
+/* ---------- Badges e Selos Ergonomicos ---------- */
+.selo-mov {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--raio-pilula);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.selo-externo {
+  background-color: var(--cor-sucesso-suave);
+  color: var(--cor-sucesso);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.selo-interno {
+  background-color: var(--cor-info-suave);
+  color: var(--cor-info);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+}
+
+.selo-previsto {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: var(--raio-pilula);
+  background-color: var(--cor-aviso-suave);
+  color: var(--cor-aviso);
+  font-size: 0.725rem;
+  font-weight: 700;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  white-space: nowrap;
+}
+
+/* Custom Scrollbar Ergonomico para Tabelas */
+.tabela-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tabela-scroll::-webkit-scrollbar-track {
+  background: var(--cor-superficie-elevada);
+  border-radius: 4px;
+}
+
+.tabela-scroll::-webkit-scrollbar-thumb {
+  background: var(--cor-borda-intensa);
+  border-radius: 4px;
+}
+
+.tabela-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--cor-texto-suave);
 }
 
 .dica-inline {

@@ -1,14 +1,25 @@
 // graficos.js
-// Fábrica fina de gráficos (Chart.js, carregado via CDN em dashboard.html) —
-// cores e formatação seguem o design system do projeto (style.css). O par
-// azul/laranja usado nos gráficos de 2 séries foi escolhido (em vez do
-// verde/vermelho usado no resto do app) porque validou contraste/CVD; o par
-// verde/vermelho falha a checagem de daltonismo (ΔE 5.0, abaixo do piso).
+// Fábrica de gráficos (Chart.js via CDN em dashboard.html) —
+// Adaptado para os guias de UX/UI, leitura de telas (temas dinâmicos) e multi-dispositivos.
+
 import { formatarReais } from "./utils.js";
 
 Chart.register(ChartDataLabels);
 
 const instancias = new Map();
+let callbackTemaAlterado = null;
+
+export function aoMudarTema(fn) {
+    callbackTemaAlterado = fn;
+}
+
+// Observer para re-renderizar os gráficos automaticamente quando o tema muda (Claro, Escuro, Sépia)
+const observerTema = new MutationObserver(() => {
+    if (typeof callbackTemaAlterado === "function") {
+        callbackTemaAlterado();
+    }
+});
+observerTema.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 function destruir(idCanvas) {
     const existente = instancias.get(idCanvas);
@@ -18,41 +29,30 @@ function destruir(idCanvas) {
     }
 }
 
-function ajustarAltura(idCanvas, quantidadeItens, alturaPorItem = 34, minimo = 160, maximo = 420) {
+function obterEstiloTema() {
+    const ehDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const ehSepia = document.documentElement.getAttribute("data-theme") === "sepia";
+
+    return {
+        corTexto: ehDark ? "#f1f5f9" : ehSepia ? "#2c221e" : "#0f172a",
+        corTextoSuave: ehDark ? "#94a3b8" : ehSepia ? "#7c6853" : "#64748b",
+        corGrid: ehDark ? "rgba(255, 255, 255, 0.08)" : ehSepia ? "rgba(44, 34, 30, 0.12)" : "rgba(15, 23, 42, 0.08)",
+        corTooltipBg: ehDark ? "#1d283d" : ehSepia ? "#f5e6c7" : "#0f172a",
+        corTooltipTexto: ehDark ? "#f1f5f9" : ehSepia ? "#2c221e" : "#ffffff"
+    };
+}
+
+function ajustarAltura(idCanvas, quantidadeItens, alturaPorItem = 38, minimo = 180, maximo = 450) {
     const canvas = document.getElementById(idCanvas);
     if (!canvas) return;
     canvas.parentElement.style.height = `${Math.min(maximo, Math.max(minimo, quantidadeItens * alturaPorItem))}px`;
 }
 
-const TOOLTIP_BASE = {
-    backgroundColor: "#0f172a",
-    titleColor: "#ffffff",
-    bodyColor: "#ffffff",
-    padding: 10,
-    cornerRadius: 8,
-    displayColors: false
-};
-
-// Rótulo com o valor direto na barra/ponto, sem precisar passar o mouse.
-const RODULO_VALOR = {
-    color: "#0f172a",
-    anchor: "end",
-    align: "end",
-    clamp: true,
-    font: { size: 11, weight: "600" },
-    formatter: (valor) => formatarReais(valor)
-};
-
-// Dá espaço extra no eixo de valor para o rótulo do maior item não cortar
-// na borda do gráfico (padrão comum ao usar chartjs-plugin-datalabels).
 function maiorValorComFolga(valores) {
     const maior = Math.max(0, ...valores);
-    return maior > 0 ? maior * 1.18 : undefined;
+    return maior > 0 ? maior * 1.2 : undefined;
 }
 
-// Mostra o gráfico (e esconde a mensagem de "sem dados"), ou o contrário.
-// Quando não há dados, `mensagemVazia` substitui o texto do parágrafo — sem
-// isso, ele fica preso no "Carregando..." inicial do HTML para sempre.
 export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) {
     const canvas = document.getElementById(idCanvas);
     const vazio = document.getElementById(idVazio);
@@ -63,7 +63,7 @@ export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) 
     }
 }
 
-// Barras horizontais, uma só série — comparação de magnitude (ex: gasto por classificação).
+// Barras horizontais simples — comparação de magnitude por categoria
 export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {}) {
     destruir(idCanvas);
     const canvas = document.getElementById(idCanvas);
@@ -72,6 +72,8 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
     const itens = Object.entries(dados).sort((a, b) => b[1] - a[1]);
     ajustarAltura(idCanvas, itens.length);
 
+    const { corTexto, corTextoSuave, corGrid, corTooltipBg, corTooltipTexto } = obterEstiloTema();
+
     const grafico = new Chart(canvas, {
         type: "bar",
         data: {
@@ -79,7 +81,7 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
             datasets: [{
                 data: itens.map(([, valor]) => valor),
                 backgroundColor: cor,
-                borderRadius: 4,
+                borderRadius: 6,
                 borderSkipped: false,
                 barPercentage: 0.65
             }]
@@ -88,34 +90,54 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            layout: { padding: { right: 12 } },
+            layout: { padding: { right: 16, top: 4, bottom: 4 } },
             scales: {
                 x: {
                     beginAtZero: true,
                     suggestedMax: maiorValorComFolga(itens.map(([, valor]) => valor)),
-                    grid: { color: "#e2e8f0" },
-                    ticks: { color: "#64748b", font: { size: 11 } }
+                    grid: { color: corGrid },
+                    ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11 } }
                 },
-                y: { grid: { display: false }, ticks: { color: "#0f172a", font: { size: 12 } } }
+                y: {
+                    grid: { display: false },
+                    ticks: { color: corTexto, font: { family: "Inter, sans-serif", size: 12, weight: "600" } }
+                }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => formatarReais(ctx.parsed.x) } },
-                datalabels: RODULO_VALOR
+                tooltip: {
+                    backgroundColor: corTooltipBg,
+                    titleColor: corTooltipTexto,
+                    bodyColor: corTooltipTexto,
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: { label: (ctx) => formatarReais(ctx.parsed.x) }
+                },
+                datalabels: {
+                    color: corTexto,
+                    anchor: "end",
+                    align: "end",
+                    clamp: true,
+                    font: { family: "Inter, sans-serif", size: 11, weight: "700" },
+                    formatter: (valor) => formatarReais(valor)
+                }
             }
         }
     });
     instancias.set(idCanvas, grafico);
 }
 
-// Barras horizontais agrupadas, duas séries (ex: entradas x saídas previstas por categoria).
+// Barras horizontais agrupadas — comparação de 2 séries (entradas x saídas)
 export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
     destruir(idCanvas);
     const canvas = document.getElementById(idCanvas);
     if (!canvas) return;
 
-    ajustarAltura(idCanvas, categorias.length, 46, 180, 420);
+    ajustarAltura(idCanvas, categorias.length, 48, 200, 450);
     const todosValores = series.flatMap((s) => s.valores);
+
+    const { corTexto, corTextoSuave, corGrid, corTooltipBg, corTooltipTexto } = obterEstiloTema();
 
     const grafico = new Chart(canvas, {
         type: "bar",
@@ -125,7 +147,7 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
                 label: s.nome,
                 data: s.valores,
                 backgroundColor: s.cor,
-                borderRadius: 4,
+                borderRadius: 6,
                 borderSkipped: false,
                 barPercentage: 0.7,
                 categoryPercentage: 0.7
@@ -135,36 +157,63 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
-            layout: { padding: { right: 12 } },
+            layout: { padding: { right: 16, top: 4, bottom: 4 } },
             scales: {
                 x: {
                     beginAtZero: true,
                     suggestedMax: maiorValorComFolga(todosValores),
-                    grid: { color: "#e2e8f0" },
-                    ticks: { color: "#64748b", font: { size: 11 } }
+                    grid: { color: corGrid },
+                    ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11 } }
                 },
-                y: { grid: { display: false }, ticks: { color: "#0f172a", font: { size: 12 } } }
+                y: {
+                    grid: { display: false },
+                    ticks: { color: corTexto, font: { family: "Inter, sans-serif", size: 12, weight: "600" } }
+                }
             },
             plugins: {
                 legend: {
                     display: true,
                     position: "top",
                     align: "start",
-                    labels: { color: "#0f172a", boxWidth: 12, boxHeight: 12, font: { size: 12 }, usePointStyle: true, pointStyle: "circle" }
+                    labels: {
+                        color: corTexto,
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        font: { family: "Inter, sans-serif", size: 12, weight: "600" },
+                        usePointStyle: true,
+                        pointStyle: "circle"
+                    }
                 },
-                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatarReais(ctx.parsed.x)}` } },
-                datalabels: RODULO_VALOR
+                tooltip: {
+                    backgroundColor: corTooltipBg,
+                    titleColor: corTooltipTexto,
+                    bodyColor: corTooltipTexto,
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatarReais(ctx.parsed.x)}` }
+                },
+                datalabels: {
+                    color: corTexto,
+                    anchor: "end",
+                    align: "end",
+                    clamp: true,
+                    font: { family: "Inter, sans-serif", size: 11, weight: "700" },
+                    formatter: (valor) => formatarReais(valor)
+                }
             }
         }
     });
     instancias.set(idCanvas, grafico);
 }
 
-// Linha, uma só série — tendência ao longo do tempo (ex: gasto total por mês).
-export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#dc2626" } = {}) {
+// Gráfico de linha — tendência de evolução temporal
+export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#ef4444" } = {}) {
     destruir(idCanvas);
     const canvas = document.getElementById(idCanvas);
     if (!canvas) return;
+
+    const { corTexto, corTextoSuave, corGrid, corTooltipBg, corTooltipTexto } = obterEstiloTema();
 
     const grafico = new Chart(canvas, {
         type: "line",
@@ -173,34 +222,48 @@ export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#dc2
             datasets: [{
                 data: valores,
                 borderColor: cor,
-                backgroundColor: `${cor}22`,
-                borderWidth: 2,
-                pointRadius: 4,
+                backgroundColor: `${cor}20`,
+                borderWidth: 2.5,
+                pointRadius: 4.5,
+                pointHoverRadius: 7,
                 pointBackgroundColor: cor,
                 pointBorderColor: "#ffffff",
-                pointBorderWidth: 1,
+                pointBorderWidth: 1.5,
                 fill: true,
-                tension: 0.25
+                tension: 0.35
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: 24, left: 8, right: 36 } },
+            layout: { padding: { top: 24, left: 8, right: 36, bottom: 8 } },
             scales: {
-                x: { grid: { display: false }, ticks: { color: "#64748b", font: { size: 11 } } },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11, weight: "600" } }
+                },
                 y: {
                     beginAtZero: true,
                     suggestedMax: maiorValorComFolga(valores),
-                    grid: { color: "#e2e8f0" },
-                    ticks: { color: "#64748b", font: { size: 11 } }
+                    grid: { color: corGrid },
+                    ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11 } }
                 }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: { ...TOOLTIP_BASE, callbacks: { label: (ctx) => formatarReais(ctx.parsed.y) } },
+                tooltip: {
+                    backgroundColor: corTooltipBg,
+                    titleColor: corTooltipTexto,
+                    bodyColor: corTooltipTexto,
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: { label: (ctx) => formatarReais(ctx.parsed.y) }
+                },
                 datalabels: {
-                    ...RODULO_VALOR,
+                    color: corTexto,
+                    font: { family: "Inter, sans-serif", size: 11, weight: "700" },
+                    formatter: (valor) => formatarReais(valor),
                     anchor: "center",
                     align: (ctx) => {
                         if (ctx.dataIndex === 0) return "right";
