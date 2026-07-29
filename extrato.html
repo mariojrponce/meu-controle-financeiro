@@ -1,17 +1,38 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <title>Extrato · Despesas Mensais</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>Extrato · Meu Financeiro</title>
+    <script>
+        (function() {
+            var t = localStorage.getItem("tema_meu_financeiro");
+            if (!t) { t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<header class="mobile-header">
+    <div class="marca-mobile">
+        <span>💰</span>
+        <span>Meu Financeiro</span>
+    </div>
+    <div class="mobile-header-acoes">
+        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
+        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+    </div>
+</header>
+
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">💰 Despesas Mensais</div>
+        <div class="sidebar-marca">
+            <span class="logo-icone">💰</span>
+            <span class="logo-texto">Meu Financeiro</span>
+        </div>
         <nav class="sidebar-links">
             <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
             <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
@@ -19,8 +40,9 @@
             <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
         </nav>
         <div class="sidebar-rodape">
+            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button id="btn-sair" class="botao-sair">🚪 Sair</button>
+            <button class="btn-sair botao-sair">🚪 Sair</button>
         </div>
     </aside>
 
@@ -51,7 +73,7 @@
             <div class="cartao">
                 <div class="filtros">
                     <div class="campo-filtro">
-                        <label>Ano</label>
+                        <label for="filtro-ano">Ano</label>
                         <select id="filtro-ano"></select>
                     </div>
                     <div class="campo-filtro">
@@ -59,11 +81,11 @@
                         <div id="filtro-mes"></div>
                     </div>
                     <div class="campo-filtro">
-                        <label>Dia início <span class="dica-inline">(sempre dia 01)</span></label>
+                        <label for="filtro-data-inicio">Dia início <span class="dica-inline">(sempre dia 01)</span></label>
                         <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa">
                     </div>
                     <div class="campo-filtro">
-                        <label>Dia fim <span class="dica-inline">(sempre hoje)</span></label>
+                        <label for="filtro-data-fim">Dia fim <span class="dica-inline">(sempre hoje)</span></label>
                         <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa">
                     </div>
                     <div class="campo-filtro">
@@ -71,15 +93,15 @@
                         <div id="filtro-banco"></div>
                     </div>
                     <div class="campo-filtro">
-                        <label>Descrição</label>
+                        <label for="filtro-descricao">Descrição</label>
                         <input type="text" id="filtro-descricao" placeholder="Buscar na descrição...">
                     </div>
                     <div class="campo-filtro">
-                        <label>Detalhe</label>
+                        <label for="filtro-detalhe">Detalhe</label>
                         <input type="text" id="filtro-detalhe" placeholder="Ex: UBER, MERCADO EXTRA">
                     </div>
                     <div class="campo-filtro">
-                        <label>Movimentação</label>
+                        <label for="filtro-movimentacao">Movimentação</label>
                         <select id="filtro-movimentacao">
                             <option value="">Todas</option>
                             <option value="EXTERNO">Externo</option>
@@ -95,13 +117,13 @@
                     <table id="tabela-transacoes">
                         <thead>
                             <tr>
-                                <th data-chave="data" data-tipo="texto">Data</th>
-                                <th data-chave="descricao" data-tipo="texto">Descrição</th>
-                                <th data-chave="saida" data-tipo="texto">Detalhe</th>
-                                <th data-chave="tipo_mov" data-tipo="texto">Movimentação</th>
-                                <th data-chave="banco" data-tipo="texto">Banco</th>
-                                <th data-chave="classificacao_saida" data-tipo="texto">Classificação</th>
-                                <th data-chave="valor" data-tipo="numero">Valor (R$)</th>
+                                <th data-chave="data" data-tipo="texto" class="th-ordenavel">Data</th>
+                                <th data-chave="descricao" data-tipo="texto" class="th-ordenavel">Descrição</th>
+                                <th data-chave="saida" data-tipo="texto" class="th-ordenavel">Detalhe</th>
+                                <th data-chave="tipo_mov" data-tipo="texto" class="th-ordenavel">Movimentação</th>
+                                <th data-chave="banco" data-tipo="texto" class="th-ordenavel">Banco</th>
+                                <th data-chave="classificacao_saida" data-tipo="texto" class="th-ordenavel">Classificação</th>
+                                <th data-chave="valor" data-tipo="numero" class="th-ordenavel" style="text-align: right;">Valor (R$)</th>
                                 <th class="col-acoes">Ações</th>
                             </tr>
                         </thead>
@@ -112,6 +134,13 @@
         </div>
     </main>
 </div>
+
+<nav class="mobile-nav">
+    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+</nav>
 
 <script type="module" src="js/extrato.js"></script>
 

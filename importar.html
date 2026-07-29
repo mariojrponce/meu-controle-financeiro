@@ -1,34 +1,60 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <title>Importar · Despesas Mensais</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>Importar · Meu Financeiro</title>
+    <script>
+        (function() {
+            var t = localStorage.getItem("tema_meu_financeiro");
+            if (!t) { t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
     <style>
         .caixa-upload {
             border: 2px dashed var(--cor-borda);
             border-radius: var(--raio);
-            padding: 28px;
+            padding: var(--espaco-xl);
             text-align: center;
-            background: var(--cor-fundo);
+            background: var(--cor-superficie-elevada);
+            transition: all 0.2s ease;
         }
-        .caixa-upload input[type="file"] { max-width: 360px; margin: 14px auto 0; }
-        .resumo-linhas { display: flex; gap: 14px; margin: 18px 0; flex-wrap: wrap; }
-        .pilula { padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 13px; }
+        .caixa-upload:hover {
+            border-color: var(--cor-primaria);
+            background: var(--cor-primaria-suave);
+        }
+        .caixa-upload input[type="file"] { max-width: 380px; margin: var(--espaco-md) auto 0; }
+        .resumo-linhas { display: flex; gap: var(--espaco-md); margin: var(--espaco-md) 0; flex-wrap: wrap; }
+        .pilula { padding: 8px 16px; border-radius: var(--raio-pilula); font-weight: 700; font-size: 0.8125rem; }
         .pilula-ok { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
         .pilula-erro { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
         .status-ok { color: var(--cor-sucesso); font-weight: 700; }
         .status-erro { color: var(--cor-perigo); font-weight: 700; cursor: help; }
-        .modelo-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; }
+        .modelo-link { display: inline-flex; align-items: center; gap: var(--espaco-sm); margin-top: var(--espaco-sm); }
     </style>
 </head>
 <body>
 
+<header class="mobile-header">
+    <div class="marca-mobile">
+        <span>💰</span>
+        <span>Meu Financeiro</span>
+    </div>
+    <div class="mobile-header-acoes">
+        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
+        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+    </div>
+</header>
+
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">💰 Despesas Mensais</div>
+        <div class="sidebar-marca">
+            <span class="logo-icone">💰</span>
+            <span class="logo-texto">Meu Financeiro</span>
+        </div>
         <nav class="sidebar-links">
             <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
             <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
@@ -36,8 +62,9 @@
             <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
         </nav>
         <div class="sidebar-rodape">
+            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button id="btn-sair" class="botao-sair">🚪 Sair</button>
+            <button class="btn-sair botao-sair">🚪 Sair</button>
         </div>
     </aside>
 
@@ -55,10 +82,10 @@
                 <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
             </div>
 
-            <div class="cartao" style="margin-top:18px;">
+            <div class="cartao" style="margin-top: var(--espaco-lg);">
                 <h3>2. Suba o arquivo preenchido</h3>
                 <div class="caixa-upload">
-                    <div>📤 Selecione o arquivo .csv, .txt ou .xlsx</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--cor-texto);">📤 Selecione o arquivo .csv, .txt ou .xlsx</div>
                     <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
                 </div>
 
@@ -70,6 +97,13 @@
         </div>
     </main>
 </div>
+
+<nav class="mobile-nav">
+    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+</nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
         integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="

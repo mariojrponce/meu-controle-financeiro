@@ -1,32 +1,69 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <title>Entrar · Despesas Mensais</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>Entrar · Meu Financeiro</title>
+    <script>
+        (function() {
+            var t = localStorage.getItem("tema_meu_financeiro");
+            if (!t) { t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .login-caixa { width: 100%; max-width: 380px; padding: 32px; text-align: center; }
-        .login-logo { font-size: 34px; margin-bottom: 4px; }
-        .login-caixa h1 { font-size: 20px; }
-        #erro { color: var(--cor-perigo); font-size: 13px; margin-top: 10px; min-height: 18px; text-align: left; }
+        body.tela-login {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--cor-fundo);
+            padding: var(--espaco-md);
+        }
+        .login-caixa {
+            width: 100%;
+            max-width: 400px;
+            padding: var(--espaco-xl);
+            text-align: center;
+        }
+        .login-logo {
+            font-size: 3rem;
+            margin-bottom: var(--espaco-xs);
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
+        }
+        .login-caixa h1 {
+            font-size: 1.5rem;
+            margin-bottom: var(--espaco-xs);
+        }
+        .login-caixa p.subtitulo {
+            text-align: center;
+            margin-bottom: var(--espaco-lg);
+        }
+        #erro {
+            color: var(--cor-perigo);
+            font-size: 0.8125rem;
+            margin-top: var(--espaco-sm);
+            min-height: 20px;
+            text-align: left;
+            font-weight: 600;
+        }
         form { text-align: left; }
     </style>
 </head>
-<body>
+<body class="tela-login">
 
 <div class="cartao login-caixa">
     <div class="login-logo">💰</div>
-    <h1>Despesas Mensais</h1>
+    <h1>Meu Financeiro</h1>
     <p class="subtitulo">Entre para continuar</p>
 
     <form id="form-login">
-        <label>E-mail</label>
+        <label for="email">E-mail</label>
         <input type="email" id="email" required autocomplete="username" placeholder="voce@email.com">
 
-        <label>Senha</label>
+        <label for="senha">Senha</label>
         <input type="password" id="senha" required autocomplete="current-password" placeholder="••••••••">
 
         <div id="erro"></div>
@@ -36,6 +73,10 @@
 </div>
 
 <script type="module" src="js/login.js"></script>
+<script type="module">
+    import { inicializarTema } from "./js/nav.js";
+    inicializarTema();
+</script>
 
 </body>
 </html>
