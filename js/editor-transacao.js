@@ -6,7 +6,10 @@ import { criarComboboxTexto } from "./combobox.js";
 import { mostrarToast } from "./ui.js";
 
 // Retorna uma Promise: resolve com os dados editados, ou null se cancelado.
-export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classificacoesSugeridas = [] } = {}) {
+// O mesmo formulário também é usado para CRIAR um lançamento novo (ex: botão
+// "+" do Extrato): basta passar um objeto parcial em `transacao` (com os
+// campos já conhecidos) e personalizar `titulo`/`textoSalvar`.
+export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classificacoesSugeridas = [], titulo = "Editar lançamento", textoSalvar = "Salvar alterações" } = {}) {
   return new Promise((resolve) => {
     const fundo = document.createElement("div");
     fundo.className = "modal-fundo";
@@ -14,7 +17,7 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
     const caixa = document.createElement("div");
     caixa.className = "modal-caixa modal-caixa-editor";
     caixa.innerHTML = `
-      <h3>Editar lançamento</h3>
+      <h3>${titulo}</h3>
       <form id="form-editor-transacao">
         <label>Valor (R$)</label>
         <input type="number" id="editor-valor" step="0.01" min="0.01" required>
@@ -48,7 +51,7 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
 
         <div class="modal-acoes" style="margin-top:20px;">
           <button type="button" id="editor-cancelar" class="botao botao-secundario">Cancelar</button>
-          <button type="submit" class="botao botao-primario" style="margin:0;">Salvar alterações</button>
+          <button type="submit" class="botao botao-primario" style="margin:0;">${textoSalvar}</button>
         </div>
       </form>
     `;

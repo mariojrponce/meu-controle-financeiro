@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <title>Importar · Meu Financeiro</title>
+    <title>Virar mês · Meu Financeiro</title>
     <script>
         (function() {
             var t = localStorage.getItem("tema_meu_financeiro");
@@ -13,28 +13,6 @@
         })();
     </script>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .caixa-upload {
-            border: 2px dashed var(--cor-borda);
-            border-radius: var(--raio);
-            padding: var(--espaco-xl);
-            text-align: center;
-            background: var(--cor-superficie-elevada);
-            transition: all 0.2s ease;
-        }
-        .caixa-upload:hover {
-            border-color: var(--cor-primaria);
-            background: var(--cor-primaria-suave);
-        }
-        .caixa-upload input[type="file"] { max-width: 380px; margin: var(--espaco-md) auto 0; }
-        .resumo-linhas { display: flex; gap: var(--espaco-md); margin: var(--espaco-md) 0; flex-wrap: wrap; }
-        .pilula { padding: 8px 16px; border-radius: var(--raio-pilula); font-weight: 700; font-size: 0.8125rem; }
-        .pilula-ok { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
-        .pilula-erro { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
-        .status-ok { color: var(--cor-sucesso); font-weight: 700; }
-        .status-erro { color: var(--cor-perigo); font-weight: 700; cursor: help; }
-        .modelo-link { display: inline-flex; align-items: center; gap: var(--espaco-sm); margin-top: var(--espaco-sm); }
-    </style>
 </head>
 <body>
 
@@ -71,29 +49,43 @@
 
     <main class="conteudo-principal">
         <div class="pagina">
-            <h2>Importar lançamentos</h2>
-            <p class="subtitulo">Suba um arquivo .csv, .txt ou .xlsx com suas transações. Você confere tudo antes de importar de verdade.</p>
+            <h2>Virar saldo de mês</h2>
+            <p class="subtitulo">Remaneja o saldo que sobrou em cada banco no mês de origem para o mês de destino — o mesmo que a transferência manual "VIRADA MES" que você fazia na planilha, só que automática.</p>
 
             <div class="cartao">
-                <h3>1. Baixe o modelo</h3>
-                <p class="dica-campo">
-                    Preencha o modelo com seus dados (uma linha por transação) e depois suba o arquivo aqui embaixo.
-                    As colunas precisam ser: <code>data, valor, descricao, saida, banco, tipo, tipo_mov, classificacao_saida</code>.
-                </p>
-                <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
-            </div>
-
-            <div class="cartao" style="margin-top: var(--espaco-lg);">
-                <h3>2. Suba o arquivo preenchido</h3>
-                <div class="caixa-upload">
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--cor-texto);">📤 Selecione o arquivo .csv, .txt ou .xlsx</div>
-                    <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
+                <div class="filtros">
+                    <div class="campo-filtro">
+                        <label for="mes-origem">Mês de origem (de onde sai)</label>
+                        <select id="mes-origem"></select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="ano-origem">Ano de origem</label>
+                        <select id="ano-origem"></select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="mes-destino">Mês de destino (para onde vai)</label>
+                        <select id="mes-destino"></select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="ano-destino">Ano de destino</label>
+                        <select id="ano-destino"></select>
+                    </div>
                 </div>
 
-                <div id="resumo-importacao"></div>
-                <div id="area-preview"></div>
-
-                <button id="btn-importar" class="botao botao-primario" style="display:none;">Importar lançamentos válidos</button>
+                <div class="tabela-scroll">
+                    <table id="tabela-saldos">
+                        <thead>
+                            <tr>
+                                <th>Banco</th>
+                                <th style="text-align: right;">Saldo apurado no mês de origem</th>
+                                <th class="col-acoes">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="3" class="vazio">Carregando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
@@ -107,10 +99,7 @@
     <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
 </nav>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
-        integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script type="module" src="js/importar.js"></script>
+<script type="module" src="js/virar-mes.js"></script>
 
 </body>
 </html>

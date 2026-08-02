@@ -38,6 +38,7 @@
             <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
             <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
             <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
         </nav>
         <div class="sidebar-rodape">
             <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
@@ -48,8 +49,13 @@
 
     <main class="conteudo-principal">
         <div class="pagina">
-            <h2>Extrato de transações</h2>
-            <p class="subtitulo">Mostrando o mês atual por padrão. Ajuste os filtros abaixo para ver outro período.</p>
+            <div class="cabecalho-pagina">
+                <div>
+                    <h2>Extrato de transações</h2>
+                    <p class="subtitulo">Mostrando o mês atual por padrão. Ajuste os filtros abaixo para ver outro período.</p>
+                </div>
+                <button id="btn-novo-lancamento" class="botao botao-primario" style="margin:0;width:auto;" title="Novo lançamento, pré-preenchido com os filtros atuais">+ Novo lançamento</button>
+            </div>
 
             <div class="grade-resumo" id="resumo">
                 <div class="cartao-metrica metrica-entrada">
@@ -113,7 +119,7 @@
                     <button id="btn-atualizar" class="botao botao-secundario" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
                 </div>
 
-                <div class="tabela-scroll tabela-scroll-extrato">
+                <div class="tabela-scroll">
                     <table id="tabela-transacoes">
                         <thead>
                             <tr>
@@ -140,6 +146,7 @@
     <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
     <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
     <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
 </nav>
 
 <script type="module" src="js/extrato.js"></script>

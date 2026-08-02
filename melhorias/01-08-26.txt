@@ -1,0 +1,10 @@
+Modificações apenas nessa tela https://mariojrponce.github.io/meu-controle-financeiro/extrato.html; Adicionar um botão de +, para adicionar novos lançamentos. Quero que abra uma janela com todos os itens de um novo lançamento mas que já pre-preenchido, se tiver um filtro de banco espefico o preenchimento vai ser aquele banco filtrado se tiver varios bancos ao mesmo tempo pode ficar em branco, data (sempre usar o dia 01 do mês que o filtro esta ativo, se o filtro esta 05/07/26 ate 31/07/26 o preenchimento é 01/07/2026), se outros filtros estiverem aplicados, descrição, detalhe, movimentação, o auto preenchimento vai reconhecer e já auto preencher na listinha de novos lançamentos da janela.
+
+https://mariojrponce.github.io/meu-controle-financeiro/index.html tela de novos lançamentos. quero que ao inserir uma data escrevendo assim 07072026 ele automaticamente corrija para 07/07/2026 para evitar erros em uma digitação rapida;
+
+uma coisa que quero arrumar é as tabelas, muitas colunas vem com linhas quebrando a ultima letra, data o numero 6 fica na linha debaixo da data tipo assim: 
+07/07/202
+6
+isso acontece para varias outras colunas; corrigir para evitar quebrar linha, mas também não quero que apareça a barra de rolagem vertical, quero que todas as informações aproveite o maximo da tela;
+
+Preciso de uma solução pratica para importar o meu saldo para o mes posterior. no excel eu estava criando uma transferencia chamada VIRADA MES, DESCRIÇÃO: VALOR EM CARTEIRA PLUXE, DETALHE: VIR_MES_JUNHO-26_JULHO-26. So que quero deixar isso mais pratico neste sistema, crie uma nova janela só para eu fazer isso, quero ver apenas os bancos que tem saldo, escolher qual mes quero importar e para qual mes o valor deve ir (exempo: preciso fazer a importação do saldo de Julho para o mes de Agosto). Ao clicar no botão remanejar valor, o saldo seja disponibilizado para o mes destino. Mas seguindo o padrão definido no extrato, pois caso eu precise editar, consiga editar tudo igual um lançamento normal. Se não conseguir entender esse pause e tire suas duvidas.

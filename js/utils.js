@@ -259,8 +259,42 @@ export function ligarCampoFiltroData(input, obterContexto) {
     }
   });
 }
+// Aplica uma máscara de data "ao vivo": conforme o usuário digita só números
+// (ex: "07072026"), insere as barras sozinho ("07/07/2026") sem esperar o
+// blur — evita erros em digitação rápida. Preserva a posição do cursor.
+// Se o usuário já estiver digitando com barras/traços, não mexe (deixa livre).
+function aplicarMascaraDataAoVivo(input) {
+  const valorAtual = input.value;
+  if (!/^[\d/]*$/.test(valorAtual)) return; // só digitando números/barras: não interfere em outros separadores
+
+  const digitosAntesCursor = valorAtual.slice(0, input.selectionStart ?? valorAtual.length).replace(/\D/g, "").length;
+  const somenteDigitos = valorAtual.replace(/\D/g, "").slice(0, 8);
+
+  let mascarado = somenteDigitos;
+  if (somenteDigitos.length > 4) {
+    mascarado = `${somenteDigitos.slice(0, 2)}/${somenteDigitos.slice(2, 4)}/${somenteDigitos.slice(4)}`;
+  } else if (somenteDigitos.length > 2) {
+    mascarado = `${somenteDigitos.slice(0, 2)}/${somenteDigitos.slice(2)}`;
+  }
+
+  if (mascarado === valorAtual) return;
+  input.value = mascarado;
+
+  let contados = 0;
+  let novaPosicao = mascarado.length;
+  for (let i = 0; i < mascarado.length; i++) {
+    if (/\d/.test(mascarado[i])) contados++;
+    if (contados === digitosAntesCursor) {
+      novaPosicao = i + 1;
+      break;
+    }
+  }
+  input.setSelectionRange(novaPosicao, novaPosicao);
+}
+
 // Liga um <input type="text"> para se comportar como campo de data "inteligente":
-// - o usuário pode digitar livremente (com ou sem separador, 1 ou 2 dígitos, ano com 2 ou 4 dígitos)
+// - conforme digita só números, a máscara "dd/mm/aaaa" é aplicada ao vivo
+// - o usuário também pode digitar livremente (com ou sem separador, 1 ou 2 dígitos, ano com 2 ou 4 dígitos)
 // - ao sair do campo (blur), o valor é reconhecido e normalizado para "dd/mm/aaaa"
 // - também aceita colar uma data de qualquer formato comum
 // - se não conseguir reconhecer uma data válida, apenas destaca o campo (sem popup)
@@ -285,6 +319,7 @@ export function ligarCampoDataInteligente(input) {
 
   input.addEventListener("input", () => {
     input.classList.remove("campo-invalido");
+    aplicarMascaraDataAoVivo(input);
   });
 
   input.addEventListener("paste", (evento) => {

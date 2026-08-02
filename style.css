@@ -329,6 +329,14 @@ html.tema-em-transicao select {
   max-width: 480px;
 }
 
+.cabecalho-pagina {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco-md);
+  flex-wrap: wrap;
+}
+
 /* ==========================================================================
    TIPOGRAFIA E ALINHAMENTO VISUAL (Skill: alinhamento_paginas_ux_ui.md)
    ========================================================================== */
@@ -616,15 +624,10 @@ button:disabled {
    ========================================================================== */
 
 .tabela-scroll {
-  overflow: auto;
-  max-height: 60vh;
+  overflow-x: auto;
+  overflow-y: visible;
   border-radius: var(--raio-pequeno);
   border: 1px solid var(--cor-borda);
-}
-
-.tabela-scroll-extrato {
-  max-height: calc(100vh - 410px);
-  min-height: 280px;
 }
 
 table {
@@ -638,6 +641,7 @@ th, td {
   padding: 13px 14px;
   text-align: left;
   border-bottom: 1px solid var(--cor-borda);
+  white-space: nowrap;
 }
 
 th {
@@ -646,16 +650,7 @@ th {
   letter-spacing: 0.05em;
   color: var(--cor-texto-suave);
   font-weight: 700;
-  white-space: nowrap;
   background-color: var(--cor-superficie-elevada);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-td {
-  white-space: normal;
-  word-break: break-word;
 }
 
 tr:hover td {

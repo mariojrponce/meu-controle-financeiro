@@ -8,7 +8,7 @@ import {
 import { criarSeletorMultiplo } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-import { obterTransacoes, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
+import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
 import { abrirEditorTransacao } from "./editor-transacao.js";
@@ -174,6 +174,47 @@ async function editarTransacao(transacao) {
         mostrarToast("Erro ao salvar as alterações. Tente novamente.", "erro");
     }
 }
+
+// Monta um "rascunho" de transação com o que já dá pra deduzir dos filtros
+// ativos, para pré-preencher o modal de novo lançamento: data = dia 01 do
+// mês/intervalo filtrado; banco = só se houver exatamente 1 banco filtrado;
+// descrição/detalhe/movimentação = copiados dos respectivos filtros de texto.
+function preenchimentoNovoLancamento() {
+    const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
+    const data = dataInicioISO ? `${dataInicioISO.slice(0, 7)}-01` : hojeISO();
+
+    const bancosFiltro = seletorBanco.obterSelecionados();
+    const banco = bancosFiltro.length === 1 ? bancosFiltro[0] : "";
+
+    return {
+        data,
+        banco,
+        descricao: campoDescricao.value.trim(),
+        saida: campoDetalhe.value.trim(),
+        tipo_mov: campoMov.value || undefined
+    };
+}
+
+async function novoLancamento() {
+    const dadosNovos = await abrirEditorTransacao(preenchimentoNovoLancamento(), {
+        ...listasDeSugestao(),
+        titulo: "Novo lançamento",
+        textoSalvar: "Salvar transação"
+    });
+    if (!dadosNovos) return;
+
+    try {
+        const id = await criarTransacao(usuario, dadosNovos);
+        todasTransacoes = [...todasTransacoes, { id, userId: usuario.uid, ...dadosNovos, criadoEmMs: Date.now() }];
+        aplicarFiltros();
+        mostrarToast("Lançamento criado!", "sucesso");
+    } catch (erro) {
+        console.error("Erro ao criar lançamento:", erro);
+        mostrarToast("Erro ao salvar. Tente novamente.", "erro");
+    }
+}
+
+document.getElementById("btn-novo-lancamento").addEventListener("click", novoLancamento);
 
 function renderizarTabela(lista) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
