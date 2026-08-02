@@ -4,6 +4,7 @@
 import { ligarCampoDataInteligente, normalizarDataDigitada, brParaISO, isoParaBR } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
 import { mostrarToast, ligarFechamentoPorFundo } from "./ui.js";
+import { normalizarNomeBanco } from "./dados-comuns.js";
 
 // Retorna uma Promise: resolve com os dados editados, ou null se cancelado.
 // O mesmo formulário também é usado para CRIAR um lançamento novo (ex: botão
@@ -98,7 +99,7 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
       const dataISO = dataNormalizada ? brParaISO(dataNormalizada) : null;
       const descricao = campoDescricao.value.trim().toUpperCase();
       const saida = campoSaida.value.trim().toUpperCase();
-      const banco = campoBanco.value.trim().toUpperCase();
+      const banco = normalizarNomeBanco(campoBanco.value.trim().toUpperCase());
       const tipo = campoTipo.value;
       const tipo_mov = campoTipoMov.value;
       const classificacao_saida = campoClassificacao.value.trim().toUpperCase();

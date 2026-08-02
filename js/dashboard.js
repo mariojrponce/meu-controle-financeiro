@@ -477,6 +477,101 @@ function calcularPrevistoPorBanco(listaFutura) {
     return porBanco;
 }
 
+// Mesma ideia acima, mas detalhado lançamento a lançamento — só aparecem os
+// bancos que realmente têm algo previsto, e cada linha é uma transação (com
+// descrição), não um total por dia — assim dois lançamentos no mesmo dia
+// continuam aparecendo separados, cada um com sua própria descrição.
+function calcularDetalhePrevistoPorBancoDia(listaFutura) {
+    const porBanco = {};
+    listaFutura.forEach((t) => {
+        if (typeof t.valor !== "number" || !t.banco || !t.data) return;
+        if (!porBanco[t.banco]) porBanco[t.banco] = [];
+        porBanco[t.banco].push(t);
+    });
+    Object.values(porBanco).forEach((lista) => lista.sort((a, b) => a.data.localeCompare(b.data)));
+    return porBanco;
+}
+
+function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
+    const container = document.getElementById("detalhe-previstos-banco");
+    container.innerHTML = "";
+
+    const bancos = Object.keys(porBancoDia);
+    if (bancos.length === 0) {
+        container.innerHTML = "<p class='vazio'>Nenhum lançamento futuro neste período.</p>";
+        return;
+    }
+
+    // Bancos com mais saída total primeiro — mesma ordem dos cartões de resumo acima.
+    const totalSaidas = (banco) => porBancoDia[banco].reduce((soma, t) => soma + (t.tipo === "SAIDA" ? t.valor : 0), 0);
+    bancos.sort((a, b) => totalSaidas(b) - totalSaidas(a));
+
+    bancos.forEach((banco) => {
+        const transacoesDoBanco = porBancoDia[banco];
+        const cor = obterCorBanco(banco);
+        const diasUnicos = new Set(transacoesDoBanco.map((t) => t.data)).size;
+
+        const detalhes = document.createElement("details");
+        detalhes.className = "detalhe-banco-dia";
+
+        const resumo = document.createElement("summary");
+        const ponto = document.createElement("span");
+        ponto.className = "ponto-banco";
+        ponto.style.background = cor;
+        resumo.appendChild(ponto);
+        resumo.appendChild(document.createTextNode(`${banco} `));
+        const contagem = document.createElement("span");
+        contagem.className = "contagem-dias-banco";
+        contagem.textContent = `(${diasUnicos} dia${diasUnicos > 1 ? "s" : ""}, ${transacoesDoBanco.length} lançamento${transacoesDoBanco.length > 1 ? "s" : ""} previstos)`;
+        resumo.appendChild(contagem);
+        detalhes.appendChild(resumo);
+
+        const tabela = document.createElement("table");
+        const thead = document.createElement("thead");
+        thead.innerHTML = "<tr><th>Data</th><th>Detalhe</th><th style='text-align:right;'>Entrando</th><th style='text-align:right;'>Saindo</th></tr>";
+        tabela.appendChild(thead);
+
+        const corpo = document.createElement("tbody");
+        transacoesDoBanco.forEach((t) => {
+            const linha = document.createElement("tr");
+
+            const tdData = document.createElement("td");
+            tdData.textContent = isoParaBR(t.data);
+            linha.appendChild(tdData);
+
+            const tdDetalhe = document.createElement("td");
+            tdDetalhe.textContent = t.saida || t.descricao || "";
+            linha.appendChild(tdDetalhe);
+
+            const tdEntrada = document.createElement("td");
+            tdEntrada.style.textAlign = "right";
+            if (t.tipo === "ENTRADA") {
+                tdEntrada.className = "entrada";
+                tdEntrada.textContent = formatarReais(t.valor);
+            } else {
+                tdEntrada.textContent = "—";
+            }
+            linha.appendChild(tdEntrada);
+
+            const tdSaida = document.createElement("td");
+            tdSaida.style.textAlign = "right";
+            if (t.tipo === "SAIDA") {
+                tdSaida.className = "saida";
+                tdSaida.textContent = formatarReais(t.valor);
+            } else {
+                tdSaida.textContent = "—";
+            }
+            linha.appendChild(tdSaida);
+
+            corpo.appendChild(linha);
+        });
+        tabela.appendChild(corpo);
+        detalhes.appendChild(tabela);
+
+        container.appendChild(detalhes);
+    });
+}
+
 function renderizarPrevistoPorBanco(porBanco) {
     const container = document.getElementById("grade-previstos-banco");
     container.innerHTML = "";
@@ -649,6 +744,7 @@ function aplicarFiltros() {
 
     renderizarCarteiras(porBanco);
     renderizarPrevistoPorBanco(calcularPrevistoPorBanco(listaFutura));
+    renderizarDetalhePrevistoPorBancoDia(calcularDetalhePrevistoPorBancoDia(listaFutura));
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
 
     const temEntradas = Object.keys(entradaPorClassificacao).length > 0;

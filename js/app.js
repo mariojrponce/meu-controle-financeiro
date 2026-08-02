@@ -1,7 +1,7 @@
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
+import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes, normalizarNomeBanco } from "./dados-comuns.js";
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
@@ -173,7 +173,7 @@ formulario.addEventListener("submit", async function (evento) {
     const dataISO = brParaISO(campoData.value);
     const descricao = document.getElementById("descricao").value.trim().toUpperCase();
     const saida = document.getElementById("saida").value.trim().toUpperCase();
-    const banco = document.getElementById("banco").value.trim().toUpperCase();
+    const banco = normalizarNomeBanco(document.getElementById("banco").value.trim().toUpperCase());
     const tipo = document.getElementById("tipo").value;
     const tipo_mov = document.getElementById("tipo_mov").value;
     const classificacao_saida = document.getElementById("classificacao_saida").value.trim().toUpperCase();

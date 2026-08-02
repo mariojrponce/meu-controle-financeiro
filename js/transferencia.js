@@ -7,7 +7,7 @@
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-import { BANCOS_SUGERIDOS, mesclarSugestoes } from "./dados-comuns.js";
+import { BANCOS_SUGERIDOS, mesclarSugestoes, normalizarNomeBanco } from "./dados-comuns.js";
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
@@ -174,8 +174,8 @@ formulario.addEventListener("submit", async function (evento) {
 
     const valor = parseFloat(document.getElementById("valor").value);
     const dataISO = brParaISO(campoData.value);
-    const bancoOrigem = campoBancoOrigem.value.trim().toUpperCase();
-    const bancoDestino = campoBancoDestino.value.trim().toUpperCase();
+    const bancoOrigem = normalizarNomeBanco(campoBancoOrigem.value.trim().toUpperCase());
+    const bancoDestino = normalizarNomeBanco(campoBancoDestino.value.trim().toUpperCase());
     const detalhe = document.getElementById("detalhe").value.trim().toUpperCase();
 
     if (!valor || valor <= 0 || !bancoOrigem || !bancoDestino) {

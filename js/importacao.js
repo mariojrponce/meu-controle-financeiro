@@ -3,6 +3,7 @@
 // acentos, maiúsculas/minúsculas diferentes, etc.) e valida cada linha
 // antes de qualquer coisa ser gravada no Firebase.
 import { celulaParaDataISO, celulaParaNumero } from "./utils.js";
+import { normalizarNomeBanco } from "./dados-comuns.js";
 
 const CAMPOS_ESPERADOS = {
   data: ["data"],
@@ -70,7 +71,7 @@ export function processarLinha(linhaBruta, mapaColunas) {
   const descricao = String(bruta("descricao") ?? "").trim().toUpperCase();
   if (!descricao) erros.push("descrição vazia");
 
-  const banco = String(bruta("banco") ?? "").trim().toUpperCase();
+  const banco = normalizarNomeBanco(String(bruta("banco") ?? "").trim().toUpperCase());
   if (!banco) erros.push("banco vazio");
 
   const classificacao_saida = String(bruta("classificacao_saida") ?? "").trim().toUpperCase();

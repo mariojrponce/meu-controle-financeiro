@@ -14,10 +14,23 @@ export const BANCOS_SUGERIDOS = [
   "BRADESCO",
   "SANTANDER",
   "CAIXA",
-  "BANCO DO BRASIL",
+  "BB",
   "C6 BANK",
   "PICPAY"
 ];
+
+// Apelidos/nomes alternativos de um mesmo banco — sempre gravados com o
+// nome padrão à direita, para não duplicar o mesmo banco com nomes
+// diferentes nos filtros e nos totais por banco.
+const APELIDOS_BANCO = {
+  "BANCO DO BRASIL": "BB"
+};
+
+// Aplica o nome padrão do banco (ex: "BANCO DO BRASIL" -> "BB"). Espera o
+// texto já em maiúsculas/aparado (mesmo padrão salvo no banco de dados).
+export function normalizarNomeBanco(nomeBanco) {
+  return APELIDOS_BANCO[nomeBanco] ?? nomeBanco;
+}
 
 export const CLASSIFICACOES_SUGERIDAS = [
   "ALUGUEL",
