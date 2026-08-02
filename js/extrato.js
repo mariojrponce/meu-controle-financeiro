@@ -12,6 +12,7 @@ import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransa
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
 import { abrirEditorTransacao } from "./editor-transacao.js";
+import { exportarTransacoesXLSX } from "./exportar-excel.js";
 
 const NOME_PAGINA = "extrato";
 
@@ -49,6 +50,7 @@ const seletorBanco = criarSeletorMultiplo({
 });
 
 let todasTransacoes = [];
+let listaFiltradaAtual = [];
 let ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
 let carregando = true;
 
@@ -216,7 +218,20 @@ async function novoLancamento() {
 
 document.getElementById("btn-novo-lancamento").addEventListener("click", novoLancamento);
 
+document.getElementById("btn-exportar-excel").addEventListener("click", () => {
+    if (listaFiltradaAtual.length === 0) {
+        mostrarToast("Nenhum lançamento para exportar neste filtro.", "erro");
+        return;
+    }
+    const agora = new Date();
+    const carimbo = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+    exportarTransacoesXLSX(listaFiltradaAtual, `Despesas Mensais - ${carimbo}.xlsx`);
+    mostrarToast("Arquivo exportado!", "sucesso");
+});
+
 function renderizarTabela(lista) {
+    listaFiltradaAtual = lista;
+
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
     corpoTabela.innerHTML = "";
 

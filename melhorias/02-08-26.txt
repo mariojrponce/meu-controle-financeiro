@@ -1,0 +1,9 @@
+Criar uma extração em .xlsx para um arquivo em excel identico a minha planilha Real. /home/note/Downloads/Despesas Mensais - 2026.xlsx caso um dia eu precise analisar por ela, só extraio os dados do sistema no modelo igual a planilha, seguindo criteriosamente o modelo original.
+
+as vezes, ao manter o mouse precionado dentro da janela e desprecionar ele fora de uma janela "flutuante", ela simplismente fecha, isso é chato pq eu perco o que escrevi e tenho que fazer tudo de novo. quero manter a facilidade de cliclar fora da janela mas quero evitar esses acidentes para ela não fechar sem minha intensão
+
+para os lançamentos futuros, no dashboard quero saber o quanto vai ser descontado por banco, para eu conseguir me preparar e colocar o saldo antes que o valor seja debitado fisicamente em meu banco.  Sera que é possível adicionar avisos? caso um valor previsto esteja se aproximando da data de debito.
+
+quero uma solução pratica para as transfrencias internas. veja uma solução parecida com a trnasfrencia de virada de mes para para o controle interno entre bancos.
+
+no visual do sistema, quero por padrão ele fique configurado conforme o horario em que esta abeto, se tiver aberto de dia com sol lá fora, quero que ele fique em tema claro, se tiver de noite, depois do sol se por, quero que fique com tema escuro. mas quero poder alternar manualmente também se quiser.

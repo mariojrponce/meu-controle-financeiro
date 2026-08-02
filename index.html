@@ -8,7 +8,7 @@
     <script>
         (function() {
             var t = localStorage.getItem("tema_meu_financeiro");
-            if (!t) { t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+            if (!t) { var h = new Date().getHours(); t = (h >= 6 && h < 18) ? "light" : "dark"; }
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
@@ -38,6 +38,7 @@
             <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
             <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
             <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
             <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
         </nav>
         <div class="sidebar-rodape">
@@ -119,6 +120,7 @@
     <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
     <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
     <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
     <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
 </nav>
 

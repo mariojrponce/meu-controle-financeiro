@@ -8,7 +8,7 @@
     <script>
         (function() {
             var t = localStorage.getItem("tema_meu_financeiro");
-            if (!t) { t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+            if (!t) { var h = new Date().getHours(); t = (h >= 6 && h < 18) ? "light" : "dark"; }
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
@@ -38,6 +38,7 @@
             <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
             <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
             <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
             <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
         </nav>
         <div class="sidebar-rodape">
@@ -54,7 +55,10 @@
                     <h2>Extrato de transações</h2>
                     <p class="subtitulo">Mostrando o mês atual por padrão. Ajuste os filtros abaixo para ver outro período.</p>
                 </div>
-                <button id="btn-novo-lancamento" class="botao botao-primario" style="margin:0;width:auto;" title="Novo lançamento, pré-preenchido com os filtros atuais">+ Novo lançamento</button>
+                <div style="display:flex; gap: var(--espaco-sm); flex-wrap:wrap;">
+                    <button id="btn-exportar-excel" class="botao botao-secundario" style="margin:0;width:auto;" title="Exportar os lançamentos filtrados abaixo para .xlsx, no modelo da planilha original">⬇️ Exportar .xlsx</button>
+                    <button id="btn-novo-lancamento" class="botao botao-primario" style="margin:0;width:auto;" title="Novo lançamento, pré-preenchido com os filtros atuais">+ Novo lançamento</button>
+                </div>
             </div>
 
             <div class="grade-resumo" id="resumo">
@@ -146,9 +150,13 @@
     <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
     <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
     <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
     <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
 </nav>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+        integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script type="module" src="js/extrato.js"></script>
 
 </body>

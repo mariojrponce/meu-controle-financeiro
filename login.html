@@ -8,7 +8,7 @@
     <script>
         (function() {
             var t = localStorage.getItem("tema_meu_financeiro");
-            if (!t) { t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+            if (!t) { var h = new Date().getHours(); t = (h >= 6 && h < 18) ? "light" : "dark"; }
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>

@@ -5,6 +5,22 @@
 let elementoToast = null;
 let temporizadorToast = null;
 
+// Fecha o modal ao clicar fora dele (no fundo escurecido) — mas só quando o
+// CLIQUE COMEÇA E TERMINA no fundo. Sem isso, selecionar um texto dentro do
+// modal (mousedown num campo) e soltar o botão fora por acidente (mouseup no
+// fundo) contava como "clicar fora" e fechava o modal, perdendo o que tinha
+// sido digitado.
+export function ligarFechamentoPorFundo(fundo, aoFechar) {
+  let comecouNoFundo = false;
+  fundo.addEventListener("mousedown", (evento) => {
+    comecouNoFundo = evento.target === fundo;
+  });
+  fundo.addEventListener("click", (evento) => {
+    if (comecouNoFundo && evento.target === fundo) aoFechar();
+    comecouNoFundo = false;
+  });
+}
+
 // Mostra um aviso discreto no canto da tela, que some sozinho.
 // Não interrompe o que o usuário está fazendo (ao contrário de um alert()).
 export function mostrarToast(mensagem, tipo = "sucesso") {
@@ -70,8 +86,6 @@ export function confirmarAcao({ titulo, mensagem, textoConfirmar = "Excluir", te
 
     botaoCancelar.addEventListener("click", () => finalizar(false));
     botaoConfirmar.addEventListener("click", () => finalizar(true));
-    fundo.addEventListener("click", (evento) => {
-      if (evento.target === fundo) finalizar(false);
-    });
+    ligarFechamentoPorFundo(fundo, () => finalizar(false));
   });
 }

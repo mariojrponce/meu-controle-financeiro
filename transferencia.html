@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <title>Importar · Meu Financeiro</title>
+    <title>Transferência interna · Meu Financeiro</title>
     <script>
         (function() {
             var t = localStorage.getItem("tema_meu_financeiro");
@@ -13,28 +13,6 @@
         })();
     </script>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .caixa-upload {
-            border: 2px dashed var(--cor-borda);
-            border-radius: var(--raio);
-            padding: var(--espaco-xl);
-            text-align: center;
-            background: var(--cor-superficie-elevada);
-            transition: all 0.2s ease;
-        }
-        .caixa-upload:hover {
-            border-color: var(--cor-primaria);
-            background: var(--cor-primaria-suave);
-        }
-        .caixa-upload input[type="file"] { max-width: 380px; margin: var(--espaco-md) auto 0; }
-        .resumo-linhas { display: flex; gap: var(--espaco-md); margin: var(--espaco-md) 0; flex-wrap: wrap; }
-        .pilula { padding: 8px 16px; border-radius: var(--raio-pilula); font-weight: 700; font-size: 0.8125rem; }
-        .pilula-ok { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
-        .pilula-erro { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
-        .status-ok { color: var(--cor-sucesso); font-weight: 700; }
-        .status-erro { color: var(--cor-perigo); font-weight: 700; cursor: help; }
-        .modelo-link { display: inline-flex; align-items: center; gap: var(--espaco-sm); margin-top: var(--espaco-sm); }
-    </style>
 </head>
 <body>
 
@@ -72,29 +50,50 @@
 
     <main class="conteudo-principal">
         <div class="pagina">
-            <h2>Importar lançamentos</h2>
-            <p class="subtitulo">Suba um arquivo .csv, .txt ou .xlsx com suas transações. Você confere tudo antes de importar de verdade.</p>
+            <h2>Transferência interna</h2>
+            <p class="subtitulo">Controle rápido de transferências entre seus próprios bancos (ex: PIX de um banco para outro) — cria os dois lançamentos automaticamente, do jeito que o Extrato já entende.</p>
 
-            <div class="cartao">
-                <h3>1. Baixe o modelo</h3>
-                <p class="dica-campo">
-                    Preencha o modelo com seus dados (uma linha por transação) e depois suba o arquivo aqui embaixo.
-                    As colunas precisam ser: <code>data, valor, descricao, saida, banco, tipo, tipo_mov, classificacao_saida</code>.
-                </p>
-                <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
-            </div>
+            <div class="grade-lancar">
+                <div class="cartao">
+                    <form id="form-transferencia">
+                        <label for="valor">Valor (R$)</label>
+                        <input type="number" id="valor" step="0.01" min="0.01" required placeholder="0,00">
 
-            <div class="cartao" style="margin-top: var(--espaco-lg);">
-                <h3>2. Suba o arquivo preenchido</h3>
-                <div class="caixa-upload">
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--cor-texto);">📤 Selecione o arquivo .csv, .txt ou .xlsx</div>
-                    <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
+                        <label for="data">Data</label>
+                        <input type="text" id="data" required placeholder="dd/mm/aaaa">
+
+                        <label for="banco-origem">Banco de origem (de onde sai)</label>
+                        <input type="text" id="banco-origem" required maxlength="60" placeholder="Digite ou escolha uma sugestão...">
+
+                        <label for="banco-destino">Banco de destino (para onde vai)</label>
+                        <input type="text" id="banco-destino" required maxlength="60" placeholder="Digite ou escolha uma sugestão...">
+
+                        <label for="detalhe">Detalhe (opcional)</label>
+                        <input type="text" id="detalhe" maxlength="120" placeholder="Ex: Controle de gastos, Valor para completar">
+
+                        <button type="submit" class="botao botao-primario">Transferir</button>
+                    </form>
                 </div>
 
-                <div id="resumo-importacao"></div>
-                <div id="area-preview"></div>
-
-                <button id="btn-importar" class="botao botao-primario" style="display:none;">Importar lançamentos válidos</button>
+                <div class="cartao">
+                    <h3 style="margin-bottom: var(--espaco-md);">Últimas transferências internas</h3>
+                    <div class="tabela-scroll">
+                        <table id="tabela-ultimas">
+                            <thead>
+                                <tr>
+                                    <th data-chave="data" data-tipo="texto" class="th-ordenavel">Data</th>
+                                    <th data-chave="descricao" data-tipo="texto" class="th-ordenavel">Descrição</th>
+                                    <th data-chave="banco" data-tipo="texto" class="th-ordenavel">Banco</th>
+                                    <th data-chave="valor" data-tipo="numero" class="th-ordenavel" style="text-align: right;">Valor (R$)</th>
+                                    <th class="col-acoes">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" class="vazio">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -109,10 +108,7 @@
     <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
 </nav>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
-        integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script type="module" src="js/importar.js"></script>
+<script type="module" src="js/transferencia.js"></script>
 
 </body>
 </html>

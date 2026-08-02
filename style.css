@@ -713,6 +713,30 @@ td.entrada {
   white-space: nowrap;
 }
 
+.selo-vencimento {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: var(--raio-pilula);
+  font-size: 0.725rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.selo-vencimento-atencao {
+  background-color: var(--cor-aviso-suave);
+  color: var(--cor-aviso);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.selo-vencimento-urgente {
+  background-color: var(--cor-perigo-suave);
+  color: var(--cor-perigo);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 /* Custom Scrollbar Ergonomico para Tabelas */
 .tabela-scroll::-webkit-scrollbar {
   width: 8px;

@@ -389,6 +389,29 @@ function salvarEstadoFiltro() {
     });
 }
 
+// Quantos dias faltam (a partir de hoje, contagem de dias de calendário —
+// não de 24h) até a data do lançamento previsto.
+function diasAte(dataISO) {
+    const hoje = new Date();
+    const hojeLocal = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const [ano, mes, dia] = dataISO.split("-").map(Number);
+    const alvo = new Date(ano, mes - 1, dia);
+    return Math.round((alvo - hojeLocal) / 86400000);
+}
+
+// Aviso de vencimento próximo — só para SAÍDAS (débitos), que são o que o
+// usuário precisa se preparar/deixar saldo disponível antes de acontecer.
+function seloVencimento(t) {
+    if (t.tipo !== "SAIDA") return null;
+    const dias = diasAte(t.data);
+    if (dias > 7) return null;
+
+    const selo = document.createElement("span");
+    selo.className = `selo-vencimento ${dias <= 3 ? "selo-vencimento-urgente" : "selo-vencimento-atencao"}`;
+    selo.textContent = dias === 1 ? "⏰ Vence amanhã" : `⏰ Vence em ${dias} dias`;
+    return selo;
+}
+
 function renderizarPrevistos(listaFutura) {
     const corpo = document.querySelector("#tabela-previstos tbody");
     corpo.innerHTML = "";
@@ -415,6 +438,8 @@ function renderizarPrevistos(listaFutura) {
         selo.className = "selo-previsto";
         selo.textContent = "Previsto";
         tdData.appendChild(selo);
+        const avisoVencimento = seloVencimento(t);
+        if (avisoVencimento) tdData.appendChild(avisoVencimento);
         linha.appendChild(tdData);
 
         const celulaTexto = (texto) => {
@@ -434,6 +459,55 @@ function renderizarPrevistos(listaFutura) {
         linha.appendChild(tdValor);
 
         corpo.appendChild(linha);
+    });
+}
+
+// Quanto ainda vai sair/entrar de cada banco pelos lançamentos previstos —
+// inclui transferências internas de propósito (o débito acontece de verdade
+// naquela conta, mesmo sendo uma transferência entre bancos próprios), já
+// que o objetivo aqui é só "quanto preciso deixar disponível nesse banco".
+function calcularPrevistoPorBanco(listaFutura) {
+    const porBanco = {};
+    listaFutura.forEach((t) => {
+        if (typeof t.valor !== "number" || !t.banco) return;
+        if (!porBanco[t.banco]) porBanco[t.banco] = { entradas: 0, saidas: 0 };
+        if (t.tipo === "ENTRADA") porBanco[t.banco].entradas += t.valor;
+        else porBanco[t.banco].saidas += t.valor;
+    });
+    return porBanco;
+}
+
+function renderizarPrevistoPorBanco(porBanco) {
+    const container = document.getElementById("grade-previstos-banco");
+    container.innerHTML = "";
+
+    const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saidas - porBanco[a].saidas);
+    if (bancos.length === 0) {
+        container.innerHTML = "<p class='vazio'>Nenhum lançamento futuro neste período.</p>";
+        return;
+    }
+
+    bancos.forEach((banco) => {
+        const dados = porBanco[banco];
+        const cor = obterCorBanco(banco);
+
+        const cartao = document.createElement("div");
+        cartao.className = "cartao-carteira";
+        cartao.style.borderTopColor = cor;
+
+        const nome = document.createElement("div");
+        nome.className = "nome-banco";
+        const ponto = document.createElement("span");
+        ponto.className = "ponto-banco";
+        ponto.style.background = cor;
+        nome.appendChild(ponto);
+        nome.appendChild(document.createTextNode(banco));
+        cartao.appendChild(nome);
+
+        cartao.appendChild(linhaCarteira("A entrar (previsto)", dados.entradas));
+        cartao.appendChild(linhaCarteira("A descontar (previsto)", dados.saidas));
+
+        container.appendChild(cartao);
     });
 }
 
@@ -574,6 +648,7 @@ function aplicarFiltros() {
     inicializarSeletorCategoriasSeparadas(classificacoesDisponiveis);
 
     renderizarCarteiras(porBanco);
+    renderizarPrevistoPorBanco(calcularPrevistoPorBanco(listaFutura));
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
 
     const temEntradas = Object.keys(entradaPorClassificacao).length > 0;

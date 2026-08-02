@@ -3,7 +3,7 @@
 // na tela de Lançar (lista de últimos lançamentos).
 import { ligarCampoDataInteligente, normalizarDataDigitada, brParaISO, isoParaBR } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
-import { mostrarToast } from "./ui.js";
+import { mostrarToast, ligarFechamentoPorFundo } from "./ui.js";
 
 // Retorna uma Promise: resolve com os dados editados, ou null se cancelado.
 // O mesmo formulário também é usado para CRIAR um lançamento novo (ex: botão
@@ -88,9 +88,7 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
     }
 
     caixa.querySelector("#editor-cancelar").addEventListener("click", () => finalizar(null));
-    fundo.addEventListener("click", (evento) => {
-      if (evento.target === fundo) finalizar(null);
-    });
+    ligarFechamentoPorFundo(fundo, () => finalizar(null));
 
     caixa.querySelector("#form-editor-transacao").addEventListener("submit", (evento) => {
       evento.preventDefault();
