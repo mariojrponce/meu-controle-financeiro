@@ -477,19 +477,35 @@ function calcularPrevistoPorBanco(listaFutura) {
     return porBanco;
 }
 
-// Mesma ideia acima, mas detalhado lançamento a lançamento — só aparecem os
-// bancos que realmente têm algo previsto, e cada linha é uma transação (com
-// descrição), não um total por dia — assim dois lançamentos no mesmo dia
-// continuam aparecendo separados, cada um com sua própria descrição.
+// Mesma ideia acima, mas detalhado por descrição — lançamentos com o mesmo
+// detalhe (ex.: uma conta que se repete em vários dias) são somados numa
+// única linha, em vez de aparecer repetido um por dia.
 function calcularDetalhePrevistoPorBancoDia(listaFutura) {
     const porBanco = {};
     listaFutura.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco || !t.data) return;
-        if (!porBanco[t.banco]) porBanco[t.banco] = [];
-        porBanco[t.banco].push(t);
+        if (!porBanco[t.banco]) porBanco[t.banco] = {};
+
+        const chave = t.saida || t.descricao || "";
+        if (!porBanco[t.banco][chave]) {
+            porBanco[t.banco][chave] = {
+                detalhe: chave, entradas: 0, saidas: 0, ocorrencias: 0,
+                primeiraData: t.data, ultimaData: t.data
+            };
+        }
+        const grupo = porBanco[t.banco][chave];
+        if (t.tipo === "ENTRADA") grupo.entradas += t.valor;
+        else grupo.saidas += t.valor;
+        grupo.ocorrencias += 1;
+        if (t.data < grupo.primeiraData) grupo.primeiraData = t.data;
+        if (t.data > grupo.ultimaData) grupo.ultimaData = t.data;
     });
-    Object.values(porBanco).forEach((lista) => lista.sort((a, b) => a.data.localeCompare(b.data)));
-    return porBanco;
+
+    const resultado = {};
+    Object.keys(porBanco).forEach((banco) => {
+        resultado[banco] = Object.values(porBanco[banco]).sort((a, b) => a.primeiraData.localeCompare(b.primeiraData));
+    });
+    return resultado;
 }
 
 function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
@@ -503,13 +519,13 @@ function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
     }
 
     // Bancos com mais saída total primeiro — mesma ordem dos cartões de resumo acima.
-    const totalSaidas = (banco) => porBancoDia[banco].reduce((soma, t) => soma + (t.tipo === "SAIDA" ? t.valor : 0), 0);
+    const totalSaidas = (banco) => porBancoDia[banco].reduce((soma, g) => soma + g.saidas, 0);
     bancos.sort((a, b) => totalSaidas(b) - totalSaidas(a));
 
     bancos.forEach((banco) => {
-        const transacoesDoBanco = porBancoDia[banco];
+        const gruposDoBanco = porBancoDia[banco];
         const cor = obterCorBanco(banco);
-        const diasUnicos = new Set(transacoesDoBanco.map((t) => t.data)).size;
+        const totalLancamentos = gruposDoBanco.reduce((soma, g) => soma + g.ocorrencias, 0);
 
         const detalhes = document.createElement("details");
         detalhes.className = "detalhe-banco-dia";
@@ -522,32 +538,35 @@ function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
         resumo.appendChild(document.createTextNode(`${banco} `));
         const contagem = document.createElement("span");
         contagem.className = "contagem-dias-banco";
-        contagem.textContent = `(${diasUnicos} dia${diasUnicos > 1 ? "s" : ""}, ${transacoesDoBanco.length} lançamento${transacoesDoBanco.length > 1 ? "s" : ""} previstos)`;
+        contagem.textContent = `(${gruposDoBanco.length} detalhe${gruposDoBanco.length > 1 ? "s" : ""}, ${totalLancamentos} lançamento${totalLancamentos > 1 ? "s" : ""} previstos)`;
         resumo.appendChild(contagem);
         detalhes.appendChild(resumo);
 
         const tabela = document.createElement("table");
         const thead = document.createElement("thead");
-        thead.innerHTML = "<tr><th>Data</th><th>Detalhe</th><th style='text-align:right;'>Entrando</th><th style='text-align:right;'>Saindo</th></tr>";
+        thead.innerHTML = "<tr><th>Período</th><th>Detalhe</th><th style='text-align:right;'>Entrando</th><th style='text-align:right;'>Saindo</th></tr>";
         tabela.appendChild(thead);
 
         const corpo = document.createElement("tbody");
-        transacoesDoBanco.forEach((t) => {
+        gruposDoBanco.forEach((g) => {
             const linha = document.createElement("tr");
 
-            const tdData = document.createElement("td");
-            tdData.textContent = isoParaBR(t.data);
-            linha.appendChild(tdData);
+            const tdPeriodo = document.createElement("td");
+            tdPeriodo.textContent = g.primeiraData === g.ultimaData
+                ? isoParaBR(g.primeiraData)
+                : `${isoParaBR(g.primeiraData)} – ${isoParaBR(g.ultimaData)}`;
+            if (g.ocorrencias > 1) tdPeriodo.textContent += ` (${g.ocorrencias}x)`;
+            linha.appendChild(tdPeriodo);
 
             const tdDetalhe = document.createElement("td");
-            tdDetalhe.textContent = t.saida || t.descricao || "";
+            tdDetalhe.textContent = g.detalhe;
             linha.appendChild(tdDetalhe);
 
             const tdEntrada = document.createElement("td");
             tdEntrada.style.textAlign = "right";
-            if (t.tipo === "ENTRADA") {
+            if (g.entradas > 0) {
                 tdEntrada.className = "entrada";
-                tdEntrada.textContent = formatarReais(t.valor);
+                tdEntrada.textContent = formatarReais(g.entradas);
             } else {
                 tdEntrada.textContent = "—";
             }
@@ -555,9 +574,9 @@ function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
 
             const tdSaida = document.createElement("td");
             tdSaida.style.textAlign = "right";
-            if (t.tipo === "SAIDA") {
+            if (g.saidas > 0) {
                 tdSaida.className = "saida";
-                tdSaida.textContent = formatarReais(t.valor);
+                tdSaida.textContent = formatarReais(g.saidas);
             } else {
                 tdSaida.textContent = "—";
             }
