@@ -8,30 +8,23 @@
 // de cada lançamento seja diferente) e `dono_carteira` (de quem é a fatia do
 // valor, ex: "EU"/"MAYARA" — pra não confundir quando o investimento é
 // compartilhado com outra pessoa).
+//
+// obterTransacoes() não tem filtro de período nenhum (só por userId), então
+// esta tela já busca o histórico inteiro por padrão — sem recorte de data.
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
-import { BANCOS_SUGERIDOS, mesclarSugestoes, normalizarNomeBanco } from "./dados-comuns.js";
-import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
-import { criarComboboxTexto } from "./combobox.js";
+import { BANCOS_SUGERIDOS, mesclarSugestoes } from "./dados-comuns.js";
+import { isoParaBR, formatarReais } from "./utils.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { abrirEditorTransacao } from "./editor-transacao.js";
 
 const CLASSIFICACAO_INVESTIMENTO = "INVESTIMENTO";
+const SEM_DONO = "Sem dono definido";
 
 const usuario = await exigirLogin();
 renderizarNav("investimentos", usuario.email);
-
-const campoData = document.getElementById("inv-data");
-ligarCampoDataInteligente(campoData);
-
-const campoInvestimento = document.getElementById("inv-investimento");
-const campoDono = document.getElementById("inv-dono");
-const campoBanco = document.getElementById("inv-banco");
-const comboboxInvestimento = criarComboboxTexto(campoInvestimento, []);
-const comboboxDono = criarComboboxTexto(campoDono, []);
-const comboboxBanco = criarComboboxTexto(campoBanco, BANCOS_SUGERIDOS);
 
 let todasTransacoes = [];
 let todosInvestimentos = [];
@@ -64,6 +57,56 @@ function linhaCarteira(rotulo, valor, classeExtra = "") {
     linha.appendChild(spanRotulo);
     linha.appendChild(spanValor);
     return linha;
+}
+
+// Linha "[+] Rótulo ... valor" que expande, ao clicar, um mini-extrato em
+// texto simples (Data, Detalhe, Valor) dos lançamentos passados — usado nos
+// cards "Por dono" pra ver rapidinho o que compõe o Aportado/Resgatado sem
+// precisar ir até a tabela grande.
+function linhaExpansivel(rotulo, valor, lancamentos) {
+    const wrapper = document.createElement("div");
+
+    const linha = document.createElement("div");
+    linha.className = "linha-carteira linha-expansivel";
+
+    const spanRotulo = document.createElement("span");
+    spanRotulo.className = "rotulo-linha";
+    spanRotulo.textContent = `[+] ${rotulo}`;
+
+    const spanValor = document.createElement("span");
+    spanValor.className = "valor-linha";
+    spanValor.textContent = formatarReais(valor);
+
+    linha.appendChild(spanRotulo);
+    linha.appendChild(spanValor);
+    wrapper.appendChild(linha);
+
+    const detalhe = document.createElement("div");
+    detalhe.className = "mini-extrato";
+    detalhe.style.display = "none";
+
+    if (lancamentos.length === 0) {
+        detalhe.innerHTML = "<p class='mini-extrato-linha vazio'>Nenhum lançamento.</p>";
+    } else {
+        [...lancamentos]
+            .sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""))
+            .forEach((l) => {
+                const linhaDetalhe = document.createElement("p");
+                linhaDetalhe.className = "mini-extrato-linha";
+                linhaDetalhe.textContent = `${isoParaBR(l.data)} — ${l.saida || l.descricao || "—"} — ${formatarReais(l.valor)}`;
+                detalhe.appendChild(linhaDetalhe);
+            });
+    }
+    wrapper.appendChild(detalhe);
+
+    let aberto = false;
+    linha.addEventListener("click", () => {
+        aberto = !aberto;
+        detalhe.style.display = aberto ? "block" : "none";
+        spanRotulo.textContent = `${aberto ? "[-]" : "[+]"} ${rotulo}`;
+    });
+
+    return wrapper;
 }
 
 function renderizarResumo(lista) {
@@ -100,7 +143,7 @@ function renderizarPorInvestimento(lista) {
 
         if (t.banco) grupo.bancos.add(t.banco);
 
-        const dono = (t.dono_carteira || "").trim() || "Sem dono definido";
+        const dono = (t.dono_carteira || "").trim() || SEM_DONO;
         if (!grupo.porDono[dono]) grupo.porDono[dono] = 0;
 
         if (t.tipo === "SAIDA") {
@@ -140,7 +183,7 @@ function renderizarPorInvestimento(lista) {
         const donos = Object.keys(dados.porDono).sort((a, b) => dados.porDono[b] - dados.porDono[a]);
         if (donos.length > 1) {
             const separador = document.createElement("div");
-            separador.style.cssText = "margin-top:8px; padding-top:8px; border-top:1px dashed var(--cor-borda); font-size:0.75rem; color:var(--cor-texto-suave); font-weight:700; text-transform:uppercase; letter-spacing:0.03em;";
+            separador.className = "separador-cartao-carteira";
             separador.textContent = "Por dono";
             cartao.appendChild(separador);
             donos.forEach((dono) => cartao.appendChild(linhaCarteira(dono, dados.porDono[dono])));
@@ -157,8 +200,9 @@ function renderizarPorDono(lista) {
     const porDono = {};
     lista.forEach((t) => {
         if (typeof t.valor !== "number") return;
-        const dono = (t.dono_carteira || "").trim() || "Sem dono definido";
-        if (!porDono[dono]) porDono[dono] = { aportado: 0, resgatado: 0 };
+        const dono = (t.dono_carteira || "").trim() || SEM_DONO;
+        if (!porDono[dono]) porDono[dono] = { aportado: 0, resgatado: 0, lancamentos: [] };
+        porDono[dono].lancamentos.push(t);
         if (t.tipo === "SAIDA") porDono[dono].aportado += t.valor;
         else porDono[dono].resgatado += t.valor;
     });
@@ -173,6 +217,8 @@ function renderizarPorDono(lista) {
     donos.forEach((dono) => {
         const dados = porDono[dono];
         const saldo = dados.aportado - dados.resgatado;
+        const aportes = dados.lancamentos.filter((t) => t.tipo === "SAIDA");
+        const resgates = dados.lancamentos.filter((t) => t.tipo === "ENTRADA");
 
         const cartao = document.createElement("div");
         cartao.className = "cartao-carteira";
@@ -182,12 +228,49 @@ function renderizarPorDono(lista) {
         nome.textContent = dono;
         cartao.appendChild(nome);
 
-        cartao.appendChild(linhaCarteira("Aportado", dados.aportado));
-        cartao.appendChild(linhaCarteira("Resgatado", dados.resgatado));
+        cartao.appendChild(linhaExpansivel("Aportado", dados.aportado, aportes));
+        cartao.appendChild(linhaExpansivel("Resgatado", dados.resgatado, resgates));
         cartao.appendChild(linhaCarteira("Saldo investido", saldo, "saldo"));
+
+        const acoes = document.createElement("div");
+        acoes.className = "acoes-cartao-carteira";
+
+        const botaoAportar = document.createElement("button");
+        botaoAportar.className = "botao botao-secundario botao-pequeno";
+        botaoAportar.textContent = "+ Aportar";
+        botaoAportar.addEventListener("click", () => abrirNovoLancamento(prefillParaDono(dono, "SAIDA")));
+
+        const botaoResgatar = document.createElement("button");
+        botaoResgatar.className = "botao botao-secundario botao-pequeno";
+        botaoResgatar.textContent = "+ Resgatar";
+        botaoResgatar.addEventListener("click", () => abrirNovoLancamento(prefillParaDono(dono, "ENTRADA")));
+
+        acoes.appendChild(botaoAportar);
+        acoes.appendChild(botaoResgatar);
+        cartao.appendChild(acoes);
 
         container.appendChild(cartao);
     });
+}
+
+// Pré-preenchimento do modal de novo lançamento a partir de um card "Por
+// dono": sempre preenche o dono; só preenche Investimento/Banco quando esse
+// dono tem exatamente 1 investimento (com mais de um, não dá pra adivinhar
+// qual — o usuário escolhe na hora via autocomplete).
+function prefillParaDono(dono, tipo) {
+    const doDono = todosInvestimentos.filter((t) => ((t.dono_carteira || "").trim() || SEM_DONO) === dono);
+    const investimentosDoDono = [...new Set(doDono.map((t) => t.investimento).filter(Boolean))];
+
+    const prefill = { tipo, dono_carteira: dono === SEM_DONO ? "" : dono };
+
+    if (investimentosDoDono.length === 1) {
+        prefill.investimento = investimentosDoDono[0];
+        const doInvestimento = doDono.filter((t) => t.investimento === investimentosDoDono[0]);
+        const ultimo = [...doInvestimento].sort((a, b) => (b.criadoEmMs ?? 0) - (a.criadoEmMs ?? 0))[0];
+        if (ultimo?.banco) prefill.banco = ultimo.banco;
+    }
+
+    return prefill;
 }
 
 function renderizarTabela(lista) {
@@ -278,16 +361,22 @@ async function excluirInvestimento(transacao) {
     }
 }
 
-async function editarInvestimento(transacao) {
-    const bancosUsados = todasTransacoes.map(t => t.banco).filter(Boolean);
-    const investimentosUsados = todosInvestimentos.map(t => t.investimento).filter(Boolean);
-    const dadosEditados = await abrirEditorTransacao(transacao, {
+function sugestoes() {
+    const bancosUsados = todasTransacoes.map((t) => t.banco).filter(Boolean);
+    const investimentosUsados = todosInvestimentos.map((t) => t.investimento).filter(Boolean);
+    const donosUsados = todosInvestimentos.map((t) => t.dono_carteira).filter(Boolean);
+    return {
         bancosSugeridos: mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados),
-        classificacoesSugeridas: [CLASSIFICACAO_INVESTIMENTO],
         investimentosSugeridos: mesclarSugestoes([], investimentosUsados),
+        donosSugeridos: mesclarSugestoes([], donosUsados)
+    };
+}
+
+async function editarInvestimento(transacao) {
+    const dadosEditados = await abrirEditorTransacao(transacao, {
+        ...sugestoes(),
         titulo: "Editar lançamento de investimento",
-        mostrarDono: true,
-        mostrarInvestimento: true
+        contextoInvestimento: true
     });
     if (!dadosEditados) return;
 
@@ -301,26 +390,41 @@ async function editarInvestimento(transacao) {
     }
 }
 
-async function carregarDados() {
+async function abrirNovoLancamento(prefill = {}) {
+    const dados = await abrirEditorTransacao(
+        { tipo: "SAIDA", ...prefill },
+        {
+            ...sugestoes(),
+            titulo: "Novo lançamento de investimento",
+            textoSalvar: "Salvar lançamento",
+            contextoInvestimento: true
+        }
+    );
+    if (!dados) return;
+
     try {
-        todasTransacoes = await obterTransacoes(usuario);
+        await criarTransacao(usuario, dados);
+        mostrarToast("Lançamento salvo!", "sucesso");
+        carregarDados();
+    } catch (erro) {
+        console.error("Erro ao salvar:", erro);
+        mostrarToast("Erro ao salvar. Tente novamente.", "erro");
+    }
+}
+
+async function carregarDados(forcarAtualizacao = false) {
+    try {
+        todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
         todosInvestimentos = todasTransacoes.filter(
             (t) => (t.classificacao_saida ?? "").trim().toUpperCase() === CLASSIFICACAO_INVESTIMENTO
         );
-
-        const bancosUsados = todasTransacoes.map(t => t.banco).filter(Boolean);
-        comboboxBanco.atualizarOpcoes(mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados));
-
-        const donosUsados = [...new Set(todosInvestimentos.map(t => t.dono_carteira).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-        comboboxDono.atualizarOpcoes(donosUsados);
-
-        const investimentosUsados = [...new Set(todosInvestimentos.map(t => t.investimento).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-        comboboxInvestimento.atualizarOpcoes(investimentosUsados);
 
         renderizarResumo(todosInvestimentos);
         renderizarPorInvestimento(todosInvestimentos);
         renderizarPorDono(todosInvestimentos);
         renderizarTabela(todosInvestimentos);
+
+        if (forcarAtualizacao) mostrarToast("Dados atualizados.", "sucesso");
     } catch (erro) {
         console.error("Erro ao buscar transações:", erro);
         document.querySelector("#tabela-investimentos tbody").innerHTML =
@@ -328,54 +432,7 @@ async function carregarDados() {
     }
 }
 
+document.getElementById("btn-novo-investimento").addEventListener("click", () => abrirNovoLancamento());
+document.getElementById("btn-atualizar").addEventListener("click", () => carregarDados(true));
+
 carregarDados();
-
-const formulario = document.getElementById("form-investimento");
-
-formulario.addEventListener("submit", async function (evento) {
-    evento.preventDefault();
-
-    const dataNormalizada = normalizarDataDigitada(campoData.value);
-    if (dataNormalizada) campoData.value = dataNormalizada;
-
-    const botaoSalvar = formulario.querySelector("button");
-
-    const valor = parseFloat(document.getElementById("inv-valor").value);
-    const dataISO = brParaISO(campoData.value);
-    const tipo = document.getElementById("inv-tipo").value;
-    const investimento = campoInvestimento.value.trim().toUpperCase();
-    const dono_carteira = campoDono.value.trim().toUpperCase();
-    const banco = normalizarNomeBanco(campoBanco.value.trim().toUpperCase());
-    const descricao = document.getElementById("inv-descricao").value.trim().toUpperCase();
-    const saida = document.getElementById("inv-detalhe").value.trim().toUpperCase();
-
-    if (!valor || valor <= 0 || !investimento || !dono_carteira || !banco || !descricao) {
-        mostrarToast("Preencha todos os campos obrigatórios.", "erro");
-        return;
-    }
-    if (!dataISO) {
-        campoData.classList.add("campo-invalido");
-        mostrarToast("Data inválida. Use dd/mm/aaaa.", "erro");
-        return;
-    }
-
-    botaoSalvar.disabled = true;
-    botaoSalvar.textContent = "Salvando...";
-
-    try {
-        await criarTransacao(usuario, {
-            valor, data: dataISO, descricao, saida, banco, investimento, dono_carteira,
-            tipo, tipo_mov: "EXTERNO", classificacao_saida: CLASSIFICACAO_INVESTIMENTO
-        });
-
-        mostrarToast("Lançamento salvo!", "sucesso");
-        formulario.reset();
-        carregarDados();
-    } catch (erro) {
-        console.error("Erro ao salvar: ", erro);
-        mostrarToast("Erro ao salvar. Tente novamente.", "erro");
-    } finally {
-        botaoSalvar.disabled = false;
-        botaoSalvar.textContent = "Salvar lançamento";
-    }
-});

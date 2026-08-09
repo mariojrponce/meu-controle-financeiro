@@ -121,6 +121,7 @@
 }
 
 html {
+  overflow-x: hidden;
   font-size: 16px;
   scroll-behavior: smooth;
   background-color: var(--cor-fundo);
@@ -130,6 +131,7 @@ html {
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
   font-family: var(--font-sans);
   font-size: var(--font-body);
   line-height: 1.55;
@@ -644,6 +646,21 @@ th, td {
   white-space: nowrap;
 }
 
+/* Datas, rótulos curtos e valores nunca quebram linha (não faz sentido
+   partir "10/08/2026" ao meio). Só as colunas de texto livre e mais longo
+   (Descrição/Detalhe) podem quebrar quando precisar — isso também deixa a
+   tabela naturalmente mais estreita, evitando o scroll horizontal. */
+#tabela-transacoes td:nth-child(2),
+#tabela-transacoes td:nth-child(3),
+#tabela-investimentos td:nth-child(3),
+#tabela-investimentos td:nth-child(4),
+#tabela-ultimos td:nth-child(2),
+#tabela-ultimas td:nth-child(2) {
+  white-space: normal;
+  overflow-wrap: break-word;
+  min-width: 200px;
+}
+
 th {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -937,6 +954,60 @@ td.entrada {
 .valor-positivo { color: var(--cor-sucesso); }
 .valor-negativo { color: var(--cor-perigo); }
 
+.linha-expansivel {
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0 -6px;
+  padding: 6px;
+}
+
+.linha-expansivel:hover {
+  background-color: var(--cor-fundo);
+}
+
+.mini-extrato {
+  padding: 2px 6px 8px;
+}
+
+.mini-extrato-linha {
+  margin: 0;
+  padding: 4px 0;
+  font-size: 0.75rem;
+  color: var(--cor-texto-suave);
+  border-bottom: 1px dashed var(--cor-borda);
+}
+
+.mini-extrato-linha:last-child {
+  border-bottom: none;
+}
+
+.mini-extrato-linha.vazio {
+  border-bottom: none;
+  font-style: italic;
+}
+
+.separador-cartao-carteira {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--cor-borda);
+  font-size: 0.75rem;
+  color: var(--cor-texto-suave);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.acoes-cartao-carteira {
+  display: flex;
+  gap: var(--espaco-sm);
+  margin-top: var(--espaco-md);
+}
+
+.acoes-cartao-carteira .botao {
+  flex: 1;
+  margin: 0;
+}
+
 /* ==========================================================================
    GRÁFICOS E SEÇÕES
    ========================================================================== */
@@ -975,6 +1046,14 @@ td.entrada {
   grid-template-columns: minmax(320px, 440px) 1fr;
   gap: var(--espaco-xl);
   align-items: start;
+}
+
+/* Sem isso, um item de grid não encolhe abaixo do tamanho do seu conteúdo
+   (ex: uma tabela larga) — mesmo a tabela tendo scroll próprio, o card dela
+   empurraria a página inteira pra direita, fazendo a tela toda deslizar na
+   horizontal em vez de só o conteúdo da tabela. */
+.grade-lancar > .cartao {
+  min-width: 0;
 }
 
 /* ==========================================================================

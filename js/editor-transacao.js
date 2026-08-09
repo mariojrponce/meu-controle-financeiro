@@ -10,7 +10,20 @@ import { normalizarNomeBanco } from "./dados-comuns.js";
 // O mesmo formulário também é usado para CRIAR um lançamento novo (ex: botão
 // "+" do Extrato): basta passar um objeto parcial em `transacao` (com os
 // campos já conhecidos) e personalizar `titulo`/`textoSalvar`.
-export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classificacoesSugeridas = [], investimentosSugeridos = [], titulo = "Editar lançamento", textoSalvar = "Salvar alterações", mostrarDono = false, mostrarInvestimento = false } = {}) {
+//
+// `contextoInvestimento: true` liga o modo usado pela tela de Investimentos:
+// troca os campos Movimentação/Classificação (que lá são sempre fixos,
+// Externo/INVESTIMENTO) por Investimento + Dono da carteira, e relabela o
+// Tipo pra Aporte/Resgate.
+export function abrirEditorTransacao(transacao, {
+  bancosSugeridos = [],
+  classificacoesSugeridas = [],
+  investimentosSugeridos = [],
+  donosSugeridos = [],
+  titulo = "Editar lançamento",
+  textoSalvar = "Salvar alterações",
+  contextoInvestimento = false
+} = {}) {
   return new Promise((resolve) => {
     const fundo = document.createElement("div");
     fundo.className = "modal-fundo";
@@ -35,22 +48,26 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
         <label>Banco</label>
         <input type="text" id="editor-banco" required maxlength="60">
 
-        ${mostrarInvestimento ? `
+        ${contextoInvestimento ? `
         <label>Investimento</label>
-        <input type="text" id="editor-investimento" maxlength="60" placeholder="Ex: CDB Bradesco...">
-        ` : ""}
+        <input type="text" id="editor-investimento" required maxlength="60" placeholder="Ex: CDB Bradesco...">
 
-        ${mostrarDono ? `
         <label>Dono da carteira</label>
-        <input type="text" id="editor-dono" maxlength="60" placeholder="Ex: Eu, Mayara...">
+        <input type="text" id="editor-dono" required maxlength="60" placeholder="Ex: Eu, Mayara...">
         ` : ""}
 
         <label>Tipo</label>
         <select id="editor-tipo">
+          ${contextoInvestimento ? `
+          <option value="SAIDA">Aporte (dinheiro indo pro investimento)</option>
+          <option value="ENTRADA">Resgate (dinheiro saindo do investimento)</option>
+          ` : `
           <option value="SAIDA">Saída</option>
           <option value="ENTRADA">Entrada</option>
+          `}
         </select>
 
+        ${contextoInvestimento ? "" : `
         <label>Movimentação</label>
         <select id="editor-tipo-mov">
           <option value="EXTERNO">Externo (Gasto/Receita real)</option>
@@ -59,6 +76,7 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
 
         <label>Classificação</label>
         <input type="text" id="editor-classificacao" required maxlength="60">
+        `}
 
         <div class="modal-acoes" style="margin-top:20px;">
           <button type="button" id="editor-cancelar" class="botao botao-secundario">Cancelar</button>
@@ -89,13 +107,14 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
     if (campoInvestimento) campoInvestimento.value = transacao.investimento ?? "";
     if (campoDono) campoDono.value = transacao.dono_carteira ?? "";
     campoTipo.value = transacao.tipo ?? "SAIDA";
-    campoTipoMov.value = transacao.tipo_mov ?? "EXTERNO";
-    campoClassificacao.value = transacao.classificacao_saida ?? "";
+    if (campoTipoMov) campoTipoMov.value = transacao.tipo_mov ?? "EXTERNO";
+    if (campoClassificacao) campoClassificacao.value = transacao.classificacao_saida ?? "";
 
     ligarCampoDataInteligente(campoData);
     criarComboboxTexto(campoBanco, bancosSugeridos);
-    criarComboboxTexto(campoClassificacao, classificacoesSugeridas);
+    if (campoClassificacao) criarComboboxTexto(campoClassificacao, classificacoesSugeridas);
     if (campoInvestimento) criarComboboxTexto(campoInvestimento, investimentosSugeridos);
+    if (campoDono) criarComboboxTexto(campoDono, donosSugeridos);
 
     function finalizar(resultado) {
       fundo.classList.remove("aberto");
@@ -116,10 +135,16 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
       const saida = campoSaida.value.trim().toUpperCase();
       const banco = normalizarNomeBanco(campoBanco.value.trim().toUpperCase());
       const tipo = campoTipo.value;
-      const tipo_mov = campoTipoMov.value;
-      const classificacao_saida = campoClassificacao.value.trim().toUpperCase();
+      const tipo_mov = campoTipoMov ? campoTipoMov.value : "EXTERNO";
+      const classificacao_saida = campoClassificacao ? campoClassificacao.value.trim().toUpperCase() : "INVESTIMENTO";
+      const investimento = campoInvestimento ? campoInvestimento.value.trim().toUpperCase() : "";
+      const dono_carteira = campoDono ? campoDono.value.trim().toUpperCase() : "";
 
-      if (!valor || valor <= 0 || !descricao || !banco || !classificacao_saida) {
+      if (!valor || valor <= 0 || !descricao || !banco || (campoClassificacao && !classificacao_saida)) {
+        mostrarToast("Preencha todos os campos obrigatórios.", "erro");
+        return;
+      }
+      if (contextoInvestimento && (!investimento || !dono_carteira)) {
         mostrarToast("Preencha todos os campos obrigatórios.", "erro");
         return;
       }
@@ -130,8 +155,8 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
       }
 
       const dadosEditados = { valor, data: dataISO, descricao, saida, banco, tipo, tipo_mov, classificacao_saida };
-      if (campoInvestimento) dadosEditados.investimento = campoInvestimento.value.trim().toUpperCase();
-      if (campoDono) dadosEditados.dono_carteira = campoDono.value.trim().toUpperCase();
+      if (campoInvestimento) dadosEditados.investimento = investimento;
+      if (campoDono) dadosEditados.dono_carteira = dono_carteira;
 
       finalizar(dadosEditados);
     });
