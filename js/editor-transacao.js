@@ -10,7 +10,7 @@ import { normalizarNomeBanco } from "./dados-comuns.js";
 // O mesmo formulário também é usado para CRIAR um lançamento novo (ex: botão
 // "+" do Extrato): basta passar um objeto parcial em `transacao` (com os
 // campos já conhecidos) e personalizar `titulo`/`textoSalvar`.
-export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classificacoesSugeridas = [], titulo = "Editar lançamento", textoSalvar = "Salvar alterações" } = {}) {
+export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classificacoesSugeridas = [], investimentosSugeridos = [], titulo = "Editar lançamento", textoSalvar = "Salvar alterações", mostrarDono = false, mostrarInvestimento = false } = {}) {
   return new Promise((resolve) => {
     const fundo = document.createElement("div");
     fundo.className = "modal-fundo";
@@ -34,6 +34,16 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
 
         <label>Banco</label>
         <input type="text" id="editor-banco" required maxlength="60">
+
+        ${mostrarInvestimento ? `
+        <label>Investimento</label>
+        <input type="text" id="editor-investimento" maxlength="60" placeholder="Ex: CDB Bradesco...">
+        ` : ""}
+
+        ${mostrarDono ? `
+        <label>Dono da carteira</label>
+        <input type="text" id="editor-dono" maxlength="60" placeholder="Ex: Eu, Mayara...">
+        ` : ""}
 
         <label>Tipo</label>
         <select id="editor-tipo">
@@ -65,6 +75,8 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
     const campoDescricao = caixa.querySelector("#editor-descricao");
     const campoSaida = caixa.querySelector("#editor-saida");
     const campoBanco = caixa.querySelector("#editor-banco");
+    const campoInvestimento = caixa.querySelector("#editor-investimento");
+    const campoDono = caixa.querySelector("#editor-dono");
     const campoTipo = caixa.querySelector("#editor-tipo");
     const campoTipoMov = caixa.querySelector("#editor-tipo-mov");
     const campoClassificacao = caixa.querySelector("#editor-classificacao");
@@ -74,6 +86,8 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
     campoDescricao.value = transacao.descricao ?? "";
     campoSaida.value = transacao.saida ?? "";
     campoBanco.value = transacao.banco ?? "";
+    if (campoInvestimento) campoInvestimento.value = transacao.investimento ?? "";
+    if (campoDono) campoDono.value = transacao.dono_carteira ?? "";
     campoTipo.value = transacao.tipo ?? "SAIDA";
     campoTipoMov.value = transacao.tipo_mov ?? "EXTERNO";
     campoClassificacao.value = transacao.classificacao_saida ?? "";
@@ -81,6 +95,7 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
     ligarCampoDataInteligente(campoData);
     criarComboboxTexto(campoBanco, bancosSugeridos);
     criarComboboxTexto(campoClassificacao, classificacoesSugeridas);
+    if (campoInvestimento) criarComboboxTexto(campoInvestimento, investimentosSugeridos);
 
     function finalizar(resultado) {
       fundo.classList.remove("aberto");
@@ -114,7 +129,11 @@ export function abrirEditorTransacao(transacao, { bancosSugeridos = [], classifi
         return;
       }
 
-      finalizar({ valor, data: dataISO, descricao, saida, banco, tipo, tipo_mov, classificacao_saida });
+      const dadosEditados = { valor, data: dataISO, descricao, saida, banco, tipo, tipo_mov, classificacao_saida };
+      if (campoInvestimento) dadosEditados.investimento = campoInvestimento.value.trim().toUpperCase();
+      if (campoDono) dadosEditados.dono_carteira = campoDono.value.trim().toUpperCase();
+
+      finalizar(dadosEditados);
     });
   });
 }

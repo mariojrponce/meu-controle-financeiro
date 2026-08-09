@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>Investimentos · Meu Financeiro</title>
+    <script>
+        (function() {
+            var t = localStorage.getItem("tema_meu_financeiro");
+            if (!t) { var h = new Date().getHours(); t = (h >= 6 && h < 18) ? "light" : "dark"; }
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="mobile-header">
+    <div class="marca-mobile">
+        <span>💰</span>
+        <span>Meu Financeiro</span>
+    </div>
+    <div class="mobile-header-acoes">
+        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
+        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+    </div>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-marca">
+            <span class="logo-icone">💰</span>
+            <span class="logo-texto">Meu Financeiro</span>
+        </div>
+        <nav class="sidebar-links">
+            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
+            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
+        </nav>
+        <div class="sidebar-rodape">
+            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
+            <div class="sidebar-email"></div>
+            <button class="btn-sair botao-sair">🚪 Sair</button>
+        </div>
+    </aside>
+
+    <main class="conteudo-principal">
+        <div class="pagina">
+            <h2>Gestão de Investimentos</h2>
+            <p class="subtitulo">Só os lançamentos classificados como INVESTIMENTO. Aportes continuam contando normalmente no saldo do Extrato/Dashboard — aqui é só uma visão organizada por investimento e por dono, pra não confundir de quem é cada valor.</p>
+
+            <div class="grade-resumo" id="resumo-investimentos">
+                <div class="cartao-metrica metrica-saida">
+                    <div class="rotulo">Total aportado</div>
+                    <div class="valor" id="total-aportado">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-entrada">
+                    <div class="rotulo">Total resgatado</div>
+                    <div class="valor" id="total-resgatado">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-saldo-pos" id="cartao-saldo-investido">
+                    <div class="rotulo">Saldo investido</div>
+                    <div class="valor" id="total-saldo-investido">R$ 0,00</div>
+                </div>
+            </div>
+
+            <div class="cartao" style="margin-bottom: var(--espaco-xl);">
+                <h3 style="margin-bottom: var(--espaco-md);">Por investimento</h3>
+                <p class="subtitulo" style="margin-top: -8px; margin-bottom: var(--espaco-md);">Saldo de cada investimento (aportes − resgates), com o banco e a divisão por dono dentro dele.</p>
+                <div class="grade-carteiras" id="grade-por-investimento">
+                    <p class="vazio">Nenhum investimento ainda.</p>
+                </div>
+            </div>
+
+            <div class="cartao" style="margin-bottom: var(--espaco-xl);">
+                <h3 style="margin-bottom: var(--espaco-md);">Por dono</h3>
+                <p class="subtitulo" style="margin-top: -8px; margin-bottom: var(--espaco-md);">Total de cada dono somando todos os investimentos dele.</p>
+                <div class="grade-carteiras" id="grade-por-dono">
+                    <p class="vazio">Nenhum investimento ainda.</p>
+                </div>
+            </div>
+
+            <div class="grade-lancar">
+                <div class="cartao">
+                    <form id="form-investimento">
+                        <label for="inv-valor">Valor (R$)</label>
+                        <input type="number" id="inv-valor" step="0.01" min="0.01" required placeholder="0,00">
+
+                        <label for="inv-data">Data</label>
+                        <input type="text" id="inv-data" required placeholder="dd/mm/aaaa">
+
+                        <label for="inv-tipo">Tipo</label>
+                        <select id="inv-tipo">
+                            <option value="SAIDA">Aporte (dinheiro indo pro investimento)</option>
+                            <option value="ENTRADA">Resgate (dinheiro saindo do investimento)</option>
+                        </select>
+
+                        <label for="inv-investimento">Investimento</label>
+                        <input type="text" id="inv-investimento" required maxlength="60" placeholder="Ex: CDB Bradesco, Tesouro Selic...">
+                        <div class="dica-campo">Use sempre o mesmo nome pro mesmo investimento — é por aqui que o sistema soma aportes e resgates dele, mesmo que a Descrição de cada lançamento seja diferente.</div>
+
+                        <label for="inv-dono">Dono da carteira</label>
+                        <input type="text" id="inv-dono" required maxlength="60" placeholder="Ex: Eu, Mayara...">
+
+                        <label for="inv-banco">Banco</label>
+                        <input type="text" id="inv-banco" required maxlength="60" placeholder="Digite ou escolha uma sugestão...">
+
+                        <label for="inv-descricao">Descrição</label>
+                        <input type="text" id="inv-descricao" required maxlength="120" placeholder="Ex: Aplicação CDB, Tesouro Selic...">
+
+                        <label for="inv-detalhe">Detalhe (opcional)</label>
+                        <input type="text" id="inv-detalhe" maxlength="120" placeholder="Ex: Motivo do resgate, observação...">
+
+                        <button type="submit" class="botao botao-primario">Salvar lançamento</button>
+                    </form>
+                </div>
+
+                <div class="cartao">
+                    <h3 style="margin-bottom: var(--espaco-md);">Movimentações de investimento</h3>
+                    <div class="tabela-scroll">
+                        <table id="tabela-investimentos">
+                            <thead>
+                                <tr>
+                                    <th data-chave="data" data-tipo="texto" class="th-ordenavel">Data</th>
+                                    <th data-chave="investimento" data-tipo="texto" class="th-ordenavel">Investimento</th>
+                                    <th data-chave="descricao" data-tipo="texto" class="th-ordenavel">Descrição</th>
+                                    <th data-chave="saida" data-tipo="texto" class="th-ordenavel">Detalhe</th>
+                                    <th data-chave="dono_carteira" data-tipo="texto" class="th-ordenavel">Dono</th>
+                                    <th data-chave="banco" data-tipo="texto" class="th-ordenavel">Banco</th>
+                                    <th data-chave="tipo" data-tipo="texto" class="th-ordenavel">Tipo</th>
+                                    <th data-chave="valor" data-tipo="numero" class="th-ordenavel" style="text-align: right;">Valor (R$)</th>
+                                    <th class="col-acoes">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="9" class="vazio">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<nav class="mobile-nav">
+    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
+    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
+</nav>
+
+<script type="module" src="js/investimentos.js"></script>
+
+</body>
+</html>

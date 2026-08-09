@@ -1,0 +1,6 @@
+Quero que seja possível filtrar se aquela transação é prevista ou não 
+
+Para este aqui, não é para fazer de imediato, quero que analise a solicitação, crie uma base de conhecimento a ela, me faça questinamentos, verifique toda minha base.
+Quero fazer um controle de investimentos, preciso que crie uma nova pagina (gestão investimentos) dentro dela só vai ter movimentações relacionadas a investimentos, 
+carteira do total que eu tenho investido, em qual banco esse investimento esta, se tem algum planejamento de resgate para esse investimento, 
+quero ver também os sub-dono desse valor, pois estou planejamento juntar valor com outras pessoas mas o investimento escolhido vai ser o mesmo, aí se eu não me organizar posso confundir os valores. Então quero meio que saber qual é o dono desse dinheiro se é meu o de outra pessoa.
