@@ -77,6 +77,14 @@
                 </div>
             </div>
 
+            <div class="filtro-aplicado" id="filtro-aplicado">
+                <div class="filtro-aplicado-cabecalho">
+                    <span class="filtro-aplicado-titulo">Onde está aplicado</span>
+                    <span class="filtro-aplicado-dica" id="dica-filtro-aplicado">Escolha um banco para ver só o que está investido nele. O saldo investido passa a ser o valor que deve bater com o app do banco (sem contar rendimento).</span>
+                </div>
+                <div class="chips-banco" id="chips-banco-aplicado"></div>
+            </div>
+
             <div class="cartao" style="margin-bottom: var(--espaco-xl);">
                 <h3 style="margin-bottom: var(--espaco-md);">Por investimento</h3>
                 <p class="subtitulo" style="margin-top: -8px; margin-bottom: var(--espaco-md);">Saldo de cada investimento (aportes − resgates), com o banco e a divisão por dono dentro dele.</p>
@@ -95,6 +103,46 @@
 
             <div class="cartao">
                 <h3 style="margin-bottom: var(--espaco-md);">Movimentações de investimento</h3>
+                <div class="filtros">
+                    <div class="campo-filtro">
+                        <label for="filtro-inv-inicio">Data início</label>
+                        <input type="text" id="filtro-inv-inicio">
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="filtro-inv-fim">Data fim</label>
+                        <input type="text" id="filtro-inv-fim">
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Investimento</label>
+                        <div id="filtro-inv-investimento"></div>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="filtro-inv-descricao">Descrição</label>
+                        <input type="text" id="filtro-inv-descricao" placeholder="Buscar na descrição...">
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="filtro-inv-detalhe">Detalhe</label>
+                        <input type="text" id="filtro-inv-detalhe" placeholder="Buscar no detalhe...">
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Dono</label>
+                        <div id="filtro-inv-dono"></div>
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Banco</label>
+                        <div id="filtro-inv-banco"></div>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="filtro-inv-tipo">Tipo</label>
+                        <select id="filtro-inv-tipo">
+                            <option value="">Todos</option>
+                            <option value="SAIDA">Aporte</option>
+                            <option value="ENTRADA">Resgate</option>
+                        </select>
+                    </div>
+                    <button id="btn-limpar-filtros-inv" class="botao botao-secundario">Limpar filtros</button>
+                </div>
+                <p class="resumo-filtro-inv" id="resumo-filtro-inv"></p>
                 <div class="tabela-scroll">
                     <table id="tabela-investimentos">
                         <thead>

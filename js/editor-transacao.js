@@ -14,12 +14,17 @@ import { normalizarNomeBanco } from "./dados-comuns.js";
 // `contextoInvestimento: true` liga o modo usado pela tela de Investimentos:
 // troca os campos Movimentação/Classificação (que lá são sempre fixos,
 // Externo/INVESTIMENTO) por Investimento + Dono da carteira, e relabela o
-// Tipo pra Aporte/Resgate.
+// Tipo pra Aporte/Resgate. Nesse modo também aparece o campo opcional "Onde
+// está aplicado" (`banco_investimento`): o Banco continua sendo a conta de
+// onde o dinheiro saiu (pro saldo do Extrato/Dashboard bater), e esse campo
+// diz onde ele de fato está investido (ex: saiu do BRADESCO, está no
+// MERCADO BITCOIN).
 export function abrirEditorTransacao(transacao, {
   bancosSugeridos = [],
   classificacoesSugeridas = [],
   investimentosSugeridos = [],
   donosSugeridos = [],
+  aplicadosSugeridos = [],
   titulo = "Editar lançamento",
   textoSalvar = "Salvar alterações",
   contextoInvestimento = false
@@ -45,10 +50,12 @@ export function abrirEditorTransacao(transacao, {
         <label>Detalhe (onde gastou / de onde recebeu)</label>
         <input type="text" id="editor-saida" maxlength="120">
 
-        <label>Banco</label>
+        <label>${contextoInvestimento ? "Banco (conta de onde o dinheiro saiu / pra onde voltou)" : "Banco"}</label>
         <input type="text" id="editor-banco" required maxlength="60">
 
         ${contextoInvestimento ? `
+        <label>Onde está aplicado <span class="dica-inline">(opcional — ex: MERCADO BITCOIN; vazio = descobre pelo Detalhe)</span></label>
+        <input type="text" id="editor-aplicado" maxlength="60" placeholder="Ex: Bradesco, Mercado Bitcoin...">
         <label>Investimento</label>
         <input type="text" id="editor-investimento" required maxlength="60" placeholder="Ex: CDB Bradesco...">
 
@@ -95,6 +102,7 @@ export function abrirEditorTransacao(transacao, {
     const campoBanco = caixa.querySelector("#editor-banco");
     const campoInvestimento = caixa.querySelector("#editor-investimento");
     const campoDono = caixa.querySelector("#editor-dono");
+    const campoAplicado = caixa.querySelector("#editor-aplicado");
     const campoTipo = caixa.querySelector("#editor-tipo");
     const campoTipoMov = caixa.querySelector("#editor-tipo-mov");
     const campoClassificacao = caixa.querySelector("#editor-classificacao");
@@ -106,6 +114,7 @@ export function abrirEditorTransacao(transacao, {
     campoBanco.value = transacao.banco ?? "";
     if (campoInvestimento) campoInvestimento.value = transacao.investimento ?? "";
     if (campoDono) campoDono.value = transacao.dono_carteira ?? "";
+    if (campoAplicado) campoAplicado.value = transacao.banco_investimento ?? "";
     campoTipo.value = transacao.tipo ?? "SAIDA";
     if (campoTipoMov) campoTipoMov.value = transacao.tipo_mov ?? "EXTERNO";
     if (campoClassificacao) campoClassificacao.value = transacao.classificacao_saida ?? "";
@@ -115,6 +124,7 @@ export function abrirEditorTransacao(transacao, {
     if (campoClassificacao) criarComboboxTexto(campoClassificacao, classificacoesSugeridas);
     if (campoInvestimento) criarComboboxTexto(campoInvestimento, investimentosSugeridos);
     if (campoDono) criarComboboxTexto(campoDono, donosSugeridos);
+    if (campoAplicado) criarComboboxTexto(campoAplicado, aplicadosSugeridos);
 
     function finalizar(resultado) {
       fundo.classList.remove("aberto");
@@ -139,6 +149,7 @@ export function abrirEditorTransacao(transacao, {
       const classificacao_saida = campoClassificacao ? campoClassificacao.value.trim().toUpperCase() : "INVESTIMENTO";
       const investimento = campoInvestimento ? campoInvestimento.value.trim().toUpperCase() : "";
       const dono_carteira = campoDono ? campoDono.value.trim().toUpperCase() : "";
+      const banco_investimento = campoAplicado ? normalizarNomeBanco(campoAplicado.value.trim().toUpperCase()) : "";
 
       if (!valor || valor <= 0 || !descricao || !banco || (campoClassificacao && !classificacao_saida)) {
         mostrarToast("Preencha todos os campos obrigatórios.", "erro");
@@ -157,6 +168,7 @@ export function abrirEditorTransacao(transacao, {
       const dadosEditados = { valor, data: dataISO, descricao, saida, banco, tipo, tipo_mov, classificacao_saida };
       if (campoInvestimento) dadosEditados.investimento = investimento;
       if (campoDono) dadosEditados.dono_carteira = dono_carteira;
+      if (campoAplicado) dadosEditados.banco_investimento = banco_investimento;
 
       finalizar(dadosEditados);
     });

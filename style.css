@@ -1407,3 +1407,101 @@ body.tela-login {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   INVESTIMENTOS — FILTRO "ONDE ESTÁ APLICADO" (CHIPS) E RESUMO DOS FILTROS
+   ========================================================================== */
+
+.filtro-aplicado {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: var(--espaco-md);
+  margin-bottom: var(--espaco-xl);
+  box-shadow: var(--sombra-suave);
+}
+
+.filtro-aplicado-cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-xs);
+  margin-bottom: var(--espaco-md);
+}
+
+.filtro-aplicado-titulo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.filtro-aplicado-dica {
+  font-size: var(--font-small);
+  color: var(--cor-texto-suave);
+}
+
+.chips-banco {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-sm);
+}
+
+.chip-banco {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-sm);
+  padding: 8px 14px;
+  min-height: 40px;
+  width: auto;
+  margin: 0;
+  border-radius: var(--raio-pilula);
+  border: 1px solid var(--cor-borda-intensa);
+  background: var(--cor-superficie-elevada);
+  color: var(--cor-texto);
+  font-size: var(--font-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.chip-banco:hover { border-color: var(--cor-primaria); }
+
+.chip-banco .chip-bolinha {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chip-banco .chip-valor {
+  font-variant-numeric: tabular-nums;
+  color: var(--cor-texto-suave);
+  font-weight: 700;
+}
+
+.chip-banco.ativo {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-suave);
+  box-shadow: var(--sombra-destaque);
+}
+
+.chip-banco.ativo .chip-valor { color: var(--cor-texto); }
+
+.resumo-filtro-inv {
+  font-size: var(--font-small);
+  color: var(--cor-texto-suave);
+  margin: 0 0 var(--espaco-md) 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.subtexto-aplicado {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--cor-texto-suave);
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .chip-banco { flex: 1 1 100%; justify-content: space-between; }
+}

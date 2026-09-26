@@ -9,37 +9,261 @@
 // valor, ex: "EU"/"MAYARA" — pra não confundir quando o investimento é
 // compartilhado com outra pessoa).
 //
+// "Onde está aplicado": o campo `banco` de um aporte é a conta de ONDE O
+// DINHEIRO SAIU (ex: BRADESCO), pra o saldo do Extrato/Dashboard bater. Mas o
+// dinheiro pode estar aplicado em outro lugar (ex: MERCADO BITCOIN, que só
+// aparece no Detalhe). Por isso cada lançamento ganha um "banco aplicado",
+// descoberto nesta ordem (ver calcularBancosAplicados):
+//   1) campo `banco_investimento`, se o usuário preencheu no modal;
+//   2) banco predominante do mesmo investimento (todos os lançamentos de
+//      "RENDA FIXA" ficam no mesmo lugar, mesmo um resgate com Detalhe "UBER");
+//   3) nome de banco encontrado no Detalhe/Descrição (ex: "BRADESCO
+//      INVESTIMENTO" → BRADESCO, "MERCADO BITCOIN" → MERCADO BITCOIN);
+//   4) o próprio `banco` (conta de origem).
+// O filtro "Onde está aplicado" (chips abaixo dos big numbers) usa esse valor,
+// então o Saldo investido filtrado é o que deve bater com o app do banco
+// (principal aportado − resgatado, sem rendimento).
+//
 // obterTransacoes() não tem filtro de período nenhum (só por userId), então
 // esta tela já busca o histórico inteiro por padrão — sem recorte de data.
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 import { BANCOS_SUGERIDOS, mesclarSugestoes } from "./dados-comuns.js";
-import { isoParaBR, formatarReais } from "./utils.js";
+import { isoParaBR, brParaISO, normalizarDataDigitada, formatarReais, ligarCampoDataInteligente } from "./utils.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
+import { criarSeletorMultiplo } from "./combobox.js";
+import { obterCorBanco } from "./cores-bancos.js";
 import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { abrirEditorTransacao } from "./editor-transacao.js";
 
 const CLASSIFICACAO_INVESTIMENTO = "INVESTIMENTO";
 const SEM_DONO = "Sem dono definido";
+const SEM_INVESTIMENTO = "Investimento não definido";
+const SEM_BANCO = "Banco não definido";
+// Lugares onde se investe que não são "banco de conta corrente" e por isso
+// não estão em BANCOS_SUGERIDOS — entram na detecção pelo Detalhe/Descrição.
+const LOCAIS_INVESTIMENTO_EXTRAS = ["MERCADO BITCOIN"];
+const CHAVE_PREFERENCIA_APLICADO = "investimentos_banco_aplicado";
 
 const usuario = await exigirLogin();
 renderizarNav("investimentos", usuario.email);
 
 let todasTransacoes = [];
 let todosInvestimentos = [];
+let bancoAplicadoPorId = new Map();
+let bancoAplicadoPorInvestimento = new Map();
+let bancoAplicadoSelecionado = lerPreferenciaAplicado();
 let ordenacaoAtual = { chave: "data", direcao: "desc", tipo: "texto" };
 
 ativarOrdenacao(document.querySelector("#tabela-investimentos thead"), (chave, direcao, tipo) => {
     ordenacaoAtual = { chave, direcao, tipo };
-    renderizarTabela(todosInvestimentos);
+    aplicarFiltrosTabela();
 });
+
+// ---------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------
+
+function lerPreferenciaAplicado() {
+    try { return localStorage.getItem(CHAVE_PREFERENCIA_APLICADO) ?? ""; } catch { return ""; }
+}
+
+function salvarPreferenciaAplicado(valor) {
+    try { localStorage.setItem(CHAVE_PREFERENCIA_APLICADO, valor); } catch { /* não é grave */ }
+}
+
+function normalizarTexto(texto) {
+    return (texto ?? "")
+        .toString()
+        .trim()
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+}
+
+function escaparRegex(texto) {
+    return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function debounce(fn, atrasoMs) {
+    let temporizador;
+    return (...args) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => fn(...args), atrasoMs);
+    };
+}
+
+function nomeInvestimento(t) {
+    return (t.investimento || "").trim() || SEM_INVESTIMENTO;
+}
+
+function nomeDono(t) {
+    return (t.dono_carteira || "").trim() || SEM_DONO;
+}
+
+function bancoAplicado(t) {
+    return bancoAplicadoPorId.get(t.id) || (t.banco || "").trim() || SEM_BANCO;
+}
+
+function somarAportesResgates(lista) {
+    let aportado = 0;
+    let resgatado = 0;
+    lista.forEach((t) => {
+        if (typeof t.valor !== "number") return;
+        if (t.tipo === "SAIDA") aportado += t.valor;
+        else resgatado += t.valor;
+    });
+    return { aportado, resgatado, saldo: aportado - resgatado };
+}
 
 function celulaTexto(texto) {
     const td = document.createElement("td");
     td.textContent = texto;
     return td;
 }
+
+// ---------------------------------------------------------------------------
+// "Onde está aplicado" — descobre o banco de cada lançamento
+// ---------------------------------------------------------------------------
+
+function candidatosDeBanco() {
+    const usados = todasTransacoes.map((t) => t.banco);
+    const aplicadosExplicitos = todosInvestimentos.map((t) => t.banco_investimento);
+    const todos = [...BANCOS_SUGERIDOS, ...LOCAIS_INVESTIMENTO_EXTRAS, ...usados, ...aplicadosExplicitos]
+        .map((b) => (b ?? "").toString().trim().toUpperCase())
+        .filter(Boolean);
+    // Mais longos primeiro: "NUBANK CAIXINHA" ganha de "NUBANK".
+    return [...new Set(todos)].sort((a, b) => b.length - a.length);
+}
+
+// Procura um nome de banco inteiro (não pedaço de palavra: "BB" não casa com
+// "HOBBY", "INTER" não casa com "INTERNO") no Detalhe e depois na Descrição.
+function detectarBancoNoTexto(t, candidatos) {
+    for (const texto of [t.saida, t.descricao]) {
+        const alvo = normalizarTexto(texto);
+        if (!alvo) continue;
+        for (const candidato of candidatos) {
+            const padrao = new RegExp(`(^|[^A-Z0-9])${escaparRegex(normalizarTexto(candidato))}([^A-Z0-9]|$)`);
+            if (padrao.test(alvo)) return candidato;
+        }
+    }
+    return "";
+}
+
+function calcularBancosAplicados() {
+    const candidatos = candidatosDeBanco();
+    const pistaPorId = new Map();
+    const votosPorInvestimento = new Map();
+
+    todosInvestimentos.forEach((t) => {
+        const explicito = (t.banco_investimento || "").trim().toUpperCase();
+        const pista = explicito || detectarBancoNoTexto(t, candidatos);
+        pistaPorId.set(t.id, { explicito, pista });
+
+        const investimento = (t.investimento || "").trim();
+        if (!investimento || !pista) return;
+        if (!votosPorInvestimento.has(investimento)) votosPorInvestimento.set(investimento, new Map());
+        const votos = votosPorInvestimento.get(investimento);
+        const atual = votos.get(pista) ?? { quantidade: 0, ultimaData: "" };
+        atual.quantidade += 1;
+        if ((t.data ?? "") > atual.ultimaData) atual.ultimaData = t.data ?? "";
+        votos.set(pista, atual);
+    });
+
+    bancoAplicadoPorInvestimento = new Map();
+    votosPorInvestimento.forEach((votos, investimento) => {
+        const [vencedor] = [...votos.entries()].sort((a, b) =>
+            (b[1].quantidade - a[1].quantidade) || b[1].ultimaData.localeCompare(a[1].ultimaData)
+        );
+        if (vencedor) bancoAplicadoPorInvestimento.set(investimento, vencedor[0]);
+    });
+
+    bancoAplicadoPorId = new Map();
+    todosInvestimentos.forEach((t) => {
+        const { explicito, pista } = pistaPorId.get(t.id);
+        const doInvestimento = bancoAplicadoPorInvestimento.get((t.investimento || "").trim());
+        const final = explicito || doInvestimento || pista || (t.banco || "").trim().toUpperCase() || SEM_BANCO;
+        bancoAplicadoPorId.set(t.id, final);
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Filtro "Onde está aplicado" (chips abaixo dos big numbers)
+// ---------------------------------------------------------------------------
+
+function listaEscopo() {
+    if (!bancoAplicadoSelecionado) return todosInvestimentos;
+    return todosInvestimentos.filter((t) => bancoAplicado(t) === bancoAplicadoSelecionado);
+}
+
+function criarChip(rotulo, valor, ativo, cor, aoClicar) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `chip-banco${ativo ? " ativo" : ""}`;
+    chip.setAttribute("aria-pressed", ativo ? "true" : "false");
+
+    if (cor) {
+        const bolinha = document.createElement("span");
+        bolinha.className = "chip-bolinha";
+        bolinha.style.background = cor;
+        chip.appendChild(bolinha);
+    }
+
+    const nome = document.createElement("span");
+    nome.textContent = rotulo;
+    chip.appendChild(nome);
+
+    const spanValor = document.createElement("span");
+    spanValor.className = "chip-valor";
+    spanValor.textContent = formatarReais(valor);
+    chip.appendChild(spanValor);
+
+    chip.addEventListener("click", aoClicar);
+    return chip;
+}
+
+function renderizarChipsAplicado() {
+    const container = document.getElementById("chips-banco-aplicado");
+    container.innerHTML = "";
+
+    const porBanco = new Map();
+    todosInvestimentos.forEach((t) => {
+        const banco = bancoAplicado(t);
+        if (!porBanco.has(banco)) porBanco.set(banco, []);
+        porBanco.get(banco).push(t);
+    });
+
+    if (bancoAplicadoSelecionado && !porBanco.has(bancoAplicadoSelecionado)) {
+        bancoAplicadoSelecionado = "";
+        salvarPreferenciaAplicado("");
+    }
+
+    const selecionar = (valor) => {
+        bancoAplicadoSelecionado = valor;
+        salvarPreferenciaAplicado(valor);
+        renderizarTudo();
+    };
+
+    const total = somarAportesResgates(todosInvestimentos).saldo;
+    container.appendChild(criarChip("Todos", total, bancoAplicadoSelecionado === "", null, () => selecionar("")));
+
+    [...porBanco.entries()]
+        .map(([banco, lista]) => ({ banco, saldo: somarAportesResgates(lista).saldo }))
+        .sort((a, b) => b.saldo - a.saldo)
+        .forEach(({ banco, saldo }) => {
+            container.appendChild(criarChip(banco, saldo, bancoAplicadoSelecionado === banco, obterCorBanco(banco), () => selecionar(banco)));
+        });
+
+    const dica = document.getElementById("dica-filtro-aplicado");
+    dica.textContent = bancoAplicadoSelecionado
+        ? `Mostrando só o que está aplicado em ${bancoAplicadoSelecionado}. O Saldo investido abaixo é o principal (aportes − resgates) e deve bater com o app do banco, sem contar rendimento.`
+        : "Escolha um banco para ver só o que está investido nele. O Saldo investido passa a ser o valor que deve bater com o app do banco (sem contar rendimento).";
+}
+
+// ---------------------------------------------------------------------------
+// Big numbers e cards
+// ---------------------------------------------------------------------------
 
 function linhaCarteira(rotulo, valor, classeExtra = "") {
     const linha = document.createElement("div");
@@ -110,21 +334,15 @@ function linhaExpansivel(rotulo, valor, lancamentos) {
 }
 
 function renderizarResumo(lista) {
-    let aportado = 0;
-    let resgatado = 0;
-
-    lista.forEach((t) => {
-        if (typeof t.valor !== "number") return;
-        if (t.tipo === "SAIDA") aportado += t.valor;
-        else resgatado += t.valor;
-    });
-
-    const saldo = aportado - resgatado;
+    const { aportado, resgatado, saldo } = somarAportesResgates(lista);
     const cartaoSaldo = document.getElementById("cartao-saldo-investido");
 
     document.getElementById("total-aportado").textContent = formatarReais(aportado);
     document.getElementById("total-resgatado").textContent = formatarReais(resgatado);
     document.getElementById("total-saldo-investido").textContent = formatarReais(saldo);
+    cartaoSaldo.querySelector(".rotulo").textContent = bancoAplicadoSelecionado
+        ? `Saldo investido · ${bancoAplicadoSelecionado}`
+        : "Saldo investido";
 
     cartaoSaldo.classList.remove("metrica-saldo-pos", "metrica-saldo-neg");
     cartaoSaldo.classList.add(saldo >= 0 ? "metrica-saldo-pos" : "metrica-saldo-neg");
@@ -137,13 +355,14 @@ function renderizarPorInvestimento(lista) {
     const porInvestimento = {};
     lista.forEach((t) => {
         if (typeof t.valor !== "number") return;
-        const nome = (t.investimento || "").trim() || "Investimento não definido";
-        if (!porInvestimento[nome]) porInvestimento[nome] = { aportado: 0, resgatado: 0, bancos: new Set(), porDono: {} };
+        const nome = nomeInvestimento(t);
+        if (!porInvestimento[nome]) porInvestimento[nome] = { aportado: 0, resgatado: 0, aplicados: new Set(), origens: new Set(), porDono: {} };
         const grupo = porInvestimento[nome];
 
-        if (t.banco) grupo.bancos.add(t.banco);
+        grupo.aplicados.add(bancoAplicado(t));
+        if (t.banco) grupo.origens.add(t.banco);
 
-        const dono = (t.dono_carteira || "").trim() || SEM_DONO;
+        const dono = nomeDono(t);
         if (!grupo.porDono[dono]) grupo.porDono[dono] = 0;
 
         if (t.tipo === "SAIDA") {
@@ -174,8 +393,10 @@ function renderizarPorInvestimento(lista) {
         nomeEl.textContent = nome;
         cartao.appendChild(nomeEl);
 
-        const bancoLabel = dados.bancos.size > 0 ? [...dados.bancos].join(", ") : "—";
-        cartao.appendChild(linhaCarteira("Banco", bancoLabel, "texto"));
+        const aplicadoLabel = [...dados.aplicados].join(", ") || "—";
+        const origemLabel = [...dados.origens].join(", ") || "—";
+        cartao.appendChild(linhaCarteira("Aplicado em", aplicadoLabel, "texto"));
+        if (origemLabel !== aplicadoLabel) cartao.appendChild(linhaCarteira("Conta de origem", origemLabel, "texto"));
         cartao.appendChild(linhaCarteira("Aportado", dados.aportado));
         cartao.appendChild(linhaCarteira("Resgatado", dados.resgatado));
         cartao.appendChild(linhaCarteira("Saldo investido", saldo, "saldo"));
@@ -200,7 +421,7 @@ function renderizarPorDono(lista) {
     const porDono = {};
     lista.forEach((t) => {
         if (typeof t.valor !== "number") return;
-        const dono = (t.dono_carteira || "").trim() || SEM_DONO;
+        const dono = nomeDono(t);
         if (!porDono[dono]) porDono[dono] = { aportado: 0, resgatado: 0, lancamentos: [] };
         porDono[dono].lancamentos.push(t);
         if (t.tipo === "SAIDA") porDono[dono].aportado += t.valor;
@@ -256,29 +477,151 @@ function renderizarPorDono(lista) {
 // Pré-preenchimento do modal de novo lançamento a partir de um card "Por
 // dono": sempre preenche o dono; só preenche Investimento/Banco quando esse
 // dono tem exatamente 1 investimento (com mais de um, não dá pra adivinhar
-// qual — o usuário escolhe na hora via autocomplete).
+// qual — o usuário escolhe na hora via autocomplete). Respeita o filtro
+// "Onde está aplicado": com um banco escolhido, só olha os investimentos dele.
 function prefillParaDono(dono, tipo) {
-    const doDono = todosInvestimentos.filter((t) => ((t.dono_carteira || "").trim() || SEM_DONO) === dono);
+    const doDono = listaEscopo().filter((t) => nomeDono(t) === dono);
     const investimentosDoDono = [...new Set(doDono.map((t) => t.investimento).filter(Boolean))];
 
     const prefill = { tipo, dono_carteira: dono === SEM_DONO ? "" : dono };
+    if (bancoAplicadoSelecionado && bancoAplicadoSelecionado !== SEM_BANCO) prefill.banco_investimento = bancoAplicadoSelecionado;
 
     if (investimentosDoDono.length === 1) {
         prefill.investimento = investimentosDoDono[0];
         const doInvestimento = doDono.filter((t) => t.investimento === investimentosDoDono[0]);
         const ultimo = [...doInvestimento].sort((a, b) => (b.criadoEmMs ?? 0) - (a.criadoEmMs ?? 0))[0];
         if (ultimo?.banco) prefill.banco = ultimo.banco;
+        if (ultimo) prefill.banco_investimento = bancoAplicado(ultimo);
     }
 
     return prefill;
 }
 
-function renderizarTabela(lista) {
+// ---------------------------------------------------------------------------
+// Filtros da tabela de movimentações
+// ---------------------------------------------------------------------------
+
+const campoInicio = document.getElementById("filtro-inv-inicio");
+const campoFim = document.getElementById("filtro-inv-fim");
+const campoDescricao = document.getElementById("filtro-inv-descricao");
+const campoDetalhe = document.getElementById("filtro-inv-detalhe");
+const campoTipo = document.getElementById("filtro-inv-tipo");
+
+const seletorInvestimento = criarSeletorMultiplo({
+    container: document.getElementById("filtro-inv-investimento"),
+    opcoes: [],
+    rotuloTodos: "Todos os investimentos",
+    aoMudar: () => aplicarFiltrosTabela()
+});
+
+const seletorDono = criarSeletorMultiplo({
+    container: document.getElementById("filtro-inv-dono"),
+    opcoes: [],
+    rotuloTodos: "Todos os donos",
+    aoMudar: () => aplicarFiltrosTabela()
+});
+
+const seletorBanco = criarSeletorMultiplo({
+    container: document.getElementById("filtro-inv-banco"),
+    opcoes: [],
+    rotuloTodos: "Todos os bancos",
+    aoMudar: () => aplicarFiltrosTabela()
+});
+
+ligarCampoDataInteligente(campoInicio);
+ligarCampoDataInteligente(campoFim);
+// Registrados depois do ligarCampoDataInteligente: o blur dele normaliza
+// ("14/9" → "14/09/2026") antes deste filtrar.
+[campoInicio, campoFim].forEach((campo) => {
+    campo.addEventListener("blur", () => aplicarFiltrosTabela());
+    campo.addEventListener("keydown", (evento) => {
+        if (evento.key === "Enter") campo.blur();
+    });
+    campo.addEventListener("input", debounce(() => {
+        if (campo.value.trim() === "" || normalizarDataDigitada(campo.value)?.length === 10 && campo.value.length === 10) aplicarFiltrosTabela();
+    }, 300));
+});
+campoDescricao.addEventListener("input", debounce(() => aplicarFiltrosTabela(), 250));
+campoDetalhe.addEventListener("input", debounce(() => aplicarFiltrosTabela(), 250));
+campoTipo.addEventListener("change", () => aplicarFiltrosTabela());
+
+document.getElementById("btn-limpar-filtros-inv").addEventListener("click", () => {
+    campoInicio.value = "";
+    campoFim.value = "";
+    campoDescricao.value = "";
+    campoDetalhe.value = "";
+    campoTipo.value = "";
+    [campoInicio, campoFim].forEach((c) => c.classList.remove("campo-invalido"));
+    seletorInvestimento.definirSelecionados([]);
+    seletorDono.definirSelecionados([]);
+    seletorBanco.definirSelecionados([]);
+    aplicarFiltrosTabela();
+});
+
+function dataDoCampoISO(campo) {
+    const texto = campo.value.trim();
+    if (!texto) return null;
+    const normalizada = normalizarDataDigitada(texto);
+    return normalizada ? brParaISO(normalizada) : null;
+}
+
+function ordenarPtBR(valores) {
+    return [...new Set(valores)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+// As opções de cada seletor vêm só do que está no escopo do filtro "Onde
+// está aplicado" (se escolheu MERCADO BITCOIN, não aparece CDB BRADESCO).
+// O Banco lista tanto a conta de origem quanto onde está aplicado — assim
+// dá pra filtrar "MERCADO BITCOIN" mesmo o lançamento tendo Banco BRADESCO.
+function atualizarOpcoesFiltros(lista) {
+    seletorInvestimento.definirOpcoes(ordenarPtBR(lista.map(nomeInvestimento)));
+    seletorDono.definirOpcoes(ordenarPtBR(lista.map(nomeDono)));
+    seletorBanco.definirOpcoes(ordenarPtBR(lista.flatMap((t) => [(t.banco || "").trim(), bancoAplicado(t)]).filter(Boolean)));
+}
+
+function filtrarTabela(lista) {
+    const inicio = dataDoCampoISO(campoInicio);
+    const fim = dataDoCampoISO(campoFim);
+    const investimentos = seletorInvestimento.obterSelecionados();
+    const donos = seletorDono.obterSelecionados();
+    const bancos = seletorBanco.obterSelecionados();
+    const termoDescricao = normalizarTexto(campoDescricao.value);
+    const termoDetalhe = normalizarTexto(campoDetalhe.value);
+    const tipo = campoTipo.value;
+
+    return lista.filter((t) => {
+        const data = t.data ?? "";
+        if (inicio && data < inicio) return false;
+        if (fim && data > fim) return false;
+        if (investimentos.length > 0 && !investimentos.includes(nomeInvestimento(t))) return false;
+        if (donos.length > 0 && !donos.includes(nomeDono(t))) return false;
+        if (bancos.length > 0 && !bancos.includes((t.banco || "").trim()) && !bancos.includes(bancoAplicado(t))) return false;
+        if (termoDescricao && !normalizarTexto(t.descricao).includes(termoDescricao)) return false;
+        if (termoDetalhe && !normalizarTexto(t.saida).includes(termoDetalhe)) return false;
+        if (tipo && t.tipo !== tipo) return false;
+        return true;
+    });
+}
+
+function aplicarFiltrosTabela() {
+    const escopo = listaEscopo();
+    const filtrada = filtrarTabela(escopo);
+
+    const { aportado, resgatado, saldo } = somarAportesResgates(filtrada);
+    const quantidade = filtrada.length;
+    document.getElementById("resumo-filtro-inv").textContent =
+        `${quantidade} ${quantidade === 1 ? "movimentação" : "movimentações"} · Aportes ${formatarReais(aportado)} · Resgates ${formatarReais(resgatado)} · Líquido ${formatarReais(saldo)}`;
+
+    renderizarTabela(filtrada, escopo.length > 0);
+}
+
+function renderizarTabela(lista, haDadosSemFiltro = true) {
     const corpo = document.querySelector("#tabela-investimentos tbody");
     corpo.innerHTML = "";
 
     if (lista.length === 0) {
-        corpo.innerHTML = "<tr><td colspan='9' class='vazio'>Nenhum lançamento de investimento ainda.</td></tr>";
+        const mensagem = haDadosSemFiltro ? "Nenhuma movimentação com esses filtros." : "Nenhum lançamento de investimento ainda.";
+        corpo.innerHTML = `<tr><td colspan='9' class='vazio'>${mensagem}</td></tr>`;
         return;
     }
 
@@ -300,7 +643,16 @@ function renderizarTabela(lista) {
         linha.appendChild(celulaTexto(transacao.descricao ?? ""));
         linha.appendChild(celulaTexto(transacao.saida ?? ""));
         linha.appendChild(celulaTexto(transacao.dono_carteira || "—"));
-        linha.appendChild(celulaTexto(transacao.banco ?? ""));
+
+        const tdBanco = celulaTexto(transacao.banco ?? "");
+        const aplicado = bancoAplicado(transacao);
+        if (aplicado && aplicado !== (transacao.banco ?? "").trim()) {
+            const sub = document.createElement("span");
+            sub.className = "subtexto-aplicado";
+            sub.textContent = `aplicado em ${aplicado}`;
+            tdBanco.appendChild(sub);
+        }
+        linha.appendChild(tdBanco);
 
         const tdTipo = document.createElement("td");
         const seloTipo = document.createElement("span");
@@ -342,6 +694,10 @@ function renderizarTabela(lista) {
     });
 }
 
+// ---------------------------------------------------------------------------
+// Ações (novo / editar / excluir)
+// ---------------------------------------------------------------------------
+
 async function excluirInvestimento(transacao) {
     const confirmou = await confirmarAcao({
         titulo: "Excluir lançamento?",
@@ -365,19 +721,27 @@ function sugestoes() {
     const bancosUsados = todasTransacoes.map((t) => t.banco).filter(Boolean);
     const investimentosUsados = todosInvestimentos.map((t) => t.investimento).filter(Boolean);
     const donosUsados = todosInvestimentos.map((t) => t.dono_carteira).filter(Boolean);
+    const aplicadosUsados = [...bancoAplicadoPorId.values()].filter((b) => b && b !== SEM_BANCO);
     return {
         bancosSugeridos: mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados),
         investimentosSugeridos: mesclarSugestoes([], investimentosUsados),
-        donosSugeridos: mesclarSugestoes([], donosUsados)
+        donosSugeridos: mesclarSugestoes([], donosUsados),
+        aplicadosSugeridos: mesclarSugestoes([...BANCOS_SUGERIDOS, ...LOCAIS_INVESTIMENTO_EXTRAS], aplicadosUsados)
     };
 }
 
 async function editarInvestimento(transacao) {
-    const dadosEditados = await abrirEditorTransacao(transacao, {
-        ...sugestoes(),
-        titulo: "Editar lançamento de investimento",
-        contextoInvestimento: true
-    });
+    // Mostra no modal onde o sistema acha que está aplicado; se o usuário
+    // salvar, esse valor passa a ficar gravado (e pode ser corrigido ali).
+    const aplicado = bancoAplicado(transacao);
+    const dadosEditados = await abrirEditorTransacao(
+        { ...transacao, banco_investimento: transacao.banco_investimento || (aplicado !== SEM_BANCO ? aplicado : "") },
+        {
+            ...sugestoes(),
+            titulo: "Editar lançamento de investimento",
+            contextoInvestimento: true
+        }
+    );
     if (!dadosEditados) return;
 
     try {
@@ -391,15 +755,17 @@ async function editarInvestimento(transacao) {
 }
 
 async function abrirNovoLancamento(prefill = {}) {
-    const dados = await abrirEditorTransacao(
-        { tipo: "SAIDA", ...prefill },
-        {
-            ...sugestoes(),
-            titulo: "Novo lançamento de investimento",
-            textoSalvar: "Salvar lançamento",
-            contextoInvestimento: true
-        }
-    );
+    const inicial = { tipo: "SAIDA", ...prefill };
+    if (!inicial.banco_investimento && bancoAplicadoSelecionado && bancoAplicadoSelecionado !== SEM_BANCO) {
+        inicial.banco_investimento = bancoAplicadoSelecionado;
+    }
+
+    const dados = await abrirEditorTransacao(inicial, {
+        ...sugestoes(),
+        titulo: "Novo lançamento de investimento",
+        textoSalvar: "Salvar lançamento",
+        contextoInvestimento: true
+    });
     if (!dados) return;
 
     try {
@@ -412,6 +778,20 @@ async function abrirNovoLancamento(prefill = {}) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Carga e renderização
+// ---------------------------------------------------------------------------
+
+function renderizarTudo() {
+    renderizarChipsAplicado();
+    const escopo = listaEscopo();
+    renderizarResumo(escopo);
+    renderizarPorInvestimento(escopo);
+    renderizarPorDono(escopo);
+    atualizarOpcoesFiltros(escopo);
+    aplicarFiltrosTabela();
+}
+
 async function carregarDados(forcarAtualizacao = false) {
     try {
         todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
@@ -419,10 +799,8 @@ async function carregarDados(forcarAtualizacao = false) {
             (t) => (t.classificacao_saida ?? "").trim().toUpperCase() === CLASSIFICACAO_INVESTIMENTO
         );
 
-        renderizarResumo(todosInvestimentos);
-        renderizarPorInvestimento(todosInvestimentos);
-        renderizarPorDono(todosInvestimentos);
-        renderizarTabela(todosInvestimentos);
+        calcularBancosAplicados();
+        renderizarTudo();
 
         if (forcarAtualizacao) mostrarToast("Dados atualizados.", "sucesso");
     } catch (erro) {

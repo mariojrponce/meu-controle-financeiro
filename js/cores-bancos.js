@@ -16,6 +16,7 @@ const CORES_CONHECIDAS = [
   { chave: "PAGBANK", cor: "#00A868" },
   { chave: "PAGSEGURO", cor: "#00A868" },
   { chave: "XP", cor: "#0B0B0B" },
+  { chave: "MERCADO BITCOIN", cor: "#F15A22" },
   { chave: "MERCADO PAGO", cor: "#00AAFF" },
   { chave: "NEON", cor: "#00E0B8" },
   { chave: "ORIGINAL", cor: "#00A65A" },
