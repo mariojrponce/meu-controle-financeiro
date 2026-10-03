@@ -49,7 +49,8 @@
     ├── preferencias-filtros.js          # Persistência de filtros do extrato no localStorage
     ├── tabela-ordenavel.js              # Utilitário para ordenação interativa de tabelas HTML
     ├── ui.js                            # Sistema de Toast Notifications e modais
-    └── utils.js                         # Formatação de moeda (BRL), datas (BR/ISO) e ordenações
+    ├── utils.js                         # Formatação de moeda (BRL), datas (BR/ISO) e ordenações
+    └── vale.js                          # Identifica bancos de vale (Alelo, Pluxe...) e o filtro Tudo/Só vale/Sem vale
 ```
 
 ---
