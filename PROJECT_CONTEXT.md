@@ -31,6 +31,7 @@
 ├── dashboard.html / js/dashboard.js     # Visão geral, saldos por banco, totais do mês e relatórios
 ├── extrato.html / js/extrato.js         # Extrato completo com filtros por período/banco/tipo e exportação
 ├── importar.html / js/importar.js       # Importação em lote de transações via planilha Excel
+├── planejamento.html / js/planejamento.js # Planejamento por ciclo de salário (quanto precisa, quanto sobra, quanto dá p/ investir)
 ├── login.html / js/login.js             # Tela de login e registro via Firebase Auth
 ├── firestore.rules                      # Regras de segurança e validações de esquema do Firestore
 ├── style.css                            # Estilos globais e componentes UI
@@ -44,6 +45,7 @@
     ├── firebase-config.js               # Configuração e inicialização dos serviços Firebase
     ├── graficos.js                      # Inicialização e renderização dos gráficos Chart.js
     ├── importacao.js                    # Processamento de linhas da planilha importada
+    ├── planejamento-calculo.js          # Conta dos ciclos de salário (sem DOM, testável no Node)
     ├── nav.js                           # Componente de cabeçalho e navegação comum
     ├── preferencias-dashboard.js        # Persistência de filtros do dashboard no localStorage
     ├── preferencias-filtros.js          # Persistência de filtros do extrato no localStorage

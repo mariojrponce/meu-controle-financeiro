@@ -1565,3 +1565,138 @@ body.tela-login {
   font-size: 0.75rem;
   cursor: pointer;
 }
+
+/* ==========================================================================
+   PLANEJAMENTO POR SALÁRIO
+   ========================================================================== */
+
+.lista-recomendacoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-sm);
+}
+
+.recomendacao {
+  padding: var(--espaco-sm) var(--espaco-md);
+  border-radius: var(--raio-pequeno);
+  border-left: 4px solid var(--cor-borda);
+  background: var(--cor-fundo);
+  line-height: 1.5;
+}
+
+.recomendacao-ok {
+  border-left-color: var(--cor-sucesso);
+  background: var(--cor-sucesso-suave);
+}
+
+.recomendacao-alerta {
+  border-left-color: var(--cor-aviso);
+  background: var(--cor-aviso-suave);
+}
+
+.aviso-banco {
+  margin: var(--espaco-sm) 0 0;
+  font-size: 0.8125rem;
+  color: var(--cor-perigo);
+  font-weight: 600;
+}
+
+.grade-ciclos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--espaco-md);
+}
+
+.cartao-ciclo {
+  border: 1px solid var(--cor-borda);
+  border-top: 4px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: var(--espaco-md) var(--espaco-lg);
+  background: var(--cor-superficie);
+  min-width: 0;
+}
+
+.cartao-ciclo-atual {
+  border-top-color: var(--cor-primaria);
+}
+
+.cartao-ciclo-negativo {
+  border-top-color: var(--cor-perigo);
+}
+
+.cartao-ciclo-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-sm);
+}
+
+.cartao-ciclo-periodo {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.selo-ciclo {
+  background: var(--cor-primaria);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.cartao-ciclo-salario {
+  margin: 4px 0 var(--espaco-sm);
+  font-size: 0.8125rem;
+  color: var(--cor-texto-suave);
+}
+
+.cartao-ciclo-resumo {
+  margin: var(--espaco-sm) 0 0;
+  font-size: 0.8125rem;
+  color: var(--cor-texto-suave);
+}
+
+.cartao-ciclo-detalhes {
+  margin-top: var(--espaco-sm);
+  font-size: 0.8125rem;
+}
+
+.cartao-ciclo-detalhes summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--cor-primaria);
+}
+
+.cartao-ciclo-detalhes table {
+  font-size: 0.75rem;
+}
+
+.config-planejamento summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.config-planejamento summary h3 {
+  display: inline;
+}
+
+.config-planejamento-corpo {
+  margin-top: var(--espaco-md);
+  display: grid;
+  gap: var(--espaco-md);
+  max-width: 720px;
+}
+
+/* 8 itens no menu de baixo do celular: menos respiro lateral para caber */
+@media (max-width: 768px) {
+  .mobile-nav a {
+    padding: 6px 2px;
+    min-width: 0;
+    font-size: 0.65rem;
+  }
+}

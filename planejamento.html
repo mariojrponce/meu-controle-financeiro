@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>Planejamento · Meu Financeiro</title>
+    <script>
+        (function() {
+            var t = localStorage.getItem("tema_meu_financeiro");
+            if (!t) { var h = new Date().getHours(); t = (h >= 6 && h < 18) ? "light" : "dark"; }
+            document.documentElement.setAttribute("data-theme", t);
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="mobile-header">
+    <div class="marca-mobile">
+        <span>💰</span>
+        <span>Meu Financeiro</span>
+    </div>
+    <div class="mobile-header-acoes">
+        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
+        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+    </div>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-marca">
+            <span class="logo-icone">💰</span>
+            <span class="logo-texto">Meu Financeiro</span>
+        </div>
+        <nav class="sidebar-links">
+            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
+            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Planejamento</span></a>
+        </nav>
+        <div class="sidebar-rodape">
+            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
+            <div class="sidebar-email"></div>
+            <button class="btn-sair botao-sair">🚪 Sair</button>
+        </div>
+    </aside>
+
+    <main class="conteudo-principal">
+        <div class="pagina">
+            <div class="cabecalho-pagina">
+                <div>
+                    <h2>🧭 Planejamento por salário</h2>
+                    <p class="subtitulo">O salário do fim do mês paga as contas até a véspera do salário do dia 15, e o do dia 15 paga as contas até a véspera do próximo. Aqui o sistema faz essa conta por você: quanto precisa para cada ciclo, quanto sobra e quanto dá para investir sem fazer falta depois. Não conta o dinheiro de vale (Alelo, Pluxe) nem transferências entre suas contas.</p>
+                </div>
+                <div style="display:flex; gap: var(--espaco-sm); flex-wrap:wrap;">
+                    <button id="btn-atualizar" class="botao botao-secundario" style="margin:0;width:auto;" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
+                </div>
+            </div>
+
+            <div class="grade-resumo">
+                <div class="cartao-metrica metrica-neutra" title="Soma do saldo de hoje de todos os bancos, sem vale">
+                    <div class="rotulo">💳 Saldo hoje (sem vale)</div>
+                    <div class="valor" id="kpi-saldo-hoje">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-saida">
+                    <div class="rotulo" id="kpi-contas-rotulo">Contas até o próximo salário</div>
+                    <div class="valor" id="kpi-contas">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-saldo-pos" id="cartao-kpi-sobra">
+                    <div class="rotulo" id="kpi-sobra-rotulo">Sobra até o próximo salário</div>
+                    <div class="valor" id="kpi-sobra">R$ 0,00</div>
+                </div>
+                <div class="cartao-metrica metrica-entrada" title="O menor saldo que você terá entre hoje e o fim do horizonte, menos o colchão de segurança">
+                    <div class="rotulo">📈 Pode investir sem fazer falta</div>
+                    <div class="valor" id="kpi-investir">R$ 0,00</div>
+                </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>💡 O que fazer agora</h3>
+                </div>
+                <ul class="lista-recomendacoes" id="recomendacoes">
+                    <li>Carregando...</li>
+                </ul>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>🏦 Cada banco até o próximo salário</h3>
+                </div>
+                <p class="dica-campo">Saldo de hoje de cada banco, mais o que ainda entra e menos o que ainda sai nele até a véspera do próximo salário. Se algum banco ficar negativo, transfira antes da primeira conta vencer.</p>
+                <div class="grade-carteiras" id="grade-bancos-ciclo">
+                    <p class="vazio">Carregando...</p>
+                </div>
+            </div>
+
+            <div class="secao cartao">
+                <div class="secao-titulo">
+                    <h3>📆 Ciclos de salário</h3>
+                </div>
+                <p class="dica-campo">Cada ciclo começa no dia em que o salário cai e vai até a véspera do próximo. O que sobra de um ciclo passa para o seguinte.</p>
+                <div class="grade-ciclos" id="grade-ciclos">
+                    <p class="vazio">Carregando...</p>
+                </div>
+            </div>
+
+            <details class="secao cartao config-planejamento">
+                <summary><h3>⚙️ Como a conta é feita (ajustes)</h3></summary>
+                <div class="config-planejamento-corpo">
+                    <div class="campo-filtro">
+                        <label for="campo-colchao">Colchão de segurança (R$)</label>
+                        <input type="text" id="campo-colchao" inputmode="decimal" placeholder="Ex: 500">
+                        <p class="dica-campo" id="dica-colchao">Dinheiro que sempre fica em caixa para imprevistos, mesmo depois de pagar tudo. Nunca é sugerido para investir.</p>
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Gastos do dia a dia</label>
+                        <div id="seletor-dia-a-dia"></div>
+                        <p class="dica-campo" id="dica-dia-a-dia">Categorias de gastos que ainda não estão lançados (lanche, uber, ônibus...). O sistema reserva a média diária dos últimos 90 dias para os dias que faltam em cada ciclo.</p>
+                    </div>
+                    <p class="dica-campo">
+                        • <b>Saldo de hoje</b>: lançamentos do mês passado até hoje. A "virada de mês" do dia 01 é o saldo de abertura, então ele bate com o saldo do Dashboard.<br>
+                        • <b>Contas</b>: saídas previstas (futuras) de cada ciclo, inclusive a fatura do cartão e os aportes já programados.<br>
+                        • <b>Salário</b>: entradas com classificação SALARIO. As datas dos ciclos vêm dos salários já lançados. Depois do último lançado, o sistema supõe os dias 15 e 30 (ou o último dia do mês), com o mesmo valor do último salário de cada um.<br>
+                        • Isto é uma conta do seu fluxo de caixa, não uma recomendação de investimento.
+                    </p>
+                </div>
+            </details>
+        </div>
+    </main>
+</div>
+
+<nav class="mobile-nav">
+    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
+    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
+    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
+    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
+    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Plano</span></a>
+</nav>
+
+<script type="module" src="js/planejamento.js"></script>
+
+</body>
+</html>
