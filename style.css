@@ -1505,3 +1505,32 @@ body.tela-login {
 @media (max-width: 768px) {
   .chip-banco { flex: 1 1 100%; justify-content: space-between; }
 }
+
+/* Título secundário de gráfico (h4) com o selo de total ao lado */
+.subtitulo-grafico {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espaco-sm);
+  margin: var(--espaco-lg) 0 var(--espaco-sm);
+}
+
+.subtitulo-grafico h4 {
+  font-size: 0.875rem;
+  margin: 0;
+  color: var(--cor-texto-suave);
+}
+
+/* Selo com a soma de todos os itens do gráfico */
+.total-grafico {
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}

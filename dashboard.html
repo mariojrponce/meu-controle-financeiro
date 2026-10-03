@@ -200,7 +200,10 @@
                     <p class="vazio">Nenhuma categoria configurada como "à parte" ainda.</p>
                 </div>
 
-                <h4 style="font-size:0.875rem; margin: var(--espaco-lg) 0 var(--espaco-sm); color:var(--cor-texto-suave);">📅 Previsto (futuro) por categoria à parte</h4>
+                <div class="subtitulo-grafico">
+                    <h4>📅 Previsto (futuro) por categoria à parte</h4>
+                    <span class="total-grafico" id="total-categorias-separadas-futuro" style="display:none;"></span>
+                </div>
                 <div class="grafico-container" style="display:none;">
                     <canvas id="grafico-categorias-separadas-futuro"></canvas>
                 </div>
@@ -210,6 +213,7 @@
             <div class="secao cartao">
                 <div class="secao-titulo">
                     <h3>💵 Entradas por categoria <span id="rotulo-periodo-entradas" style="font-weight:600;color:var(--cor-texto-suave);font-size:0.8125rem;"></span></h3>
+                    <span class="total-grafico" id="total-entradas-categoria" style="display:none;"></span>
                 </div>
                 <div class="grafico-container" style="display:none;">
                     <canvas id="grafico-entradas-categoria"></canvas>
@@ -220,13 +224,17 @@
             <div class="secao cartao">
                 <div class="secao-titulo">
                     <h3>📌 Maiores gastos do período por classificação</h3>
+                    <span class="total-grafico" id="total-classificacoes" style="display:none;"></span>
                 </div>
                 <div class="grafico-container" style="display:none;">
                     <canvas id="grafico-classificacoes"></canvas>
                 </div>
                 <p class="vazio" id="vazio-classificacoes">Sem dados ainda.</p>
 
-                <h4 style="font-size:0.875rem; margin: var(--espaco-lg) 0 var(--espaco-sm); color:var(--cor-texto-suave);">📈 Evolução mensal de gastos no período</h4>
+                <div class="subtitulo-grafico">
+                    <h4>📈 Evolução mensal de gastos — <span id="rotulo-ano-gastos"></span></h4>
+                    <span class="total-grafico" id="total-tendencia-gastos" style="display:none;"></span>
+                </div>
                 <div class="grafico-container" style="display:none;">
                     <canvas id="grafico-tendencia-gastos"></canvas>
                 </div>

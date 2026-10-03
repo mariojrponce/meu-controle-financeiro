@@ -15,7 +15,8 @@ import {
     obterVisoesPersonalizadas, salvarVisoesPersonalizadas
 } from "./preferencias-dashboard.js";
 import {
-    renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema
+    renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema,
+    mostrarTotalGrafico, somarValores
 } from "./graficos.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
 
@@ -351,8 +352,23 @@ function renderizarVisoesPersonalizadas(lista) {
             aplicarFiltros();
         });
 
+        const dados = calcularVisaoPersonalizada(lista, visao);
+        const temDados = Object.keys(dados).length > 0;
+
+        const seloTotal = document.createElement("span");
+        seloTotal.className = "total-grafico";
+        seloTotal.textContent = totalEmReais(Object.values(dados));
+        if (!temDados) seloTotal.style.display = "none";
+
+        const ladoDireito = document.createElement("div");
+        ladoDireito.style.display = "flex";
+        ladoDireito.style.alignItems = "center";
+        ladoDireito.style.gap = "var(--espaco-sm)";
+        ladoDireito.appendChild(seloTotal);
+        ladoDireito.appendChild(botaoRemover);
+
         titulo.appendChild(h4);
-        titulo.appendChild(botaoRemover);
+        titulo.appendChild(ladoDireito);
         bloco.appendChild(titulo);
 
         const idCanvas = `grafico-visao-${visao.id}`;
@@ -373,8 +389,6 @@ function renderizarVisoesPersonalizadas(lista) {
 
         container.appendChild(bloco);
 
-        const dados = calcularVisaoPersonalizada(lista, visao);
-        const temDados = Object.keys(dados).length > 0;
         alternarEstadoVazio(idCanvas, idVazio, temDados);
         if (temDados) renderizarGraficoBarras(idCanvas, dados, { cor: "#059669" });
     });
@@ -631,6 +645,31 @@ function renderizarPrevistoPorBanco(porBanco) {
     });
 }
 
+// Evolução mês a mês do ano inteiro (jan–dez), sempre com os 12 meses —
+// independe do mês filtrado, só do ano do período. Segue as mesmas regras
+// dos gráficos por classificação: sem transferências internas e sem as
+// categorias "à parte"; realizado + previsto.
+function calcularEvolucaoAnual(listaAno, tipo, categoriasSeparadas, classificacao = null) {
+    const valores = Array(12).fill(0);
+    listaAno.forEach((t) => {
+        if (typeof t.valor !== "number" || t.tipo !== tipo) return;
+        if (categoriasSeparadas.has(t.classificacao_saida)) return;
+        if (t.tipo_mov === "INTERNO") return;
+        if (classificacao && (t.classificacao_saida || "SEM CLASSIFICAÇÃO") !== classificacao) return;
+        const mes = Number((t.data ?? "").slice(5, 7));
+        if (mes >= 1 && mes <= 12) valores[mes - 1] += t.valor;
+    });
+    return valores;
+}
+
+function rotulosMesesDoAno(ano) {
+    return Array.from({ length: 12 }, (_, i) => rotuloMesCurto(`${ano}-${String(i + 1).padStart(2, "0")}`));
+}
+
+function totalEmReais(valores) {
+    return `Total: ${formatarReais(somarValores(valores))}`;
+}
+
 // ---------- Filtro principal ----------
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
@@ -641,15 +680,22 @@ function aplicarFiltros() {
     const detalheFiltro = campoDetalhe.value.trim().toUpperCase();
     const descricaoFiltro = campoDescricao.value.trim().toUpperCase();
 
-    let lista = todasTransacoes;
+    // Primeiro os filtros que não são de data — a evolução anual usa essa
+    // lista (ano inteiro), o resto do dashboard aplica também o período.
+    let listaSemPeriodo = todasTransacoes;
+    if (bancosFiltro.length > 0) listaSemPeriodo = listaSemPeriodo.filter(t => bancosFiltro.includes(t.banco));
+    if (movFiltro !== "") listaSemPeriodo = listaSemPeriodo.filter(t => t.tipo_mov === movFiltro);
+    listaSemPeriodo = filtrarPorVale(listaSemPeriodo, campoVale.value);
+    if (detalheFiltro !== "") listaSemPeriodo = listaSemPeriodo.filter(t => (t.saida ?? "").includes(detalheFiltro));
+    if (descricaoFiltro !== "") listaSemPeriodo = listaSemPeriodo.filter(t => (t.descricao ?? "").includes(descricaoFiltro));
+
+    let lista = listaSemPeriodo;
     if (dataInicioISO) lista = lista.filter(t => t.data >= dataInicioISO);
     if (dataFimISO) lista = lista.filter(t => t.data <= dataFimISO);
     if (mesesFiltro.length > 0) lista = lista.filter(t => mesesFiltro.includes((t.data ?? "").slice(5, 7)));
-    if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
-    if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
-    lista = filtrarPorVale(lista, campoVale.value);
-    if (detalheFiltro !== "") lista = lista.filter(t => (t.saida ?? "").includes(detalheFiltro));
-    if (descricaoFiltro !== "") lista = lista.filter(t => (t.descricao ?? "").includes(descricaoFiltro));
+
+    const anoEvolucao = (dataInicioISO ?? "").slice(0, 4) || campoAno.value || String(new Date().getFullYear());
+    const listaAno = listaSemPeriodo.filter(t => (t.data ?? "").startsWith(`${anoEvolucao}-`));
 
     const hoje = hojeISO();
     const listaRealizada = lista.filter(t => (t.data ?? "") <= hoje);
@@ -665,7 +711,6 @@ function aplicarFiltros() {
     const gastoPorClassificacao = {};
     const entradaPorClassificacao = {};
     const porCategoriaSeparada = {};
-    const gastoPorMes = {};
 
     listaRealizada.forEach((t) => {
         if (typeof t.valor !== "number" || !t.banco) return;
@@ -723,8 +768,6 @@ function aplicarFiltros() {
             entradaPorClassificacao[chave] = (entradaPorClassificacao[chave] ?? 0) + t.valor;
         } else {
             gastoPorClassificacao[chave] = (gastoPorClassificacao[chave] ?? 0) + t.valor;
-            const chaveMes = (t.data ?? "").slice(0, 7);
-            if (chaveMes) gastoPorMes[chaveMes] = (gastoPorMes[chaveMes] ?? 0) + t.valor;
         }
     });
 
@@ -776,32 +819,34 @@ function aplicarFiltros() {
     const temEntradas = Object.keys(entradaPorClassificacao).length > 0;
     alternarEstadoVazio("grafico-entradas-categoria", "vazio-entradas-categoria", temEntradas, "Nenhuma entrada classificada neste período.");
     if (temEntradas) renderizarGraficoBarras("grafico-entradas-categoria", entradaPorClassificacao, { cor: "#059669" });
+    mostrarTotalGrafico("total-entradas-categoria", temEntradas ? totalEmReais(Object.values(entradaPorClassificacao)) : "");
 
     const temGastos = Object.keys(gastoPorClassificacao).length > 0;
     alternarEstadoVazio("grafico-classificacoes", "vazio-classificacoes", temGastos, "Nenhum gasto classificado neste período.");
     if (temGastos) renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, { cor: "#dc2626" });
+    mostrarTotalGrafico("total-classificacoes", temGastos ? totalEmReais(Object.values(gastoPorClassificacao)) : "");
 
-    const mesesOrdenados = Object.keys(gastoPorMes).sort();
-    const temTendencia = mesesOrdenados.length > 0;
-    alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia, "Sem gastos para montar a evolução mensal neste período.");
-    if (temTendencia) {
-        renderizarGraficoLinha(
-            "grafico-tendencia-gastos",
-            mesesOrdenados.map(rotuloMesCurto),
-            mesesOrdenados.map((m) => gastoPorMes[m]),
-            { cor: "#dc2626" }
-        );
-    }
+    const gastoPorMes = calcularEvolucaoAnual(listaAno, "SAIDA", categoriasSeparadas);
+    const temTendencia = gastoPorMes.some((v) => v > 0);
+    document.getElementById("rotulo-ano-gastos").textContent = `jan a dez/${anoEvolucao}`;
+    alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia, `Sem gastos em ${anoEvolucao} para montar a evolução mensal.`);
+    if (temTendencia) renderizarGraficoLinha("grafico-tendencia-gastos", rotulosMesesDoAno(anoEvolucao), gastoPorMes, { cor: "#dc2626" });
+    mostrarTotalGrafico("total-tendencia-gastos", temTendencia ? totalEmReais(gastoPorMes) : "");
 
     const categoriasFuturas = Object.keys(porCategoriaSeparadaFutura);
     const temFuturoSeparado = categoriasFuturas.length > 0;
     alternarEstadoVazio("grafico-categorias-separadas-futuro", "vazio-categorias-separadas-futuro", temFuturoSeparado, "Nenhum lançamento futuro nas categorias à parte, neste período.");
+    const entradasFuturasSeparadas = categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].entradas);
+    const saidasFuturasSeparadas = categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].saidas);
     if (temFuturoSeparado) {
         renderizarGraficoBarrasAgrupadas("grafico-categorias-separadas-futuro", categoriasFuturas, [
-            { nome: "Entradas previstas", valores: categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].entradas), cor: "#2a78d6" },
-            { nome: "Saídas previstas", valores: categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].saidas), cor: "#eb6834" }
+            { nome: "Entradas previstas", valores: entradasFuturasSeparadas, cor: "#2a78d6" },
+            { nome: "Saídas previstas", valores: saidasFuturasSeparadas, cor: "#eb6834" }
         ]);
     }
+    mostrarTotalGrafico("total-categorias-separadas-futuro", temFuturoSeparado
+        ? `Entradas: ${formatarReais(somarValores(entradasFuturasSeparadas))} · Saídas: ${formatarReais(somarValores(saidasFuturasSeparadas))}`
+        : "");
 
     renderizarPrevistos(listaFutura);
     renderizarVisoesPersonalizadas(lista);

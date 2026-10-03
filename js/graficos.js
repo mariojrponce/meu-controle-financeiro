@@ -29,6 +29,17 @@ const observerTema = new MutationObserver(() => {
 });
 observerTema.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
+// Pede o contexto 2D "por software" antes do Chart.js tocar no canvas (o
+// tipo de contexto fica fixo na primeira chamada). No Chrome com aceleração
+// de GPU, canvas largos às vezes saíam em branco ou com pedaços de quadros
+// antigos (barras picotadas, linha de evolução sumindo) — por software o
+// desenho sai sempre certo, e para gráficos desse tamanho não pesa.
+function obterCanvas(idCanvas) {
+    const canvas = document.getElementById(idCanvas);
+    if (canvas) canvas.getContext("2d", { willReadFrequently: true });
+    return canvas;
+}
+
 function destruir(idCanvas) {
     const existente = instancias.get(idCanvas);
     if (existente) {
@@ -61,6 +72,18 @@ function maiorValorComFolga(valores) {
     return maior > 0 ? maior * 1.2 : undefined;
 }
 
+// Escreve o total (soma de todos os itens) no selo ao lado do título do gráfico.
+export function mostrarTotalGrafico(idTotal, texto) {
+    const selo = document.getElementById(idTotal);
+    if (!selo) return;
+    selo.textContent = texto ?? "";
+    selo.style.display = texto ? "" : "none";
+}
+
+export function somarValores(valores) {
+    return valores.reduce((soma, valor) => soma + (Number(valor) || 0), 0);
+}
+
 export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) {
     const canvas = document.getElementById(idCanvas);
     const vazio = document.getElementById(idVazio);
@@ -74,7 +97,7 @@ export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) 
 // Barras horizontais simples — comparação de magnitude por categoria
 export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {}) {
     destruir(idCanvas);
-    const canvas = document.getElementById(idCanvas);
+    const canvas = obterCanvas(idCanvas);
     if (!canvas) return;
 
     const itens = Object.entries(dados).sort((a, b) => b[1] - a[1]);
@@ -139,7 +162,7 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
 // Barras horizontais agrupadas — comparação de 2 séries (entradas x saídas)
 export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
     destruir(idCanvas);
-    const canvas = document.getElementById(idCanvas);
+    const canvas = obterCanvas(idCanvas);
     if (!canvas) return;
 
     ajustarAltura(idCanvas, categorias.length, 48, 200, 450);
@@ -218,7 +241,7 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
 // Gráfico de linha — tendência de evolução temporal
 export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#ef4444" } = {}) {
     destruir(idCanvas);
-    const canvas = document.getElementById(idCanvas);
+    const canvas = obterCanvas(idCanvas);
     if (!canvas) return;
 
     const { corTexto, corTextoSuave, corGrid, corTooltipBg, corTooltipTexto } = obterEstiloTema();
@@ -272,6 +295,9 @@ export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#ef4
                     color: corTexto,
                     font: { family: "Inter, sans-serif", size: 11, weight: "700" },
                     formatter: (valor) => formatarReais(valor),
+                    // Meses sem movimento (comum no ano todo, jan–dez) ficam sem
+                    // rótulo para não poluir o gráfico com vários "R$ 0,00".
+                    display: (ctx) => ctx.dataset.data[ctx.dataIndex] !== 0,
                     anchor: "center",
                     align: (ctx) => {
                         if (ctx.dataIndex === 0) return "right";
