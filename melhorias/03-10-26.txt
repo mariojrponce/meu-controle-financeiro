@@ -1,0 +1,21 @@
+-Diferenciar dinheiro de alimentação (pluxe, alelo) com dinheiro de outros bancos. Quero que exista um filtro para conseguir fazer essa diferenciação também. (Tudo, com vale, sem vale) em todas as janelas
+
+-Arrumar os graficos pois eles ainda estão quebrados (/home/note/projetos/sistema-financeiro/prints/image.png), (/home/note/projetos/sistema-financeiro/prints/image copy.png)
+
+-Sobre a evolução mensal de gastos no período
+    -fazer ele sempre mostrar pelo período do ano todo, não depender o mes filtrado apenas do ano que o período esta, aí ele sempre vai mostrar de janeiro a dezembro do ano filtrado.
+    -em todos os graficos, sempre mostrar o total (a soma de todos os itens)
+
+-fazer uma evolução mensal das entradas também (salarios, presentes e tal)
+    -utilizar a mesma premissa da evolução por gastos
+
+-no geral, se eu clicar em alguma linha tipo SALARIO, o valor da evolução vai mostar a evolução apenas daquela linha selecionada.
+-fazer isso tando no gastos quanto entradas
+
+
+-(não fazer, vamos apenas reunir informações para depois desenvolver) sobre o mês atual completo, eu querio estudar um jeito de deixar o sistema mais inteligente.
+    -me mostrar o quanto vai sobrar de dinheiro no final do mes
+    -com base nesse valor final ele vai me dizer se vale a pena eu investir esse valor ou deixar guardado em caixa para possíveis despesas gerais
+    -/home/note/projetos/sistema-financeiro/prints/image copy 2.png
+    -esse print ele já mostra muitas coisas mas não consigo me planejar de um jeito facil, pois tenho que ficar somando, subtraindo em calculadora por fora.
+    -

@@ -6,6 +6,14 @@ import { formatarReais } from "./utils.js";
 
 Chart.register(ChartDataLabels);
 
+// Sem animação de "crescimento" das barras/linhas: o dashboard redesenha
+// os gráficos várias vezes seguidas (filtros, tema, carga do cache e depois
+// do Firebase), e com a animação ligada o navegador às vezes ficava com
+// pedaços de quadros intermediários no canvas — barras "picotadas" e
+// rótulos cortados no meio. Desenhando direto o quadro final, isso some.
+Chart.defaults.animation = false;
+Chart.defaults.resizeDelay = 100;
+
 const instancias = new Map();
 let callbackTemaAlterado = null;
 
