@@ -17,6 +17,7 @@ import {
 import {
     renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema
 } from "./graficos.js";
+import { filtrarPorVale, preencherSelectVale } from "./vale.js";
 
 const NOME_PAGINA = "dashboard";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -31,6 +32,8 @@ const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
 const campoDetalhe = document.getElementById("filtro-detalhe");
 const campoDescricao = document.getElementById("filtro-descricao");
+const campoVale = document.getElementById("filtro-vale");
+preencherSelectVale(campoVale);
 
 function contextoMesAtual() {
     const selecionados = seletorMes.obterSelecionados();
@@ -65,6 +68,7 @@ aoMudarTema(() => {
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);
+campoVale.addEventListener("change", aplicarFiltros);
 document.getElementById("btn-filtrar").addEventListener("click", aplicarFiltros);
 document.getElementById("btn-atualizar").addEventListener("click", () => carregarDashboard(true));
 
@@ -85,6 +89,7 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
     campoMov.value = "";
+    campoVale.value = "";
     campoDetalhe.value = "";
     campoDescricao.value = "";
     aplicarFiltros();
@@ -384,6 +389,7 @@ function salvarEstadoFiltro() {
         fimBR: campoFim.value,
         bancos: seletorBanco.obterSelecionados(),
         mov: campoMov.value,
+        vale: campoVale.value,
         detalhe: campoDetalhe.value,
         descricao: campoDescricao.value
     });
@@ -641,6 +647,7 @@ function aplicarFiltros() {
     if (mesesFiltro.length > 0) lista = lista.filter(t => mesesFiltro.includes((t.data ?? "").slice(5, 7)));
     if (bancosFiltro.length > 0) lista = lista.filter(t => bancosFiltro.includes(t.banco));
     if (movFiltro !== "") lista = lista.filter(t => t.tipo_mov === movFiltro);
+    lista = filtrarPorVale(lista, campoVale.value);
     if (detalheFiltro !== "") lista = lista.filter(t => (t.saida ?? "").includes(detalheFiltro));
     if (descricaoFiltro !== "") lista = lista.filter(t => (t.descricao ?? "").includes(descricaoFiltro));
 
@@ -819,6 +826,7 @@ async function carregarDashboard(forcarAtualizacao = false) {
                 campoFim.value = salvo.fimBR ?? "";
                 seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
                 campoMov.value = salvo.mov ?? "";
+                campoVale.value = salvo.vale ?? "";
                 campoDetalhe.value = salvo.detalhe ?? "";
                 campoDescricao.value = salvo.descricao ?? "";
             } else {

@@ -7,6 +7,7 @@ import { criarComboboxTexto } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
 import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { abrirEditorTransacao } from "./editor-transacao.js";
+import { filtrarPorVale, preencherSelectVale } from "./vale.js";
 
 const QTD_ULTIMOS = 10;
 
@@ -19,7 +20,18 @@ ligarCampoDataInteligente(campoData);
 const comboboxBanco = criarComboboxTexto(document.getElementById("banco"), BANCOS_SUGERIDOS);
 const comboboxClassificacao = criarComboboxTexto(document.getElementById("classificacao_saida"), CLASSIFICACOES_SUGERIDAS);
 
+let todasRecentes = [];
 let ultimosAtuais = [];
+
+const campoVale = document.getElementById("filtro-vale");
+preencherSelectVale(campoVale);
+campoVale.addEventListener("change", atualizarUltimos);
+
+function atualizarUltimos() {
+    ultimosAtuais = filtrarPorVale(todasRecentes, campoVale.value).slice(0, QTD_ULTIMOS);
+    ordenacaoAtual = { chave: "criadoEmMs", direcao: "desc", tipo: "numero" };
+    renderizarUltimos(ultimosAtuais);
+}
 let ordenacaoAtual = { chave: "criadoEmMs", direcao: "desc", tipo: "numero" };
 
 ativarOrdenacao(document.querySelector("#tabela-ultimos thead"), (chave, direcao, tipo) => {
@@ -38,11 +50,8 @@ async function carregarDadosAuxiliares() {
         comboboxBanco.atualizarOpcoes(mesclarSugestoes(BANCOS_SUGERIDOS, bancosUsados));
         comboboxClassificacao.atualizarOpcoes(mesclarSugestoes(CLASSIFICACOES_SUGERIDAS, classificacoesUsadas));
 
-        ultimosAtuais = [...transacoes]
-            .sort((a, b) => (b.criadoEmMs ?? 0) - (a.criadoEmMs ?? 0))
-            .slice(0, QTD_ULTIMOS);
-        ordenacaoAtual = { chave: "criadoEmMs", direcao: "desc", tipo: "numero" };
-        renderizarUltimos(ultimosAtuais);
+        todasRecentes = [...transacoes].sort((a, b) => (b.criadoEmMs ?? 0) - (a.criadoEmMs ?? 0));
+        atualizarUltimos();
 
     } catch (erro) {
         console.error("Não foi possível carregar dados auxiliares:", erro);
