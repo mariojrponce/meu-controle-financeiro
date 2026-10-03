@@ -62,6 +62,10 @@ const seletorBanco = criarSeletorMultiplo({
 let todasTransacoes = [];
 let seletorCategoriasSeparadas = null;
 let carregando = true;
+// Categoria clicada no gráfico de barras — a evolução mensal correspondente
+// passa a mostrar só ela (null = total de todas).
+let selecaoEntradas = null;
+let selecaoGastos = null;
 
 aoMudarTema(() => {
     if (!carregando) aplicarFiltros();
@@ -666,6 +670,19 @@ function rotulosMesesDoAno(ano) {
     return Array.from({ length: 12 }, (_, i) => rotuloMesCurto(`${ano}-${String(i + 1).padStart(2, "0")}`));
 }
 
+function mostrarSelecaoGrafico(idSelo, categoria, aoLimpar) {
+    const selo = document.getElementById(idSelo);
+    selo.innerHTML = "";
+    if (!categoria) return;
+    selo.appendChild(document.createTextNode(`só ${categoria}`));
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.title = "Voltar ao total de todas as categorias";
+    botao.textContent = "✕";
+    botao.addEventListener("click", aoLimpar);
+    selo.appendChild(botao);
+}
+
 function totalEmReais(valores) {
     return `Total: ${formatarReais(somarValores(valores))}`;
 }
@@ -816,26 +833,50 @@ function aplicarFiltros() {
     renderizarDetalhePrevistoPorBancoDia(calcularDetalhePrevistoPorBancoDia(listaFutura));
     renderizarCartoesCategoriaSeparada(porCategoriaSeparada);
 
+    // Se a categoria escolhida não existe no período atual, volta ao total.
+    if (selecaoEntradas && !(selecaoEntradas in entradaPorClassificacao)) selecaoEntradas = null;
+    if (selecaoGastos && !(selecaoGastos in gastoPorClassificacao)) selecaoGastos = null;
+
     const temEntradas = Object.keys(entradaPorClassificacao).length > 0;
     alternarEstadoVazio("grafico-entradas-categoria", "vazio-entradas-categoria", temEntradas, "Nenhuma entrada classificada neste período.");
-    if (temEntradas) renderizarGraficoBarras("grafico-entradas-categoria", entradaPorClassificacao, { cor: "#059669" });
+    if (temEntradas) {
+        renderizarGraficoBarras("grafico-entradas-categoria", entradaPorClassificacao, {
+            cor: "#059669",
+            selecionado: selecaoEntradas,
+            aoClicar: (categoria) => {
+                selecaoEntradas = selecaoEntradas === categoria ? null : categoria;
+                aplicarFiltros();
+            }
+        });
+    }
     mostrarTotalGrafico("total-entradas-categoria", temEntradas ? totalEmReais(Object.values(entradaPorClassificacao)) : "");
 
     const temGastos = Object.keys(gastoPorClassificacao).length > 0;
     alternarEstadoVazio("grafico-classificacoes", "vazio-classificacoes", temGastos, "Nenhum gasto classificado neste período.");
-    if (temGastos) renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, { cor: "#dc2626" });
+    if (temGastos) {
+        renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, {
+            cor: "#dc2626",
+            selecionado: selecaoGastos,
+            aoClicar: (categoria) => {
+                selecaoGastos = selecaoGastos === categoria ? null : categoria;
+                aplicarFiltros();
+            }
+        });
+    }
     mostrarTotalGrafico("total-classificacoes", temGastos ? totalEmReais(Object.values(gastoPorClassificacao)) : "");
 
-    const entradaPorMes = calcularEvolucaoAnual(listaAno, "ENTRADA", categoriasSeparadas);
+    const entradaPorMes = calcularEvolucaoAnual(listaAno, "ENTRADA", categoriasSeparadas, selecaoEntradas);
     const temTendenciaEntradas = entradaPorMes.some((v) => v > 0);
     document.getElementById("rotulo-ano-entradas").textContent = `jan a dez/${anoEvolucao}`;
+    mostrarSelecaoGrafico("selecao-entradas", selecaoEntradas, () => { selecaoEntradas = null; aplicarFiltros(); });
     alternarEstadoVazio("grafico-tendencia-entradas", "vazio-tendencia-entradas", temTendenciaEntradas, `Sem entradas em ${anoEvolucao} para montar a evolução mensal.`);
     if (temTendenciaEntradas) renderizarGraficoLinha("grafico-tendencia-entradas", rotulosMesesDoAno(anoEvolucao), entradaPorMes, { cor: "#059669" });
     mostrarTotalGrafico("total-tendencia-entradas", temTendenciaEntradas ? totalEmReais(entradaPorMes) : "");
 
-    const gastoPorMes = calcularEvolucaoAnual(listaAno, "SAIDA", categoriasSeparadas);
+    const gastoPorMes = calcularEvolucaoAnual(listaAno, "SAIDA", categoriasSeparadas, selecaoGastos);
     const temTendencia = gastoPorMes.some((v) => v > 0);
     document.getElementById("rotulo-ano-gastos").textContent = `jan a dez/${anoEvolucao}`;
+    mostrarSelecaoGrafico("selecao-gastos", selecaoGastos, () => { selecaoGastos = null; aplicarFiltros(); });
     alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia, `Sem gastos em ${anoEvolucao} para montar a evolução mensal.`);
     if (temTendencia) renderizarGraficoLinha("grafico-tendencia-gastos", rotulosMesesDoAno(anoEvolucao), gastoPorMes, { cor: "#dc2626" });
     mostrarTotalGrafico("total-tendencia-gastos", temTendencia ? totalEmReais(gastoPorMes) : "");

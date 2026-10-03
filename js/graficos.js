@@ -67,6 +67,14 @@ function ajustarAltura(idCanvas, quantidadeItens, alturaPorItem = 38, minimo = 1
     canvas.parentElement.style.height = `${Math.min(maximo, Math.max(minimo, quantidadeItens * alturaPorItem))}px`;
 }
 
+// Qual categoria (linha do eixo Y) está na altura do clique/mouse.
+function rotuloDaLinha(grafico, evento) {
+    const { top, bottom } = grafico.chartArea;
+    if (evento.y < top || evento.y > bottom) return null;
+    const indice = Math.round(grafico.scales.y.getValueForPixel(evento.y));
+    return grafico.data.labels[indice] ?? null;
+}
+
 function maiorValorComFolga(valores) {
     const maior = Math.max(0, ...valores);
     return maior > 0 ? maior * 1.2 : undefined;
@@ -95,7 +103,10 @@ export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) 
 }
 
 // Barras horizontais simples — comparação de magnitude por categoria
-export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {}) {
+// aoClicar(rotulo): chamado ao clicar em qualquer ponto da linha de uma
+// categoria (barra, espaço vazio ou o nome no eixo). Com `selecionado`, as
+// outras barras ficam apagadas para destacar a escolhida.
+export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669", selecionado = null, aoClicar = null } = {}) {
     destruir(idCanvas);
     const canvas = obterCanvas(idCanvas);
     if (!canvas) return;
@@ -111,7 +122,7 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
             labels: itens.map(([nome]) => nome),
             datasets: [{
                 data: itens.map(([, valor]) => valor),
-                backgroundColor: cor,
+                backgroundColor: itens.map(([nome]) => (selecionado && nome !== selecionado ? `${cor}40` : cor)),
                 borderRadius: 6,
                 borderSkipped: false,
                 barPercentage: 0.65
@@ -121,6 +132,7 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: "y",
+
             layout: { padding: { right: 16, top: 4, bottom: 4 } },
             scales: {
                 x: {
@@ -157,6 +169,27 @@ export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669" } = {
         }
     });
     instancias.set(idCanvas, grafico);
+    ligarCliqueNasLinhas(canvas, grafico, aoClicar);
+}
+
+// O onClick do Chart.js só dispara dentro da área das barras; com eventos
+// nativos o clique vale também no nome da categoria (eixo Y). Atribuição
+// direta (não addEventListener) para não acumular ouvintes a cada redesenho.
+function ligarCliqueNasLinhas(canvas, grafico, aoClicar) {
+    if (!aoClicar) {
+        canvas.onclick = null;
+        canvas.onmousemove = null;
+        canvas.style.cursor = "";
+        return;
+    }
+    const rotuloNoEvento = (evento) => rotuloDaLinha(grafico, Chart.helpers.getRelativePosition(evento, grafico));
+    canvas.onclick = (evento) => {
+        const rotulo = rotuloNoEvento(evento);
+        if (rotulo !== null) aoClicar(rotulo);
+    };
+    canvas.onmousemove = (evento) => {
+        canvas.style.cursor = rotuloNoEvento(evento) !== null ? "pointer" : "";
+    };
 }
 
 // Barras horizontais agrupadas — comparação de 2 séries (entradas x saídas)
