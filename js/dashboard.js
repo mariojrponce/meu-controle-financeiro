@@ -826,6 +826,13 @@ function aplicarFiltros() {
     if (temGastos) renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, { cor: "#dc2626" });
     mostrarTotalGrafico("total-classificacoes", temGastos ? totalEmReais(Object.values(gastoPorClassificacao)) : "");
 
+    const entradaPorMes = calcularEvolucaoAnual(listaAno, "ENTRADA", categoriasSeparadas);
+    const temTendenciaEntradas = entradaPorMes.some((v) => v > 0);
+    document.getElementById("rotulo-ano-entradas").textContent = `jan a dez/${anoEvolucao}`;
+    alternarEstadoVazio("grafico-tendencia-entradas", "vazio-tendencia-entradas", temTendenciaEntradas, `Sem entradas em ${anoEvolucao} para montar a evolução mensal.`);
+    if (temTendenciaEntradas) renderizarGraficoLinha("grafico-tendencia-entradas", rotulosMesesDoAno(anoEvolucao), entradaPorMes, { cor: "#059669" });
+    mostrarTotalGrafico("total-tendencia-entradas", temTendenciaEntradas ? totalEmReais(entradaPorMes) : "");
+
     const gastoPorMes = calcularEvolucaoAnual(listaAno, "SAIDA", categoriasSeparadas);
     const temTendencia = gastoPorMes.some((v) => v > 0);
     document.getElementById("rotulo-ano-gastos").textContent = `jan a dez/${anoEvolucao}`;
@@ -893,7 +900,7 @@ async function carregarDashboard(forcarAtualizacao = false) {
         console.error("Erro ao carregar dashboard:", erro);
         document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
         document.querySelector("#tabela-previstos tbody").innerHTML = "<tr><td colspan='5' class='vazio'>Erro ao carregar dados.</td></tr>";
-        ["grafico-entradas-categoria", "grafico-classificacoes", "grafico-tendencia-gastos", "grafico-categorias-separadas-futuro"].forEach((idCanvas) => {
+        ["grafico-entradas-categoria", "grafico-tendencia-entradas", "grafico-classificacoes", "grafico-tendencia-gastos", "grafico-categorias-separadas-futuro"].forEach((idCanvas) => {
             const idVazio = idCanvas.replace("grafico-", "vazio-");
             alternarEstadoVazio(idCanvas, idVazio, false);
             const vazio = document.getElementById(idVazio);
