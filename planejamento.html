@@ -62,6 +62,34 @@
                 </div>
             </div>
 
+            <div class="cartao" style="margin-bottom: var(--espaco-lg);">
+                <div class="filtros">
+                    <div class="campo-filtro">
+                        <label for="filtro-situacao">Ciclos</label>
+                        <select id="filtro-situacao">
+                            <option value="">Todos</option>
+                            <option value="atual">Ciclo atual</option>
+                            <option value="futuro">Ciclos futuros</option>
+                            <option value="encerrado">Ciclos encerrados</option>
+                        </select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="filtro-ano">Ano</label>
+                        <select id="filtro-ano"></select>
+                    </div>
+                    <div class="campo-filtro">
+                        <label>Banco</label>
+                        <div id="filtro-banco"></div>
+                    </div>
+                    <div class="campo-filtro">
+                        <label for="filtro-vale">Vale</label>
+                        <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
+                    </div>
+                    <button id="btn-limpar-filtros" class="botao botao-secundario">Limpar filtros</button>
+                </div>
+                <p class="dica-campo" style="margin-top: var(--espaco-sm);">Banco e Vale mudam todas as contas da página. Ciclos e Ano só escolhem quais bloquinhos de ciclo aparecem.</p>
+            </div>
+
             <div class="grade-resumo">
                 <div class="cartao-metrica metrica-neutra" title="Soma do saldo de hoje de todos os bancos, sem vale">
                     <div class="rotulo">💳 Saldo hoje (sem vale)</div>
@@ -104,8 +132,8 @@
                 <div class="secao-titulo">
                     <h3>📆 Ciclos de salário</h3>
                 </div>
-                <p class="dica-campo">Cada ciclo começa no dia em que o salário cai e vai até a véspera do próximo. O que sobra de um ciclo passa para o seguinte.</p>
-                <div class="grade-ciclos" id="grade-ciclos">
+                <p class="dica-campo">Cada ciclo começa no dia em que o salário cai e vai até a véspera do próximo. Nos ciclos futuros, o que sobra de um passa para o seguinte. Nos encerrados aparece o que de fato entrou e saiu. Clique num ciclo para abrir os lançamentos dele.</p>
+                <div id="grade-ciclos">
                     <p class="vazio">Carregando...</p>
                 </div>
             </div>

@@ -1604,76 +1604,122 @@ body.tela-login {
   font-weight: 600;
 }
 
+/* Bloquinhos de ciclo (usam a base de .cartao-carteira) */
 .grade-ciclos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: var(--espaco-md);
 }
 
+.grupo-ciclos + .grupo-ciclos {
+  margin-top: var(--espaco-lg);
+}
+
+.grupo-ciclos-titulo {
+  font-size: 0.875rem;
+  margin: 0 0 var(--espaco-sm);
+  color: var(--cor-texto-suave);
+}
+
 .cartao-ciclo {
-  border: 1px solid var(--cor-borda);
-  border-top: 4px solid var(--cor-borda);
-  border-radius: var(--raio);
-  padding: var(--espaco-md) var(--espaco-lg);
-  background: var(--cor-superficie);
+  cursor: pointer;
   min-width: 0;
 }
 
 .cartao-ciclo-atual {
   border-top-color: var(--cor-primaria);
+  box-shadow: 0 0 0 2px var(--cor-primaria), var(--sombra-suave);
 }
 
-.cartao-ciclo-negativo {
-  border-top-color: var(--cor-perigo);
+.cartao-ciclo-futuro {
+  border-top-color: #2a78d6;
+}
+
+/* Ciclos que já passaram: cinza, mas voltam à cor ao passar o mouse */
+.cartao-ciclo-encerrado {
+  border-top-color: var(--cor-borda);
+  filter: grayscale(1);
+  opacity: 0.6;
+  transition: filter 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+
+.cartao-ciclo-encerrado:hover,
+.cartao-ciclo-encerrado:focus-visible,
+.cartao-ciclo-encerrado.cartao-ciclo-selecionado {
+  filter: none;
+  opacity: 1;
+}
+
+.cartao-ciclo-selecionado {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
 }
 
 .cartao-ciclo-cabecalho {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--espaco-sm);
 }
 
 .cartao-ciclo-periodo {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 1.05rem;
+  margin-bottom: 0;
+  white-space: nowrap;
 }
 
 .selo-ciclo {
-  background: var(--cor-primaria);
-  color: #ffffff;
   border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 0.75rem;
+  padding: 2px 8px;
+  font-size: 0.6875rem;
   font-weight: 700;
+  white-space: nowrap;
+  color: #ffffff;
+  background: var(--cor-texto-suave);
+}
+
+.selo-ciclo-atual {
+  background: var(--cor-primaria);
+}
+
+.selo-ciclo-futuro {
+  background: #2a78d6;
 }
 
 .cartao-ciclo-salario {
   margin: 4px 0 var(--espaco-sm);
-  font-size: 0.8125rem;
-  color: var(--cor-texto-suave);
-}
-
-.cartao-ciclo-resumo {
-  margin: var(--espaco-sm) 0 0;
-  font-size: 0.8125rem;
-  color: var(--cor-texto-suave);
-}
-
-.cartao-ciclo-detalhes {
-  margin-top: var(--espaco-sm);
-  font-size: 0.8125rem;
-}
-
-.cartao-ciclo-detalhes summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--cor-primaria);
-}
-
-.cartao-ciclo-detalhes table {
   font-size: 0.75rem;
+  color: var(--cor-texto-suave);
+}
+
+/* Janela com os lançamentos do ciclo clicado */
+.modal-caixa-ciclo {
+  max-width: 980px;
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.modal-caixa-ciclo .secao-titulo h3 {
+  margin: 0;
+}
+
+.modal-caixa-ciclo table {
+  font-size: 0.8125rem;
+}
+
+.modal-caixa-ciclo td {
+  white-space: normal;
+}
+
+.modal-caixa-ciclo td:first-child,
+.modal-caixa-ciclo td:last-child {
+  white-space: nowrap;
+}
+
+.subtitulo-detalhe {
+  margin: var(--espaco-md) 0 var(--espaco-sm);
+  font-weight: 700;
+  font-size: 0.8125rem;
 }
 
 .config-planejamento summary {

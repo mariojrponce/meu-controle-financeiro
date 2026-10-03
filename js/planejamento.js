@@ -9,8 +9,9 @@ import { formatarReais, isoParaBR, hojeISO, celulaParaNumero } from "./utils.js"
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
 import { obterTransacoes } from "./dados-carteira.js";
-import { mostrarToast } from "./ui.js";
+import { mostrarToast, ligarFechamentoPorFundo } from "./ui.js";
 import { calcularPlanejamento, sugerirCategoriasDiaADia } from "./planejamento-calculo.js";
+import { preencherSelectVale } from "./vale.js";
 
 const usuario = await exigirLogin();
 renderizarNav("planejamento", usuario.email);
@@ -31,8 +32,42 @@ function salvarPreferencias(parcial) {
 }
 
 const campoColchao = document.getElementById("campo-colchao");
+const campoSituacao = document.getElementById("filtro-situacao");
+const campoAno = document.getElementById("filtro-ano");
+const campoVale = document.getElementById("filtro-vale");
+preencherSelectVale(campoVale);
+
 let todasTransacoes = [];
 let seletorDiaADia = null;
+
+const seletorBanco = criarSeletorMultiplo({
+    container: document.getElementById("filtro-banco"),
+    opcoes: [],
+    rotuloTodos: "Todos os bancos",
+    aoMudar: () => { salvarFiltros(); recalcular(); }
+});
+
+function salvarFiltros() {
+    salvarPreferencias({
+        filtros: {
+            situacao: campoSituacao.value,
+            ano: campoAno.value,
+            bancos: seletorBanco.obterSelecionados(),
+            vale: campoVale.value
+        }
+    });
+}
+
+[campoSituacao, campoAno, campoVale].forEach((campo) => campo.addEventListener("change", () => { salvarFiltros(); recalcular(); }));
+
+document.getElementById("btn-limpar-filtros").addEventListener("click", () => {
+    campoSituacao.value = "";
+    campoAno.value = "";
+    seletorBanco.definirSelecionados([]);
+    campoVale.value = "SEM";
+    salvarFiltros();
+    recalcular();
+});
 
 campoColchao.addEventListener("change", () => {
     const texto = campoColchao.value.trim();
@@ -207,54 +242,141 @@ function tabelaLancamentos(lista, classeValor) {
     return rolagem;
 }
 
-function renderizarCiclos(plano) {
-    const container = document.getElementById("grade-ciclos");
-    container.innerHTML = "";
-    if (plano.ciclos.length === 0) {
-        container.appendChild(elemento("p", "vazio", "Sem salários lançados para montar os ciclos."));
-        return;
-    }
+const ROTULO_SITUACAO = { encerrado: "Encerrado", atual: "Ciclo atual", futuro: "Futuro" };
 
-    plano.ciclos.forEach((c) => {
-        const cartao = elemento("div", `cartao-ciclo ${c.ehAtual ? "cartao-ciclo-atual" : ""} ${c.saldoFinal < 0 ? "cartao-ciclo-negativo" : ""}`);
+function cartaoCiclo(c) {
+    const cartao = elemento("div", `cartao-carteira cartao-ciclo cartao-ciclo-${c.situacao}`);
+    cartao.tabIndex = 0;
+    cartao.setAttribute("role", "button");
+    cartao.title = "Ver os lançamentos deste ciclo";
 
-        const cabecalho = elemento("div", "cartao-ciclo-cabecalho");
-        cabecalho.appendChild(elemento("span", "cartao-ciclo-periodo", `${dataCurta(c.inicio)} → ${dataCurta(c.fim)}`));
-        if (c.ehAtual) cabecalho.appendChild(elemento("span", "selo-ciclo", "Agora"));
-        cartao.appendChild(cabecalho);
+    const cabecalho = elemento("div", "cartao-ciclo-cabecalho");
+    cabecalho.appendChild(elemento("span", "nome-banco cartao-ciclo-periodo", `${isoParaBR(c.inicio).slice(0, 5)} → ${isoParaBR(c.fim)}`));
+    cabecalho.appendChild(elemento("span", `selo-ciclo selo-ciclo-${c.situacao}`, ROTULO_SITUACAO[c.situacao]));
+    cartao.appendChild(cabecalho);
 
-        const salario = c.salario;
-        cartao.appendChild(elemento("p", "cartao-ciclo-salario",
-            `Salário de ${dataCurta(salario.data)}: ${formatarReais(salario.valor)}${salario.estimado ? " (estimado)" : ""}`));
+    cartao.appendChild(elemento("p", "cartao-ciclo-salario",
+        `Salário ${dataCurta(c.salario.data)}: ${formatarReais(c.salario.valor)}${c.salario.estimado ? " (estimado)" : ""}`));
 
+    if (c.situacao === "encerrado") {
+        cartao.appendChild(linhaValor("Entradas", c.totalEntradas, "valor-positivo"));
+        cartao.appendChild(linhaValor(`Gastos (${c.contas.length})`, c.totalContas, "valor-negativo"));
+        const linhaResultado = linhaValor(c.resultado >= 0 ? "= Sobrou" : "= Faltou", Math.abs(c.resultado), c.resultado >= 0 ? "valor-positivo" : "valor-negativo");
+        linhaResultado.classList.add("saldo");
+        cartao.appendChild(linhaResultado);
+        cartao.appendChild(linhaValor("Saldo no fim", c.saldoFinalReal));
+    } else {
         cartao.appendChild(linhaValor(c.ehAtual ? "Saldo hoje" : "Começa com", c.saldoInicial));
-        cartao.appendChild(linhaValor(c.ehAtual ? "+ Ainda entra" : "+ Entradas (salário e outras)", c.totalEntradas, "valor-positivo"));
+        cartao.appendChild(linhaValor(c.ehAtual ? "+ Ainda entra" : "+ Entradas", c.totalEntradas, "valor-positivo"));
         cartao.appendChild(linhaValor(`− Contas (${c.contas.length})`, c.totalContas, "valor-negativo"));
-        if (c.totalAportes > 0) cartao.appendChild(linhaValor("   dos quais aportes programados", c.totalAportes));
-        cartao.appendChild(linhaValor(`− Dia a dia (${c.diasRestantes} dias)`, c.reserva, "valor-negativo"));
+        cartao.appendChild(linhaValor(`− Dia a dia (${c.diasRestantes}d)`, c.reserva, "valor-negativo"));
         const linhaFinal = linhaValor(c.saldoFinal >= 0 ? "= Sobra" : "= Falta", Math.abs(c.saldoFinal), c.saldoFinal >= 0 ? "valor-positivo" : "valor-negativo");
         linhaFinal.classList.add("saldo");
         cartao.appendChild(linhaFinal);
+    }
 
-        cartao.appendChild(elemento("p", "cartao-ciclo-resumo", c.saldoFinal >= 0
-            ? `Precisa de ${formatarReais(c.necessario)} para pagar tudo. Sobram ${formatarReais(c.saldoFinal)} para o próximo ciclo.`
-            : `Precisa de ${formatarReais(c.necessario)} para pagar tudo e vão faltar ${formatarReais(-c.saldoFinal)}.`));
-
-        if (c.contas.length > 0) {
-            const detalhes = elemento("details", "cartao-ciclo-detalhes");
-            detalhes.appendChild(elemento("summary", "", c.contas.length === 1 ? "Ver a conta" : `Ver as ${c.contas.length} contas`));
-            detalhes.appendChild(tabelaLancamentos(c.contas, "saida"));
-            cartao.appendChild(detalhes);
-        }
-        if (c.entradas.length > 0) {
-            const detalhes = elemento("details", "cartao-ciclo-detalhes");
-            detalhes.appendChild(elemento("summary", "", c.entradas.length === 1 ? "Ver a entrada" : `Ver as ${c.entradas.length} entradas`));
-            detalhes.appendChild(tabelaLancamentos(c.entradas, "entrada"));
-            cartao.appendChild(detalhes);
-        }
-
-        container.appendChild(cartao);
+    const abrir = () => {
+        cartao.classList.add("cartao-ciclo-selecionado");
+        abrirDetalheCiclo(c, () => {
+            cartao.classList.remove("cartao-ciclo-selecionado");
+            cartao.focus();
+        });
+    };
+    cartao.addEventListener("click", abrir);
+    cartao.addEventListener("keydown", (evento) => {
+        if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); abrir(); }
     });
+    return cartao;
+}
+
+function grupoDeCiclos(titulo, ciclos) {
+    const grupo = elemento("div", "grupo-ciclos");
+    grupo.appendChild(elemento("h4", "grupo-ciclos-titulo", `${titulo} (${ciclos.length})`));
+    const grade = elemento("div", "grade-ciclos");
+    ciclos.forEach((c) => grade.appendChild(cartaoCiclo(c)));
+    grupo.appendChild(grade);
+    return grupo;
+}
+
+// Janela flutuante com os lançamentos do ciclo clicado — fica por cima da
+// lista, então funciona igual para o ciclo atual e para um encerrado lá embaixo.
+function abrirDetalheCiclo(ciclo, aoFechar) {
+    const fundo = elemento("div", "modal-fundo");
+    const caixa = elemento("div", "modal-caixa modal-caixa-ciclo");
+    caixa.setAttribute("role", "dialog");
+    caixa.setAttribute("aria-modal", "true");
+
+    const cabecalho = elemento("div", "secao-titulo");
+    cabecalho.appendChild(elemento("h3", "", `${isoParaBR(ciclo.inicio)} → ${isoParaBR(ciclo.fim)}`));
+    cabecalho.appendChild(elemento("span", `selo-ciclo selo-ciclo-${ciclo.situacao}`, ROTULO_SITUACAO[ciclo.situacao]));
+    caixa.appendChild(cabecalho);
+
+    caixa.appendChild(elemento("p", "", ciclo.ehAtual
+        ? "Aparece só o que ainda vai acontecer (depois de hoje). O que já aconteceu está no saldo de hoje."
+        : ciclo.situacao === "encerrado"
+            ? "O que de fato entrou e saiu neste ciclo (sem transferências entre suas contas)."
+            : "O que está lançado como previsto para este ciclo."));
+
+    caixa.appendChild(elemento("p", "subtitulo-detalhe", `${ciclo.situacao === "encerrado" ? "Gastos" : "Contas"} (${ciclo.contas.length}) · ${formatarReais(ciclo.totalContas)}`));
+    caixa.appendChild(ciclo.contas.length > 0 ? tabelaLancamentos(ciclo.contas, "saida") : elemento("p", "vazio", "Nenhuma."));
+    caixa.appendChild(elemento("p", "subtitulo-detalhe", `Entradas (${ciclo.entradas.length}) · ${formatarReais(ciclo.totalEntradas)}`));
+    caixa.appendChild(ciclo.entradas.length > 0 ? tabelaLancamentos(ciclo.entradas, "entrada") : elemento("p", "vazio", "Nenhuma."));
+
+    const acoes = elemento("div", "modal-acoes");
+    const botaoFechar = elemento("button", "botao botao-secundario", "Fechar");
+    acoes.appendChild(botaoFechar);
+    caixa.appendChild(acoes);
+
+    fundo.appendChild(caixa);
+    document.body.appendChild(fundo);
+    requestAnimationFrame(() => fundo.classList.add("aberto"));
+    botaoFechar.focus({ preventScroll: true });
+
+    const aoTeclar = (evento) => { if (evento.key === "Escape") fechar(); };
+    function fechar() {
+        document.removeEventListener("keydown", aoTeclar);
+        fundo.classList.remove("aberto");
+        setTimeout(() => fundo.remove(), 150);
+        aoFechar();
+    }
+    document.addEventListener("keydown", aoTeclar);
+    botaoFechar.addEventListener("click", fechar);
+    ligarFechamentoPorFundo(fundo, fechar);
+}
+
+function renderizarCiclos(plano) {
+    const container = document.getElementById("grade-ciclos");
+    container.innerHTML = "";
+
+    const situacao = campoSituacao.value;
+    const ano = campoAno.value;
+    const visiveis = plano.todosCiclos.filter((c) =>
+        (!situacao || c.situacao === situacao) && (!ano || c.inicio.startsWith(ano) || c.fim.startsWith(ano)));
+
+    if (visiveis.length === 0) {
+        container.appendChild(elemento("p", "vazio", "Nenhum ciclo com esses filtros."));
+        return;
+    }
+
+    const atuais = visiveis.filter((c) => c.situacao === "atual");
+    const futuros = visiveis.filter((c) => c.situacao === "futuro");
+    const encerrados = visiveis.filter((c) => c.situacao === "encerrado").reverse(); // mais recente primeiro
+    if (atuais.length > 0) container.appendChild(grupoDeCiclos("🟢 Ciclo atual", atuais));
+    if (futuros.length > 0) container.appendChild(grupoDeCiclos("🔮 Ciclos futuros", futuros));
+    if (encerrados.length > 0) container.appendChild(grupoDeCiclos("✔️ Ciclos encerrados", encerrados));
+}
+
+function popularAnos(plano) {
+    const anos = [...new Set(plano.todosCiclos.flatMap((c) => [c.inicio.slice(0, 4), c.fim.slice(0, 4)]))].sort().reverse();
+    const atual = campoAno.value;
+    campoAno.innerHTML = "";
+    [["", "Todos"], ...anos.map((a) => [a, a])].forEach(([valor, rotulo]) => {
+        const opcao = document.createElement("option");
+        opcao.value = valor;
+        opcao.textContent = rotulo;
+        campoAno.appendChild(opcao);
+    });
+    campoAno.value = anos.includes(atual) ? atual : "";
 }
 
 // ---------- Ajustes ----------
@@ -291,8 +413,11 @@ function recalcular() {
     const plano = calcularPlanejamento(todasTransacoes, {
         hoje,
         categoriasDiaADia: categoriasEscolhidas,
-        colchao: preferencias.colchao ?? null
+        colchao: preferencias.colchao ?? null,
+        vale: campoVale.value,
+        bancos: seletorBanco.obterSelecionados()
     });
+    popularAnos(plano);
 
     const categoriasDisponiveis = [...new Set(todasTransacoes.filter((t) => t.tipo === "SAIDA").map((t) => t.classificacao_saida).filter(Boolean))].sort();
     prepararAjustes(plano, categoriasDisponiveis, categoriasEscolhidas);
@@ -306,6 +431,18 @@ function recalcular() {
 async function carregar(forcarAtualizacao = false) {
     try {
         todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
+
+        const bancosDisponiveis = [...new Set(todasTransacoes.map((t) => t.banco).filter(Boolean))].sort();
+        seletorBanco.definirOpcoes(bancosDisponiveis);
+        if (!forcarAtualizacao) {
+            const filtros = lerPreferencias().filtros ?? {};
+            campoSituacao.value = filtros.situacao ?? "";
+            campoVale.value = filtros.vale ?? "SEM";
+            seletorBanco.definirSelecionados((filtros.bancos ?? []).filter((b) => bancosDisponiveis.includes(b)));
+            // O ano só existe depois do primeiro cálculo; guarda para aplicar nele.
+            campoAno.innerHTML = `<option value="${filtros.ano ?? ""}">${filtros.ano || "Todos"}</option>`;
+            campoAno.value = filtros.ano ?? "";
+        }
         recalcular();
         if (forcarAtualizacao) mostrarToast("Dados atualizados.", "sucesso");
     } catch (erro) {

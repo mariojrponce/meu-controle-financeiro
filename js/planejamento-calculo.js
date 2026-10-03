@@ -7,7 +7,7 @@
 // sobra de um ciclo passa para o seguinte; o menor saldo que aparece nessa
 // sequência, menos um colchão de segurança, é o que dá para investir sem
 // fazer falta depois.
-import { ehBancoVale } from "./vale.js";
+import { ehBancoVale, filtrarPorVale } from "./vale.js";
 
 const PADRAO_SALARIO = /SAL[AÁ]RIO/;
 const PADRAO_INVESTIMENTO = /INVESTIMENTO/;
@@ -73,15 +73,16 @@ export function calcularSaldoHojePorBanco(base, hoje) {
 function juntarSalarios(base) {
     const porData = {};
     base.filter(ehSalario).forEach((t) => {
-        porData[t.data] = (porData[t.data] ?? 0) + t.valor;
+        porData[t.data] ??= { valor: 0, banco: t.banco };
+        porData[t.data].valor += t.valor;
     });
     const pagamentos = [];
     Object.keys(porData).sort().forEach((data) => {
         const anterior = pagamentos[pagamentos.length - 1];
         if (anterior && diasEntre(anterior.data, data) <= DIAS_JUNTAR_SALARIOS) {
-            anterior.valor += porData[data];
+            anterior.valor += porData[data].valor;
         } else {
-            pagamentos.push({ data, valor: porData[data], estimado: false });
+            pagamentos.push({ data, valor: porData[data].valor, banco: porData[data].banco, estimado: false });
         }
     });
     return pagamentos;
@@ -89,15 +90,16 @@ function juntarSalarios(base) {
 
 // Depois do último salário lançado, supõe dia 15 e dia 30 (ou o último dia do
 // mês), repetindo o valor do último salário real de cada um dos dois.
-function estenderSalarios(pagamentos, quantidadeMinimaDepois, hoje) {
+function estenderSalarios(pagamentos, quantidadeMinimaDepois, hoje, ateData = hoje) {
     const lista = [...pagamentos];
-    const ultimoValor = { meio: 0, fim: 0 };
-    lista.forEach((p) => { ultimoValor[ehMeioDoMes(p.data) ? "meio" : "fim"] = p.valor; });
+    const ultimo = { meio: { valor: 0, banco: "" }, fim: { valor: 0, banco: "" } };
+    lista.forEach((p) => { ultimo[ehMeioDoMes(p.data) ? "meio" : "fim"] = p; });
 
     const depoisDeHoje = () => lista.filter((p) => p.data > hoje).length;
     let referencia = lista.length > 0 ? lista[lista.length - 1].data : hoje;
     let seguranca = 0;
-    while (depoisDeHoje() < quantidadeMinimaDepois && seguranca++ < 48) {
+    const faltaChegar = () => lista.length === 0 || lista[lista.length - 1].data <= ateData;
+    while ((depoisDeHoje() < quantidadeMinimaDepois || faltaChegar()) && seguranca++ < 240) {
         const [ano, mes, dia] = referencia.split("-").map(Number);
         let proxima;
         if (dia < 15 - DIAS_JUNTAR_SALARIOS) {
@@ -109,7 +111,8 @@ function estenderSalarios(pagamentos, quantidadeMinimaDepois, hoje) {
             const data = new Date(Date.UTC(ano, mes, 15));
             proxima = paraISO(data);
         }
-        lista.push({ data: proxima, valor: ultimoValor[ehMeioDoMes(proxima) ? "meio" : "fim"], estimado: true });
+        const modelo = ultimo[ehMeioDoMes(proxima) ? "meio" : "fim"];
+        lista.push({ data: proxima, valor: modelo.valor, banco: modelo.banco, estimado: true });
         referencia = proxima;
     }
     return lista;
@@ -147,8 +150,14 @@ function calcularTaxaDiaria(base, hoje, categorias) {
 }
 
 // ---------- Conta principal ----------
-export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colchao = null, ciclosFuturos = 3 }) {
-    const base = transacoes.filter((t) => ehValido(t) && !ehBancoVale(t.banco));
+// Monta TODOS os ciclos da base (do primeiro salário até o último lançamento):
+//  - encerrado: já acabou — mostra o que de fato entrou/saiu e o saldo real no fim;
+//  - atual: o de hoje — saldo de hoje + o que ainda entra − o que ainda sai − dia a dia;
+//  - futuro: projeção encadeada (a sobra/falta de um ciclo é o começo do seguinte).
+// Filtros: `vale` ("" | "COM" | "SEM", padrão sem vale) e `bancos` (vazio = todos).
+export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colchao = null, ciclosHorizonte = 3, vale = "SEM", bancos = [] }) {
+    const baseTodosBancos = filtrarPorVale(transacoes.filter(ehValido), vale);
+    const base = bancos.length > 0 ? baseTodosBancos.filter((t) => bancos.includes(t.banco)) : baseTodosBancos;
 
     const saldoPorBanco = calcularSaldoHojePorBanco(base, hoje);
     const saldoHoje = Object.values(saldoPorBanco).reduce((a, b) => a + b, 0);
@@ -156,30 +165,49 @@ export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colc
     const taxaDiaria = calcularTaxaDiaria(base, hoje, categoriasDiaADia);
     const colchaoUsado = colchao ?? Math.ceil((taxaDiaria * 15) / 50) * 50;
 
-    let pagamentos = estenderSalarios(juntarSalarios(base), ciclosFuturos + 1, hoje);
-    let indiceAtual = pagamentos.map((p) => p.data <= hoje).lastIndexOf(true);
-    if (indiceAtual === -1) {
+    const ultimaData = baseTodosBancos.reduce((maior, t) => (t.data > maior ? t.data : maior), hoje);
+    // As datas dos ciclos vêm dos salários da base toda, mesmo filtrando um
+    // banco onde o salário não cai — o ciclo continua sendo o mesmo.
+    let pagamentos = estenderSalarios(juntarSalarios(baseTodosBancos), ciclosHorizonte + 1, hoje, ultimaData);
+    if (!pagamentos.some((p) => p.data <= hoje)) {
         pagamentos = [{ data: `${hoje.slice(0, 8)}01`, valor: 0, estimado: true }, ...pagamentos];
-        indiceAtual = 0;
     }
 
-    const ciclos = [];
-    for (let k = 0; k <= ciclosFuturos; k++) {
-        const pagamento = pagamentos[indiceAtual + k];
-        const proximo = pagamentos[indiceAtual + k + 1];
-        if (!pagamento || !proximo) break;
-
-        const ehAtual = k === 0;
+    const todos = [];
+    for (let i = 0; i + 1 < pagamentos.length; i++) {
+        const pagamento = pagamentos[i];
+        const proximo = pagamentos[i + 1];
         const inicio = pagamento.data;
         const fim = somarDias(proximo.data, -1);
+        const situacao = fim < hoje ? "encerrado" : inicio > hoje ? "futuro" : "atual";
+        const ciclo = {
+            inicio, fim, situacao, ehAtual: situacao === "atual",
+            salario: { data: pagamento.data, valor: pagamento.valor, estimado: pagamento.estimado },
+            proximoSalario: { data: proximo.data, valor: proximo.valor, estimado: proximo.estimado }
+        };
+
+        if (situacao === "encerrado") {
+            const movimentos = base.filter((t) => t.tipo_mov !== "INTERNO" && t.data >= inicio && t.data <= fim);
+            ciclo.entradas = movimentos.filter((t) => t.tipo === "ENTRADA").sort((a, b) => a.data.localeCompare(b.data));
+            ciclo.contas = movimentos.filter((t) => t.tipo === "SAIDA").sort((a, b) => a.data.localeCompare(b.data));
+            ciclo.totalEntradas = ciclo.entradas.reduce((s, t) => s + t.valor, 0);
+            ciclo.totalContas = ciclo.contas.reduce((s, t) => s + t.valor, 0);
+            ciclo.totalAportes = ciclo.contas.filter((t) => PADRAO_INVESTIMENTO.test(t.classificacao_saida ?? "")).reduce((s, t) => s + t.valor, 0);
+            ciclo.resultado = ciclo.totalEntradas - ciclo.totalContas;
+            ciclo.saldoFinalReal = Object.values(calcularSaldoHojePorBanco(base, fim)).reduce((a, b) => a + b, 0);
+            todos.push(ciclo);
+            continue;
+        }
+
+        const ehAtual = situacao === "atual";
         // No ciclo atual, o que já aconteceu (até hoje) já está no saldo.
         const desde = ehAtual ? somarDias(hoje, 1) : inicio;
-
         const movimentos = base.filter((t) => t.tipo_mov !== "INTERNO" && t.data >= desde && t.data <= fim);
-        const entradas = movimentos.filter((t) => t.tipo === "ENTRADA");
+        const entradas = movimentos.filter((t) => t.tipo === "ENTRADA").sort((a, b) => a.data.localeCompare(b.data));
         const contas = movimentos.filter((t) => t.tipo === "SAIDA").sort((a, b) => a.data.localeCompare(b.data));
-        if (!ehAtual && pagamento.estimado && pagamento.valor > 0) {
-            entradas.push({ data: inicio, valor: pagamento.valor, descricao: "SALÁRIO (estimado)", classificacao_saida: "SALARIO", banco: "", estimado: true });
+        const salarioEntraNoFiltro = bancos.length === 0 || bancos.includes(pagamento.banco);
+        if (!ehAtual && pagamento.estimado && pagamento.valor > 0 && salarioEntraNoFiltro) {
+            entradas.unshift({ data: inicio, valor: pagamento.valor, descricao: "SALÁRIO (estimado)", classificacao_saida: "SALARIO", banco: pagamento.banco, estimado: true });
         }
 
         const totalEntradas = entradas.reduce((s, t) => s + t.valor, 0);
@@ -188,28 +216,30 @@ export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colc
         const diasRestantes = diasEntre(desde, fim) + 1;
         const reserva = taxaDiaria * Math.max(0, diasRestantes);
 
-        const saldoInicial = ehAtual ? saldoHoje : ciclos[k - 1].saldoFinal;
+        const anterior = todos[todos.length - 1];
+        const saldoInicial = ehAtual || !anterior || anterior.situacao === "encerrado" ? saldoHoje : anterior.saldoFinal;
         const saldoFinal = saldoInicial + totalEntradas - totalContas - reserva;
 
-        ciclos.push({
-            inicio, fim, ehAtual,
-            salario: { data: pagamento.data, valor: pagamento.valor, estimado: pagamento.estimado },
-            proximoSalario: { data: proximo.data, valor: proximo.valor, estimado: proximo.estimado },
+        todos.push(Object.assign(ciclo, {
             saldoInicial, entradas, contas,
             totalEntradas, totalContas, totalAportes, reserva, diasRestantes,
             necessario: totalContas + reserva,
             saldoFinal
-        });
+        }));
     }
 
+    // Horizonte das recomendações: ciclo atual + os próximos (~2 meses).
+    const indiceAtual = todos.findIndex((c) => c.situacao === "atual");
+    const ciclos = indiceAtual === -1 ? [] : todos.slice(indiceAtual, indiceAtual + ciclosHorizonte + 1);
+
     // Banco a banco, só no ciclo atual (é o que dá para agir agora).
-    const bancos = {};
-    Object.entries(saldoPorBanco).forEach(([banco, saldo]) => { bancos[banco] = { banco, saldoHoje: saldo, entradas: 0, saidas: 0, primeiraConta: null }; });
+    const porBanco = {};
+    Object.entries(saldoPorBanco).forEach(([banco, saldo]) => { porBanco[banco] = { banco, saldoHoje: saldo, entradas: 0, saidas: 0, primeiraConta: null }; });
     const atual = ciclos[0];
     if (atual) {
         base.filter((t) => t.data > hoje && t.data <= atual.fim).forEach((t) => {
-            bancos[t.banco] ??= { banco: t.banco, saldoHoje: 0, entradas: 0, saidas: 0, primeiraConta: null };
-            const b = bancos[t.banco];
+            porBanco[t.banco] ??= { banco: t.banco, saldoHoje: 0, entradas: 0, saidas: 0, primeiraConta: null };
+            const b = porBanco[t.banco];
             if (t.tipo === "ENTRADA") b.entradas += t.valor;
             else {
                 b.saidas += t.valor;
@@ -217,7 +247,7 @@ export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colc
             }
         });
     }
-    const listaBancos = Object.values(bancos)
+    const listaBancos = Object.values(porBanco)
         .map((b) => ({ ...b, saldoFinal: b.saldoHoje + b.entradas - b.saidas }))
         .filter((b) => Math.abs(b.saldoHoje) >= 0.005 || b.entradas > 0 || b.saidas > 0)
         .sort((a, b) => b.saidas - a.saidas || b.saldoHoje - a.saldoHoje);
@@ -229,7 +259,7 @@ export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colc
 
     return {
         hoje, saldoHoje, saldoPorBanco, taxaDiaria, colchao: colchaoUsado,
-        ciclos, bancos: listaBancos, transferencias, menorSaldo, podeInvestir,
+        todosCiclos: todos, ciclos, bancos: listaBancos, transferencias, menorSaldo, podeInvestir,
         usouSalarioEstimado: ciclos.some((c) => c.salario.estimado || c.proximoSalario.estimado)
     };
 }
