@@ -787,8 +787,8 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
         document.getElementById("nota-evolucao-cat").textContent = "";
         return;
     }
-    // Cada categoria ocupa 4 linhas: ano anterior (apagado), ano atual (em
-    // destaque), diferença em R$ e em % — mês a mês e no período comparável.
+    // Cada categoria ocupa 4 linhas: ano atual (em destaque), ano anterior
+    // (apagado), diferença em R$ e em % — mês a mês e no período comparável.
     const ehPrevisto = (i) => i >= r.mesLimite;
     const thead = document.createElement("thead");
     const cab = document.createElement("tr");
@@ -819,14 +819,14 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
         const sentidoPeriodo = sentidoDaVariacao(tipo, item.diferenca);
         const linhas = [
             {
-                classe: "linha-anterior", rotulo: r.anoAnterior,
-                mes: (i) => ({ texto: valorCompacto(item.anterior[i]), classe: Math.abs(item.anterior[i]) < 0.5 ? "zero" : "", titulo: `${nome} · ${MESES_CURTOS[i]}/${r.anoAnterior}: ${formatarReais(item.anterior[i])}` }),
-                periodo: { texto: valorCompacto(item.periodoAnterior), titulo: `${periodoAnterior}: ${formatarReais(item.periodoAnterior)}` }
-            },
-            {
                 classe: "linha-atual", rotulo: r.ano,
                 mes: (i) => ({ texto: valorCompacto(item.meses[i]), classe: [Math.abs(item.meses[i]) < 0.5 ? "zero" : "", ehPrevisto(i) ? "col-previsto" : ""].join(" ").trim(), titulo: `${nome} · ${MESES_CURTOS[i]}/${r.ano}: ${formatarReais(item.meses[i])}${ehPrevisto(i) ? " (previsto)" : ""}` }),
                 periodo: { texto: valorCompacto(item.periodoAtual), titulo: `${periodoAtual}: ${formatarReais(item.periodoAtual)}` }
+            },
+            {
+                classe: "linha-anterior", rotulo: r.anoAnterior,
+                mes: (i) => ({ texto: valorCompacto(item.anterior[i]), classe: Math.abs(item.anterior[i]) < 0.5 ? "zero" : "", titulo: `${nome} · ${MESES_CURTOS[i]}/${r.anoAnterior}: ${formatarReais(item.anterior[i])}` }),
+                periodo: { texto: valorCompacto(item.periodoAnterior), titulo: `${periodoAnterior}: ${formatarReais(item.periodoAnterior)}` }
             },
             {
                 classe: "linha-diferenca", rotulo: "Dif. R$",
@@ -888,7 +888,7 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
     document.getElementById("nota-evolucao-cat").textContent = (r.mesLimite < 12
         ? `A comparação usa os mesmos meses nos dois anos (${periodoAtual} × ${periodoAnterior}); ${MESES_CURTOS[r.mesLimite - 1].toLowerCase()}/${r.ano} ainda está em andamento. Meses em azul e itálico ainda não chegaram (só previstos). `
         : `Ano inteiro de ${r.ano} × ${r.anoAnterior}. `)
-        + `Cada categoria tem a linha de ${r.anoAnterior} (mais clara), a de ${r.ano} (em destaque) e a diferença de cada mês em R$ e em %. `
+        + `Cada categoria tem a linha de ${r.ano} (em destaque), a de ${r.anoAnterior} (mais clara) e a diferença de cada mês em R$ e em %. `
         + (temEquiparadas ? "Categorias com ≈ incluem lançamentos que tinham outra classificação (passe o mouse no nome para ver de onde vieram). " : "")
         + `Valores em R$ sem centavos (passe o mouse para ver o valor exato). ${ehGasto ? "Gasto subindo aparece em vermelho; caindo, em verde." : "Recebimento subindo aparece em verde; caindo, em vermelho."} Usa os filtros de banco, vale, movimentação e texto; não conta transferências internas nem as categorias à parte.`;
 }

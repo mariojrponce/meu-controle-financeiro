@@ -199,6 +199,36 @@
                 </div>
             </section>
 
+            <section class="secao cartao" aria-labelledby="titulo-evolucao-cat" id="secao-evolucao-categorias">
+                <div class="secao-titulo">
+                    <h2 id="titulo-evolucao-cat"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Evolução por categoria</h2>
+                    <div class="alternador" role="group" aria-label="O que comparar">
+                        <button type="button" class="alternador-opcao ativo" data-tipo="SAIDA" aria-pressed="true">Gastos</button>
+                        <button type="button" class="alternador-opcao" data-tipo="ENTRADA" aria-pressed="false">Recebimentos</button>
+                    </div>
+                </div>
+                <p class="dica-campo" id="dica-evolucao-cat">Todas as categorias mês a mês, comparadas com os mesmos meses do ano anterior. Clique numa categoria da tabela para vê-la no gráfico.</p>
+                <label class="opcao-equiparar" title="A forma de classificar mudou de um ano para o outro (ex.: TRANSPORTE virou UBER e ONIBUS). Ligado, cada lançamento entra na categoria que você usa hoje, pela finalidade do gasto.">
+                    <input type="checkbox" id="equiparar-categorias" checked>
+                    <span>Equiparar categorias pela finalidade <small>(ex.: o que era TRANSPORTE entra em UBER e ONIBUS)</small></span>
+                </label>
+
+                <div class="grade-resumo resumo-comparativo" id="resumo-evolucao-cat" style="margin-top: var(--e-4);"></div>
+
+                <div class="subtitulo-grafico" style="margin-top: 0;">
+                    <h4><span id="titulo-grafico-evolucao-cat">Total de gastos por mês</span> <span class="selecao-grafico" id="selecao-evolucao-cat"></span></h4>
+                </div>
+                <div class="grafico-container" style="height: 340px;">
+                    <canvas id="grafico-evolucao-cat"></canvas>
+                </div>
+                <p class="vazio" id="vazio-evolucao-cat" style="display:none;">Sem lançamentos neste ano nem no anterior.</p>
+
+                <div class="tabela-scroll" id="area-tabela-evolucao-cat">
+                    <table id="tabela-evolucao-cat" class="tabela-matriz"></table>
+                </div>
+                <p class="dica-campo" id="nota-evolucao-cat" style="margin-top: var(--e-3);"></p>
+            </section>
+
             <section class="secao cartao" aria-labelledby="titulo-separadas">
                 <div class="secao-titulo">
                     <h2 id="titulo-separadas"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-categorias"></use></svg>Categorias à parte</h2>
@@ -276,36 +306,6 @@
                         <p class="vazio" id="vazio-tendencia-gastos">Sem dados ainda.</p>
                     </div>
                 </div>
-            </section>
-
-            <section class="secao cartao" aria-labelledby="titulo-evolucao-cat" id="secao-evolucao-categorias">
-                <div class="secao-titulo">
-                    <h2 id="titulo-evolucao-cat"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Evolução por categoria</h2>
-                    <div class="alternador" role="group" aria-label="O que comparar">
-                        <button type="button" class="alternador-opcao ativo" data-tipo="SAIDA" aria-pressed="true">Gastos</button>
-                        <button type="button" class="alternador-opcao" data-tipo="ENTRADA" aria-pressed="false">Recebimentos</button>
-                    </div>
-                </div>
-                <p class="dica-campo" id="dica-evolucao-cat">Todas as categorias mês a mês, comparadas com os mesmos meses do ano anterior. Clique numa categoria da tabela para vê-la no gráfico.</p>
-                <label class="opcao-equiparar" title="A forma de classificar mudou de um ano para o outro (ex.: TRANSPORTE virou UBER e ONIBUS). Ligado, cada lançamento entra na categoria que você usa hoje, pela finalidade do gasto.">
-                    <input type="checkbox" id="equiparar-categorias" checked>
-                    <span>Equiparar categorias pela finalidade <small>(ex.: o que era TRANSPORTE entra em UBER e ONIBUS)</small></span>
-                </label>
-
-                <div class="grade-resumo resumo-comparativo" id="resumo-evolucao-cat" style="margin-top: var(--e-4);"></div>
-
-                <div class="subtitulo-grafico" style="margin-top: 0;">
-                    <h4><span id="titulo-grafico-evolucao-cat">Total de gastos por mês</span> <span class="selecao-grafico" id="selecao-evolucao-cat"></span></h4>
-                </div>
-                <div class="grafico-container" style="height: 340px;">
-                    <canvas id="grafico-evolucao-cat"></canvas>
-                </div>
-                <p class="vazio" id="vazio-evolucao-cat" style="display:none;">Sem lançamentos neste ano nem no anterior.</p>
-
-                <div class="tabela-scroll" id="area-tabela-evolucao-cat">
-                    <table id="tabela-evolucao-cat" class="tabela-matriz"></table>
-                </div>
-                <p class="dica-campo" id="nota-evolucao-cat" style="margin-top: var(--e-3);"></p>
             </section>
 
             <section class="secao cartao" aria-labelledby="titulo-visoes">

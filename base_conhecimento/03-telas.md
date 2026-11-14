@@ -116,16 +116,17 @@ Padrão ao abrir pela 1ª vez: mês atual, do dia 01 até hoje. Depois, abre com
    - **A descontar por banco:** um cartão por banco com "A entrar (previsto)" e "A descontar (previsto)".
    - **Lista por data** (largura toda, sem rolagem lateral; a descrição quebra linha): Data + selo Previsto + aviso de vencimento, Descrição, Banco, Classificação, Valor. Aviso só para **saídas**: 🟡 "Vence em N dias" (4 a 7 dias), 🔴 "Vence em N dias" / "Vence amanhã" (até 3 dias).
    - **Dia a dia, por banco:** um bloco recolhível por banco, uma linha por detalhe (Período, Detalhe, Entrando, Saindo).
-5. **Categorias à parte:** Configurar → marcar classificações que não devem se misturar com o saldo. Um cartão por categoria (Entradas, Saídas, Saldo, remover) + gráfico do previsto por categoria à parte.
-6. **Entradas** e **Gastos**, cada um com dois gráficos lado a lado: barras por categoria/classificação (azul) e **Evolução Jan–Dez** (linha verde/vermelha).
-   - Clicar numa categoria destaca ela e a evolução passa a mostrar só ela (selo "só SALARIO ✕"). Clicar de novo ou no ✕ volta ao total.
-   - Todo gráfico mostra o selo **Total: R$ …** ao lado do título.
-7. **Evolução por categoria** (alternar **Gastos** / **Recebimentos**), conta em `js/evolucao-categorias.js`:
+5. **Evolução por categoria** (alternar **Gastos** / **Recebimentos**), conta em `js/evolucao-categorias.js` (equiparação de categorias em `js/finalidade.js`):
    - **Resumo:** total do período no ano do filtro × **mesmos meses** do ano anterior, com a variação em R$ e % ("você está gastando mais/menos"). No ano corrente o período vai de jan até o mês atual (inclui os previstos do mês); em anos passados, o ano inteiro.
-   - **Gráfico:** mês a mês, linha do ano (cheia; meses que ainda não chegaram tracejados, só previstos) × ano anterior (cinza tracejado). O tooltip mostra os dois valores e a diferença.
-   - **Tabela:** todas as categorias × Jan–Dez (R$ sem centavos; passar o mouse mostra o exato), depois o período deste ano, o mesmo período do ano anterior, Diferença e %. Gasto subindo = vermelho ▲, caindo = verde ▼ (recebimentos ao contrário); "novo" quando não havia no ano anterior. Linha **Total** no fim.
+   - **Gráfico:** mês a mês, linha do ano (cheia, em destaque; meses que ainda não chegaram tracejados, só previstos) × ano anterior (a mesma cor mais clara, tracejada). Cada ponto mostra o valor (ano atual em negrito, ano anterior apagado). O tooltip mostra os dois valores e a diferença.
+   - **Tabela:** cada categoria em 4 linhas × Jan–Dez — ano atual (em destaque), ano anterior (mais claro), **Dif. R$** e **Dif. %** de cada mês — mais a coluna do período comparável (Jan–mês atual). R$ sem centavos; passar o mouse mostra o exato. Gasto subindo = vermelho ▲, caindo = verde ▼ (recebimentos ao contrário); "novo" quando não havia no ano anterior; meses que ainda não chegaram ficam sem diferença. Grupo **Total** no fim.
+   - **Equiparar categorias pela finalidade** (ligado por padrão): a classificação mudou ao longo dos anos (TRANSPORTE virou UBER e ONIBUS; DAS/MEI e Spotify viraram DESP MENSAL; COMPRAS CASA virou COMPRAS CASA 108N...). Ligado, cada lançamento entra na categoria usada hoje, olhando classificação + descrição + detalhe — só na visão, o lançamento gravado não muda. Categorias com **≈** receberam lançamentos de outra classificação (passar o mouse no nome mostra de onde). As regras ficam em `js/finalidade.js`.
    - **Clicar numa categoria** mostra ela no gráfico e no resumo (selo "só CATEGORIA ✕" para voltar ao total).
    - Mesmas regras dos outros gráficos: usa os filtros de banco, vale, movimentação e texto (o período do filtro só define o ano); não conta transferências internas nem as categorias à parte.
+6. **Categorias à parte:** Configurar → marcar classificações que não devem se misturar com o saldo. Um cartão por categoria (Entradas, Saídas, Saldo, remover) + gráfico do previsto por categoria à parte.
+7. **Entradas** e **Gastos**, cada um com dois gráficos lado a lado: barras por categoria/classificação (azul) e **Evolução Jan–Dez** (linha verde/vermelha).
+   - Clicar numa categoria destaca ela e a evolução passa a mostrar só ela (selo "só SALARIO ✕"). Clicar de novo ou no ✕ volta ao total.
+   - Todo gráfico mostra o selo **Total: R$ …** ao lado do título.
 8. **Suas visões personalizadas:** Nova visão → Título, Filtrar por (nenhum / classificação / banco / detalhe / descrição) + valor, Agrupar por, Tipo. Cada visão vira um gráfico de barras com Total e botão Remover.
 
 ---

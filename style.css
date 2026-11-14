@@ -2054,7 +2054,7 @@ body.tela-login {
 .cartao-metrica .valor.variacao-melhorou { color: var(--cor-entrada); }
 
 /* Matriz categorias × meses — cada categoria em 4 linhas:
-   ano anterior (apagado), ano atual (destaque), diferença em R$ e em % */
+   ano atual (destaque), ano anterior (apagado), diferença em R$ e em % */
 .tabela-matriz { font-size: 0.8125rem; border-collapse: separate; border-spacing: 0; }
 .tabela-matriz th, .tabela-matriz td { padding: 3px 4px; height: 26px; border-bottom: none; }
 .tabela-matriz th { font-size: 0.6875rem; text-align: right; height: 34px; border-bottom: 1px solid var(--borda-sutil); }
@@ -2098,10 +2098,10 @@ body.tela-login {
 .tabela-matriz .marca-equiparada { margin-left: 4px; color: var(--cor-primaria); font-weight: 700; cursor: help; }
 
 /* Ano anterior mais clarinho; ano atual em destaque */
-.tabela-matriz .linha-anterior td { color: var(--texto-secundario); opacity: 0.75; padding-top: 7px; }
-.tabela-matriz .linha-anterior td.col-nome { opacity: 1; color: var(--texto-principal); }
+.tabela-matriz .linha-anterior td { color: var(--texto-secundario); opacity: 0.75; }
 .tabela-matriz .linha-anterior td.zero { opacity: 0.4; }
-.tabela-matriz .linha-atual td { font-weight: 700; color: var(--texto-principal); font-size: 0.84375rem; }
+.tabela-matriz .linha-atual td { font-weight: 700; color: var(--texto-principal); font-size: 0.84375rem; padding-top: 7px; }
+.tabela-matriz .linha-atual td.col-nome { font-weight: 600; font-size: inherit; padding-top: 3px; }
 .tabela-matriz .linha-atual td.zero { font-weight: 400; color: var(--texto-secundario); }
 .tabela-matriz .linha-atual td.col-rotulo { color: var(--texto-principal); font-size: 0.6875rem; }
 .tabela-matriz .linha-diferenca td, .tabela-matriz .linha-percentual td { font-size: 0.6875rem; }
