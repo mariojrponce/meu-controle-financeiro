@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Extrato · Meu Financeiro</title>
     <script>
@@ -12,130 +12,149 @@
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="mobile-header">
-    <div class="marca-mobile">
-        <span>💰</span>
-        <span>Meu Financeiro</span>
-    </div>
+    <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
     <div class="mobile-header-acoes">
-        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
-        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
+        <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
     </div>
 </header>
 
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">
-            <span class="logo-icone">💰</span>
-            <span class="logo-texto">Meu Financeiro</span>
-        </div>
-        <nav class="sidebar-links">
-            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
-            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
-            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
-            <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Planejamento</span></a>
+        <div class="sidebar-marca"><a class="marca" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span></a></div>
+        <nav class="sidebar-links" aria-label="Menu principal">
+            <div class="grupo-nav">Registrar</div>
+            <a href="index.html" data-pagina="lancar" title="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar" title="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+            <a href="transferencia.html" data-pagina="transferencia" title="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes" title="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar mês</span></a>
+            <div class="grupo-nav">Acompanhar</div>
+            <a href="dashboard.html" data-pagina="dashboard" title="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dashboard</span></a>
+            <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+            <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
         </nav>
         <div class="sidebar-rodape">
-            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button class="btn-sair botao-sair">🚪 Sair</button>
+            <div class="sidebar-acoes">
+                <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+                <button type="button" class="btn-sair botao-sair" title="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg><span class="rotulo-sair">Sair</span></button>
+            </div>
         </div>
     </aside>
 
-    <main class="conteudo-principal">
+    <main class="conteudo-principal" id="conteudo">
         <div class="pagina">
             <div class="cabecalho-pagina">
                 <div>
-                    <h2>Extrato de transações</h2>
-                    <p class="subtitulo">Mostrando o mês atual por padrão. Ajuste os filtros abaixo para ver outro período.</p>
+                    <h1>Extrato</h1>
+                    <p class="subtitulo">Mostra o mês atual por padrão. Use os filtros para ver outro período.</p>
                 </div>
-                <div style="display:flex; gap: var(--espaco-sm); flex-wrap:wrap;">
-                    <button id="btn-exportar-excel" class="botao botao-secundario" style="margin:0;width:auto;" title="Exportar os lançamentos filtrados abaixo para .xlsx, no modelo da planilha original">⬇️ Exportar .xlsx</button>
-                    <button id="btn-novo-lancamento" class="botao botao-primario" style="margin:0;width:auto;" title="Novo lançamento, pré-preenchido com os filtros atuais">+ Novo lançamento</button>
+                <div class="acoes-pagina">
+                    <button id="btn-exportar-excel" class="botao botao-secundario" title="Exporta os lançamentos filtrados para .xlsx, no modelo da planilha original"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-baixar"></use></svg>Exportar .xlsx</button>
+                    <button id="btn-novo-lancamento" class="botao botao-primario" title="Novo lançamento, já preenchido com os filtros atuais"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"></use></svg>Novo lançamento</button>
                 </div>
             </div>
 
             <div class="grade-resumo" id="resumo">
-                <div class="cartao-metrica metrica-entrada">
-                    <div class="rotulo">Entradas</div>
+                <div class="cartao-metrica metrica-entrada sinal-mais">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Entradas</div>
                     <div class="valor" id="total-entradas">R$ 0,00</div>
                 </div>
-                <div class="cartao-metrica metrica-saida">
-                    <div class="rotulo">Saídas</div>
+                <div class="cartao-metrica metrica-saida sinal-menos">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg>Saídas</div>
                     <div class="valor" id="total-saidas">R$ 0,00</div>
                 </div>
-                <div class="cartao-metrica metrica-saldo-pos" id="cartao-saldo">
-                    <div class="rotulo">Saldo do período</div>
+                <div class="cartao-metrica metrica-saldo-pos sinal-auto" id="cartao-saldo">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-carteira"></use></svg>Saldo do período</div>
                     <div class="valor" id="total-saldo">R$ 0,00</div>
                 </div>
-                <div class="cartao-metrica metrica-neutra" title="Saldo do período se todos os lançamentos futuros (previstos) se confirmarem">
-                    <div class="rotulo">📅 Saldo previsto</div>
+                <div class="cartao-metrica metrica-previsto" title="Saldo do período se todos os lançamentos futuros (previstos) se confirmarem">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-calendario"></use></svg>Saldo previsto</div>
                     <div class="valor" id="total-saldo-previsto">R$ 0,00</div>
                 </div>
             </div>
 
-            <div class="cartao">
-                <div class="filtros">
-                    <div class="campo-filtro">
-                        <label for="filtro-ano">Ano</label>
-                        <select id="filtro-ano"></select>
+            <section class="cartao" aria-label="Filtros e lançamentos">
+                <details class="painel-filtros" open>
+                    <summary><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-filtro"></use></svg>Filtros</summary>
+                    <div class="grupos-filtros">
+                        <fieldset class="grupo-filtros grupo-periodo">
+                            <legend><svg class="icone icone-sm" aria-hidden="true"><use href="assets/icones.svg#i-calendario"></use></svg>Período</legend>
+                            <div class="campo-filtro">
+                                <label for="filtro-ano">Ano</label>
+                                <select id="filtro-ano"></select>
+                            </div>
+                            <div class="campo-filtro">
+                                <label>Mês</label>
+                                <div id="filtro-mes"></div>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-data-inicio">De</label>
+                                <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-data-fim">Até</label>
+                                <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                        </fieldset>
+                        <fieldset class="grupo-filtros grupo-escopo">
+                            <legend><svg class="icone icone-sm" aria-hidden="true"><use href="assets/icones.svg#i-banco"></use></svg>Escopo</legend>
+                            <div class="campo-filtro">
+                                <label>Banco</label>
+                                <div id="filtro-banco"></div>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-movimentacao">Movimentação</label>
+                                <select id="filtro-movimentacao">
+                                    <option value="">Todas</option>
+                                    <option value="EXTERNO">Externo</option>
+                                    <option value="INTERNO">Interno</option>
+                                </select>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-vale">Vale</label>
+                                <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-situacao">Situação</label>
+                                <select id="filtro-situacao">
+                                    <option value="">Todas</option>
+                                    <option value="PREVISTA">Só previstas</option>
+                                    <option value="REALIZADA">Só realizadas</option>
+                                </select>
+                            </div>
+                        </fieldset>
+                        <fieldset class="grupo-filtros grupo-texto">
+                            <legend><svg class="icone icone-sm" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg>Texto</legend>
+                            <div class="campo-filtro">
+                                <label for="filtro-descricao">Descrição</label>
+                                <input type="text" id="filtro-descricao" placeholder="Buscar...">
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-detalhe">Detalhe</label>
+                                <input type="text" id="filtro-detalhe" placeholder="Ex.: UBER">
+                            </div>
+                        </fieldset>
                     </div>
-                    <div class="campo-filtro">
-                        <label>Mês</label>
-                        <div id="filtro-mes"></div>
+                    <div class="filtros-acoes">
+                        <button id="btn-atualizar" class="botao botao-secundario" title="Buscar os dados mais recentes do Firebase"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-atualizar"></use></svg>Atualizar dados</button>
+                        <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
+                        <button id="btn-filtrar" class="botao botao-primario">Pesquisar</button>
                     </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-data-inicio">Dia início <span class="dica-inline">(sempre dia 01)</span></label>
-                        <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa">
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-data-fim">Dia fim <span class="dica-inline">(sempre hoje)</span></label>
-                        <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa">
-                    </div>
-                    <div class="campo-filtro">
-                        <label>Banco</label>
-                        <div id="filtro-banco"></div>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-descricao">Descrição</label>
-                        <input type="text" id="filtro-descricao" placeholder="Buscar na descrição...">
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-detalhe">Detalhe</label>
-                        <input type="text" id="filtro-detalhe" placeholder="Ex: UBER, MERCADO EXTRA">
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-movimentacao">Movimentação</label>
-                        <select id="filtro-movimentacao">
-                            <option value="">Todas</option>
-                            <option value="EXTERNO">Externo</option>
-                            <option value="INTERNO">Interno</option>
-                        </select>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-vale">Vale</label>
-                        <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-situacao">Situação</label>
-                        <select id="filtro-situacao">
-                            <option value="">Todas</option>
-                            <option value="PREVISTA">Só previstas</option>
-                            <option value="REALIZADA">Só realizadas</option>
-                        </select>
-                    </div>
-                    <button id="btn-filtrar" class="botao botao-primario" style="margin:0;width:auto;">Pesquisar</button>
-                    <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
-                    <button id="btn-atualizar" class="botao botao-secundario" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
-                </div>
+                </details>
 
                 <div class="tabela-scroll">
                     <table id="tabela-transacoes">
@@ -147,27 +166,27 @@
                                 <th data-chave="tipo_mov" data-tipo="texto" class="th-ordenavel">Movimentação</th>
                                 <th data-chave="banco" data-tipo="texto" class="th-ordenavel">Banco</th>
                                 <th data-chave="classificacao_saida" data-tipo="texto" class="th-ordenavel">Classificação</th>
-                                <th data-chave="valor" data-tipo="numero" class="th-ordenavel" style="text-align: right;">Valor (R$)</th>
-                                <th class="col-acoes">Ações</th>
+                                <th data-chave="valor" data-tipo="numero" class="th-ordenavel">Valor</th>
+                                <th class="col-acoes"><span class="visualmente-oculto">Ações</span></th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
                 </div>
-            </div>
+            </section>
         </div>
     </main>
 </div>
 
-<nav class="mobile-nav">
-    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
-    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
-    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
-    <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Plano</span></a>
+<nav class="mobile-nav" aria-label="Menu principal">
+    <a href="index.html" data-pagina="lancar" aria-label="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar" aria-label="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+    <a href="transferencia.html" data-pagina="transferencia" aria-label="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes" aria-label="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar</span></a>
+    <a href="dashboard.html" data-pagina="dashboard" aria-label="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dash</span></a>
+    <a href="extrato.html" data-pagina="extrato" aria-label="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+    <a href="investimentos.html" data-pagina="investimentos" aria-label="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento" aria-label="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Plano</span></a>
 </nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"

@@ -6,7 +6,7 @@
 // padrão usado em "Virar mês" para a virada de saldo.
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
 import { BANCOS_SUGERIDOS, mesclarSugestoes, normalizarNomeBanco } from "./dados-comuns.js";
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
@@ -105,13 +105,13 @@ function renderizarUltimas(lista) {
         const botaoEditar = document.createElement("button");
         botaoEditar.className = "botao-icone-primario";
         botaoEditar.title = "Editar lançamento";
-        botaoEditar.textContent = "✏️";
+        preencherBotao(botaoEditar, "editar");
         botaoEditar.addEventListener("click", () => editarTransacao(transacao));
 
         const botaoExcluir = document.createElement("button");
         botaoExcluir.className = "botao-icone-perigo";
         botaoExcluir.title = "Excluir lançamento";
-        botaoExcluir.textContent = "🗑";
+        preencherBotao(botaoExcluir, "excluir");
         botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
 
         wrapperAcoes.appendChild(botaoEditar);
@@ -170,7 +170,7 @@ formulario.addEventListener("submit", async function (evento) {
     const dataNormalizada = normalizarDataDigitada(campoData.value);
     if (dataNormalizada) campoData.value = dataNormalizada;
 
-    const botaoTransferir = formulario.querySelector("button");
+    const botaoTransferir = formulario.querySelector("button[type=submit]");
 
     const valor = parseFloat(document.getElementById("valor").value);
     const dataISO = brParaISO(campoData.value);
@@ -227,3 +227,41 @@ formulario.addEventListener("submit", async function (evento) {
         botaoTransferir.textContent = "Transferir";
     }
 });
+
+// Resumo ao vivo "ORIGEM ➔ DESTINO · valor": deixa a direção à vista antes de
+// confirmar, para não inverter as contas sem querer.
+const resumoTransferencia = document.getElementById("resumo-transferencia");
+function atualizarResumoTransferencia() {
+    if (!resumoTransferencia) return;
+    const origem = campoBancoOrigem.value.trim().toUpperCase();
+    const destino = campoBancoDestino.value.trim().toUpperCase();
+    const valor = parseFloat(document.getElementById("valor").value);
+    if (!origem && !destino) {
+        resumoTransferencia.replaceChildren();
+        return;
+    }
+    const seta = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    seta.setAttribute("class", "icone");
+    seta.setAttribute("aria-hidden", "true");
+    const uso = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    uso.setAttribute("href", "assets/icones.svg#i-seta");
+    seta.appendChild(uso);
+    const de = document.createElement("span");
+    de.textContent = origem || "origem?";
+    const para = document.createElement("span");
+    para.textContent = destino || "destino?";
+    const partes = [de, seta, para];
+    if (valor > 0) {
+        const quanto = document.createElement("span");
+        quanto.textContent = `· ${formatarReais(valor)}`;
+        partes.push(quanto);
+    }
+    resumoTransferencia.replaceChildren(...partes);
+    resumoTransferencia.setAttribute("aria-label", `Transferir de ${de.textContent} para ${para.textContent}`);
+}
+["input", "change"].forEach((evento) => {
+    campoBancoOrigem.addEventListener(evento, atualizarResumoTransferencia);
+    campoBancoDestino.addEventListener(evento, atualizarResumoTransferencia);
+    document.getElementById("valor").addEventListener(evento, atualizarResumoTransferencia);
+});
+document.getElementById("form-transferencia").addEventListener("reset", () => setTimeout(atualizarResumoTransferencia, 0));

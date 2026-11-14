@@ -1,13 +1,26 @@
 # 3. Telas
 
-Elementos comuns a todas as telas privadas:
+Elementos comuns a todas as telas privadas (visual segue a **identidade visual v1.0**, ver 3.0 abaixo):
 
-- **Menu lateral** (desktop) / **barra inferior** (celular) com as 8 telas, e-mail do usuário, botão de tema e 🚪 Sair.
-- **Tema**: ☀️ Claro → 🌙 Escuro → 📜 Sépia → Claro (cada clique avança). Sem escolha manual, o tema segue o horário: **06h–18h claro, fora disso escuro**. A escolha manual fica gravada e passa a valer sempre, até trocar de novo.
-- **Avisos (toast)**: mensagem discreta no canto, some em ~2,2 s (verde = sucesso, vermelho = erro).
+- **Menu lateral** (desktop ≥ 1024 px) com a logo (clique → Lançar) e as 8 telas em dois grupos: **Registrar** (Lançar, Importar, Transferência, Virar mês) e **Acompanhar** (Dashboard, Extrato, Investimentos, Planejamento); no rodapé, e-mail, botão de tema e Sair. **Tablet (768–1023 px):** menu recolhido, só ícones e o símbolo da carteira. **Celular (< 768 px):** topo com o símbolo + barra inferior com os 8 itens (rótulos curtos: Lançar, Importar, Transf., Virar, Dash, Extrato, Invest., Plano).
+- **Tema**: Claro → Escuro → Sépia → Claro (cada clique avança; ícones sol / lua / livro). Sem escolha manual, o tema segue o horário: **06h–18h claro, fora disso escuro**. A escolha manual fica gravada e passa a valer sempre, até trocar de novo. No Sépia a logo fica monocromática marrom.
+- **Avisos (toast)**: mensagem discreta no canto, some em ~2,2 s (faixa verde = sucesso, vermelha = erro).
 - **Janelas flutuantes (modais)**: fecham com Cancelar, ou clicando fora **somente se o clique começar e terminar no fundo escuro**. Assim, selecionar um texto dentro da janela e soltar o mouse fora não fecha a janela nem perde o que foi digitado. A janela de detalhes do ciclo (Planejamento) fecha também com **Esc**.
 - **Tabelas**: clicar no cabeçalho ordena (▲/▼, clique de novo inverte). Células não quebram linha; a página inteira rola (sem barra de rolagem interna).
-- **Excluir** sempre pede confirmação ("Essa ação não pode ser desfeita").
+- **Excluir** sempre pede confirmação ("Essa ação não pode ser desfeita"). Botões de excluir nunca são preenchidos (contorno/ícone), para evitar clique sem querer.
+- **Filtros** (Extrato, Dashboard, Investimentos) agrupados em **Período**, **Escopo** e **Texto**; no celular ficam recolhidos em "Filtros".
+
+### 3.0 Identidade visual aplicada (v1.10)
+
+Fonte: pasta `identidade visual/` (manual em PDF + guias). Resumo do que vale no código:
+
+| Item | Regra |
+|------|-------|
+| Cores | Só tokens de `style.css` (`--brand-*`, `--bg-*`, `--texto-*`, `--cor-entrada`, `--cor-saida`, `--cor-alerta`, `--cor-previsto`, `--cor-interno`...) nos 3 temas. Azul domina; verde = entrada/saldo positivo; vermelho = saída/erro; laranja só como acento de atenção. Os gráficos leem os tokens (`corDoTema()` em `graficos.js`). Exceção: cores das marcas dos bancos (`cores-bancos.js`), que são dado. |
+| Marca | `assets/brand/`: símbolo da carteira (recortado do logo original, sem fundo), versão sépia, logo horizontal e ícones (favicon 32/48, 180, 192, 512). A logo horizontal das telas é montada (símbolo + divisor + "Meu / Financeiro" + linha degradê) para trocar de cor com o tema. |
+| Tipografia | Inter 400–700 em tudo; Nunito 800 só no nome da marca. Página 22 px/700, seção 16 px/600, corpo 14 px, rótulos 12 px. Valores com números tabulares, à direita, sem quebrar. |
+| Ícones | `assets/icones.svg`: conjunto linear único (traço 1,8). Emojis só como sinal em textos de aviso. |
+| Componentes | Cards raio 12 px; campos e botões 40 px (44 px no celular), raio 8 px; selos/pílulas raio 999 px. KPIs neutros com **cor + sinal + rótulo** (nunca só cor). Linhas previstas com borda azul à esquerda. |
 
 ---
 
@@ -96,19 +109,18 @@ Padrão ao abrir pela 1ª vez: mês atual, do dia 01 até hoje. Depois, abre com
 
 **Seções, na ordem da tela** (fórmulas em [06-calculos.md](06-calculos.md#62-dashboard)):
 
-1. **Cartões:** Saldo do período · Entradas no período · Saídas no período · 🔁 Transferências internas · 📅 Saldo previsto. Entradas/Saídas consideram só movimentações **externas**.
-2. **📅 Lançamentos previstos (futuros):** Data + selo Previsto + aviso de vencimento, Descrição, Banco, Classificação, Valor. Ordem por data crescente.
-   - Aviso só para **saídas**: 🟡 "Vence em N dias" (4 a 7 dias), 🔴 "Vence em N dias" / "Vence amanhã" (até 3 dias).
-3. **⏰ A descontar por banco (previsto):** um cartão por banco com "A entrar (previsto)" e "A descontar (previsto)". Ordem: quem mais vai descontar primeiro.
-4. **📆 Previsto por banco, dia a dia:** um bloco recolhível por banco. Dentro, uma linha por **detalhe** (lançamentos com o mesmo Detalhe são somados), com Período (primeira–última data e "(Nx)"), Detalhe, Entrando, Saindo.
-5. **💳 Saldo por carteira / banco (no período):** cartão por banco com Entradas, Saídas, Saldo (com a cor do banco).
-6. **🍱 Categorias à parte:** ⚙️ Configurar → marcar classificações que não devem se misturar com o saldo. Um cartão por categoria (Entradas, Saídas, Saldo, 🗑 remover).
-7. **📅 Previsto (futuro) por categoria à parte:** barras agrupadas Entradas previstas × Saídas previstas.
-8. **💵 Entradas por categoria** (barras) e **📈 Evolução mensal de entradas** (linha jan–dez).
-9. **📌 Maiores gastos do período por classificação** (barras) e **📈 Evolução mensal de gastos** (linha jan–dez).
-   - Clicar numa categoria (barra, espaço vazio ou nome) destaca ela e a evolução passa a mostrar só ela (selo "só SALARIO ✕"). Clicar de novo ou no ✕ volta ao total.
+1. **Cartões:** Saldo do período · Entradas (+) · Saídas (−) · Saldo previsto. Entradas/Saídas consideram só movimentações **externas**.
+2. **Faixa discreta:** Transferências internas no período (não entram em Entradas nem Saídas).
+3. **Saldo por carteira:** cartão por banco com Entradas, Saídas, Saldo (borda com a cor do banco).
+4. **Radar de previstos**, em duas colunas:
+   - **Lista por data:** Data + selo Previsto + aviso de vencimento, Descrição, Banco, Classificação, Valor. Aviso só para **saídas**: 🟡 "Vence em N dias" (4 a 7 dias), 🔴 "Vence em N dias" / "Vence amanhã" (até 3 dias).
+   - **A descontar por banco:** um cartão por banco com "A entrar (previsto)" e "A descontar (previsto)".
+   - Abaixo, **Dia a dia, por banco:** um bloco recolhível por banco, uma linha por detalhe (Período, Detalhe, Entrando, Saindo).
+5. **Categorias à parte:** Configurar → marcar classificações que não devem se misturar com o saldo. Um cartão por categoria (Entradas, Saídas, Saldo, remover) + gráfico do previsto por categoria à parte.
+6. **Entradas** e **Gastos**, cada um com dois gráficos lado a lado: barras por categoria/classificação (azul) e **Evolução Jan–Dez** (linha verde/vermelha).
+   - Clicar numa categoria destaca ela e a evolução passa a mostrar só ela (selo "só SALARIO ✕"). Clicar de novo ou no ✕ volta ao total.
    - Todo gráfico mostra o selo **Total: R$ …** ao lado do título.
-10. **🧩 Suas visões personalizadas:** ➕ Nova visão → Título, Filtrar por (nenhum / classificação / banco / detalhe / descrição) + valor, Agrupar por (detalhe / classificação / banco / descrição), Tipo (só saídas / só entradas / ambos). Cada visão vira um gráfico de barras com Total e botão 🗑 Remover.
+7. **Suas visões personalizadas:** Nova visão → Título, Filtrar por (nenhum / classificação / banco / detalhe / descrição) + valor, Agrupar por, Tipo. Cada visão vira um gráfico de barras com Total e botão Remover.
 
 ---
 
@@ -116,7 +128,7 @@ Padrão ao abrir pela 1ª vez: mês atual, do dia 01 até hoje. Depois, abre com
 
 **Objetivo:** registrar PIX/transferência entre seus próprios bancos com um formulário só.
 
-Campos: Valor, Data, Banco de origem, Banco de destino, Detalhe (opcional). Botão **Transferir** → confirmação → cria 2 lançamentos.
+Campos: Valor, Data, **De** ➔ **Para** (lado a lado, com seta), Detalhe (opcional). Um resumo ao vivo ("NUBANK ➔ BRADESCO · R$ 150,00") mostra a direção antes de confirmar. Botão **Transferir** → confirmação → cria 2 lançamentos.
 Tabela **Últimas transferências internas**: os 10 últimos lançamentos INTERNOS criados (inclui viradas de mês), com editar/excluir.
 Regras completas em [05-transferencias-e-virada-de-mes.md](05-transferencias-e-virada-de-mes.md).
 

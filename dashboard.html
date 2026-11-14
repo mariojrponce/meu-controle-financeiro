@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Dashboard · Meu Financeiro</title>
     <script>
@@ -12,308 +12,343 @@
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="mobile-header">
-    <div class="marca-mobile">
-        <span>💰</span>
-        <span>Meu Financeiro</span>
-    </div>
+    <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
     <div class="mobile-header-acoes">
-        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
-        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
+        <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
     </div>
 </header>
 
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">
-            <span class="logo-icone">💰</span>
-            <span class="logo-texto">Meu Financeiro</span>
-        </div>
-        <nav class="sidebar-links">
-            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
-            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
-            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
-            <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Planejamento</span></a>
+        <div class="sidebar-marca"><a class="marca" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span></a></div>
+        <nav class="sidebar-links" aria-label="Menu principal">
+            <div class="grupo-nav">Registrar</div>
+            <a href="index.html" data-pagina="lancar" title="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar" title="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+            <a href="transferencia.html" data-pagina="transferencia" title="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes" title="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar mês</span></a>
+            <div class="grupo-nav">Acompanhar</div>
+            <a href="dashboard.html" data-pagina="dashboard" title="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dashboard</span></a>
+            <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+            <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
         </nav>
         <div class="sidebar-rodape">
-            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button class="btn-sair botao-sair">🚪 Sair</button>
+            <div class="sidebar-acoes">
+                <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+                <button type="button" class="btn-sair botao-sair" title="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg><span class="rotulo-sair">Sair</span></button>
+            </div>
         </div>
     </aside>
 
-    <main class="conteudo-principal">
+    <main class="conteudo-principal" id="conteudo">
         <div class="pagina">
-            <h2>Dashboard</h2>
-            <p class="subtitulo" id="subtitulo-periodo">Mostrando o mês atual por padrão. Ajuste os filtros para ver outro período.</p>
-
-            <div class="cartao" style="margin-bottom: var(--espaco-lg);">
-                <div class="filtros">
-                    <div class="campo-filtro">
-                        <label for="filtro-ano">Ano</label>
-                        <select id="filtro-ano"></select>
-                    </div>
-                    <div class="campo-filtro">
-                        <label>Mês</label>
-                        <div id="filtro-mes"></div>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-data-inicio">Dia início <span class="dica-inline">(sempre dia 01)</span></label>
-                        <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa">
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-data-fim">Dia fim <span class="dica-inline">(sempre hoje)</span></label>
-                        <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa">
-                    </div>
-                    <div class="campo-filtro">
-                        <label>Banco</label>
-                        <div id="filtro-banco"></div>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-descricao">Descrição</label>
-                        <input type="text" id="filtro-descricao" placeholder="Buscar na descrição...">
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-detalhe">Detalhe</label>
-                        <input type="text" id="filtro-detalhe" placeholder="Ex: UBER, MERCADO EXTRA">
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-movimentacao">Movimentação</label>
-                        <select id="filtro-movimentacao">
-                            <option value="">Todas</option>
-                            <option value="EXTERNO">Externo</option>
-                            <option value="INTERNO">Interno</option>
-                        </select>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-vale">Vale</label>
-                        <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
-                    </div>
-                    <button id="btn-filtrar" class="botao botao-primario" style="margin:0;width:auto;">Pesquisar</button>
-                    <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
-                    <button id="btn-atualizar" class="botao botao-secundario" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
+            <div class="cabecalho-pagina">
+                <div>
+                    <h1>Dashboard</h1>
+                    <p class="subtitulo" id="subtitulo-periodo">Mostra o mês atual por padrão. Ajuste os filtros para ver outro período.</p>
                 </div>
             </div>
+
+            <section class="cartao" aria-label="Filtros" style="margin-bottom: var(--e-6);">
+                <details class="painel-filtros" open>
+                    <summary><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-filtro"></use></svg>Filtros</summary>
+                    <div class="grupos-filtros">
+                        <fieldset class="grupo-filtros grupo-periodo">
+                            <legend><svg class="icone icone-sm" aria-hidden="true"><use href="assets/icones.svg#i-calendario"></use></svg>Período</legend>
+                            <div class="campo-filtro">
+                                <label for="filtro-ano">Ano</label>
+                                <select id="filtro-ano"></select>
+                            </div>
+                            <div class="campo-filtro">
+                                <label>Mês</label>
+                                <div id="filtro-mes"></div>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-data-inicio">De</label>
+                                <input type="text" id="filtro-data-inicio" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-data-fim">Até</label>
+                                <input type="text" id="filtro-data-fim" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                        </fieldset>
+                        <fieldset class="grupo-filtros grupo-escopo">
+                            <legend><svg class="icone icone-sm" aria-hidden="true"><use href="assets/icones.svg#i-banco"></use></svg>Escopo</legend>
+                            <div class="campo-filtro">
+                                <label>Banco</label>
+                                <div id="filtro-banco"></div>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-movimentacao">Movimentação</label>
+                                <select id="filtro-movimentacao">
+                                    <option value="">Todas</option>
+                                    <option value="EXTERNO">Externo</option>
+                                    <option value="INTERNO">Interno</option>
+                                </select>
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-vale">Vale</label>
+                                <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
+                            </div>
+                        </fieldset>
+                        <fieldset class="grupo-filtros grupo-texto">
+                            <legend><svg class="icone icone-sm" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg>Texto</legend>
+                            <div class="campo-filtro">
+                                <label for="filtro-descricao">Descrição</label>
+                                <input type="text" id="filtro-descricao" placeholder="Buscar...">
+                            </div>
+                            <div class="campo-filtro">
+                                <label for="filtro-detalhe">Detalhe</label>
+                                <input type="text" id="filtro-detalhe" placeholder="Ex.: UBER">
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="filtros-acoes">
+                        <button id="btn-atualizar" class="botao botao-secundario" title="Buscar os dados mais recentes do Firebase"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-atualizar"></use></svg>Atualizar dados</button>
+                        <button id="btn-limpar" class="botao botao-secundario">Mês atual</button>
+                        <button id="btn-filtrar" class="botao botao-primario">Pesquisar</button>
+                    </div>
+                </details>
+            </section>
 
             <div class="grade-resumo">
-                <div class="cartao-metrica metrica-saldo-pos" id="cartao-saldo-geral">
-                    <div class="rotulo">Saldo do período</div>
+                <div class="cartao-metrica metrica-saldo-pos sinal-auto" id="cartao-saldo-geral">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-carteira"></use></svg>Saldo do período</div>
                     <div class="valor" id="saldo-geral">R$ 0,00</div>
+                    <div class="kpi-meta">Realizados, só externos</div>
                 </div>
-                <div class="cartao-metrica metrica-entrada">
-                    <div class="rotulo">Entradas no período</div>
+                <div class="cartao-metrica metrica-entrada sinal-mais">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Entradas</div>
                     <div class="valor" id="entradas-periodo">R$ 0,00</div>
+                    <div class="kpi-meta">Dinheiro que entrou de fora</div>
                 </div>
-                <div class="cartao-metrica metrica-saida">
-                    <div class="rotulo">Saídas no período</div>
+                <div class="cartao-metrica metrica-saida sinal-menos">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg>Saídas</div>
                     <div class="valor" id="saidas-periodo">R$ 0,00</div>
+                    <div class="kpi-meta">Dinheiro que saiu de verdade</div>
                 </div>
-                <div class="cartao-metrica metrica-neutra" title="Transferências entre suas próprias contas — não contam como receita real">
-                    <div class="rotulo">🔁 Transferências internas</div>
-                    <div class="valor" id="transferencias-internas">R$ 0,00</div>
-                </div>
-                <div class="cartao-metrica metrica-neutra" title="Saldo se todos os lançamentos futuros (previstos) deste período se confirmarem">
-                    <div class="rotulo">📅 Saldo previsto</div>
+                <div class="cartao-metrica metrica-previsto" title="Saldo se todos os lançamentos futuros (previstos) deste período se confirmarem">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-calendario"></use></svg>Saldo previsto</div>
                     <div class="valor" id="saldo-previsto">R$ 0,00</div>
+                    <div class="kpi-meta">Se os previstos se confirmarem</div>
                 </div>
             </div>
 
-            <p class="dica-campo" style="margin:-10px 0 var(--espaco-lg);">
-                💡 "Entradas" e "Saídas" acima consideram só movimentações <b>Externas</b> (dinheiro que realmente entrou ou saiu da sua vida financeira). Transferências <b>Internas</b> (entre suas próprias contas) aparecem separadas, sem inflar esse número.
+            <p class="faixa-info" style="flex-wrap: nowrap;" title="Transferências entre suas próprias contas não são receita nem gasto">
+                <svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg>
+                <span>Transferências internas no período: <b id="transferencias-internas">R$ 0,00</b> · entre suas próprias contas, não entram em Entradas nem em Saídas.</span>
             </p>
 
-            <div class="secao cartao">
+            <section class="secao cartao" aria-labelledby="titulo-carteiras">
                 <div class="secao-titulo">
-                    <h3>📅 Lançamentos previstos (futuros)</h3>
-                </div>
-                <p class="dica-campo">
-                    Ainda não entraram no saldo real acima — aparecem aqui só como previsão do que está agendado para este período.
-                </p>
-                <div class="tabela-scroll">
-                    <table id="tabela-previstos">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Descrição</th>
-                                <th>Banco</th>
-                                <th>Classificação</th>
-                                <th style="text-align: right;">Valor (R$)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="5" class="vazio">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="secao cartao">
-                <div class="secao-titulo">
-                    <h3>⏰ A descontar por banco (previsto)</h3>
-                </div>
-                <p class="dica-campo">
-                    Quanto ainda vai sair (e entrar) de cada banco pelos lançamentos previstos deste período — deixe o saldo pronto antes do débito acontecer de verdade. Lançamentos com vencimento em até 7 dias aparecem com aviso na tabela de previstos acima.
-                </p>
-                <div class="grade-carteiras" id="grade-previstos-banco">
-                    <p class="vazio">Carregando...</p>
-                </div>
-            </div>
-
-            <div class="secao cartao">
-                <div class="secao-titulo">
-                    <h3>📆 Previsto por banco, dia a dia</h3>
-                </div>
-                <p class="dica-campo">
-                    Só os dias em que cada banco realmente tem algo previsto entrando ou saindo. Clique num banco para abrir.
-                </p>
-                <div id="detalhe-previstos-banco">
-                    <p class="vazio">Carregando...</p>
-                </div>
-            </div>
-
-            <div class="secao cartao">
-                <div class="secao-titulo">
-                    <h3>💳 Saldo por carteira / banco (no período)</h3>
+                    <h2 id="titulo-carteiras"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-carteira"></use></svg>Saldo por carteira</h2>
                 </div>
                 <div class="grade-carteiras" id="grade-carteiras">
                     <p class="vazio">Carregando...</p>
                 </div>
-            </div>
+            </section>
 
-            <div class="secao cartao">
+            <section class="secao cartao" aria-labelledby="titulo-radar">
                 <div class="secao-titulo">
-                    <h3>🍱 Categorias à parte</h3>
-                    <button id="btn-config-separadas" class="botao botao-secundario botao-pequeno">⚙️ Configurar</button>
+                    <h2 id="titulo-radar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-relogio"></use></svg>Radar de previstos</h2>
                 </div>
-                <p class="dica-campo">
-                    Marque classificações que têm valor restrito (ex: Vale Alimentação) para vê-las à parte, sem misturar com seu saldo "de verdade" acima.
-                </p>
-                <div id="config-categorias-separadas" style="display:none; margin-bottom: var(--espaco-md);"></div>
-                <div class="grade-carteiras" id="grade-categorias-separadas">
+                <p class="dica-campo">O que está agendado neste período e ainda não entrou no saldo. Vencimentos em até 7 dias aparecem com aviso.</p>
+                <div class="par-colunas">
+                    <div>
+                        <h3 class="subtitulo-detalhe">Lista por data</h3>
+                        <div class="tabela-scroll">
+                            <table id="tabela-previstos">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Descrição</th>
+                                        <th>Banco</th>
+                                        <th>Classificação</th>
+                                        <th class="col-valor">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="5" class="vazio">Carregando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="subtitulo-detalhe">A descontar por banco</h3>
+                        <p class="dica-campo">Quanto ainda sai (e entra) de cada banco. Deixe o saldo pronto antes do débito.</p>
+                        <div class="grade-carteiras" id="grade-previstos-banco" style="margin-top: var(--e-3);">
+                            <p class="vazio">Carregando...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="subtitulo-detalhe" style="margin-top: var(--e-6);">Dia a dia, por banco</h3>
+                <p class="dica-campo" style="margin-bottom: var(--e-3);">Só os dias em que cada banco tem algo previsto. Clique num banco para abrir.</p>
+                <div id="detalhe-previstos-banco">
+                    <p class="vazio">Carregando...</p>
+                </div>
+            </section>
+
+            <section class="secao cartao" aria-labelledby="titulo-separadas">
+                <div class="secao-titulo">
+                    <h2 id="titulo-separadas"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-categorias"></use></svg>Categorias à parte</h2>
+                    <button id="btn-config-separadas" class="botao botao-secundario botao-pequeno"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-ajustes"></use></svg>Configurar</button>
+                </div>
+                <p class="dica-campo">Classificações de valor restrito (ex.: Vale Alimentação) ficam aqui, sem misturar com o seu saldo "de verdade".</p>
+                <div id="config-categorias-separadas" style="display:none; margin: var(--e-4) 0;"></div>
+                <div class="grade-carteiras" id="grade-categorias-separadas" style="margin-top: var(--e-4);">
                     <p class="vazio">Nenhuma categoria configurada como "à parte" ainda.</p>
                 </div>
 
                 <div class="subtitulo-grafico">
-                    <h4>📅 Previsto (futuro) por categoria à parte</h4>
+                    <h4>Previsto (futuro) por categoria à parte</h4>
                     <span class="total-grafico" id="total-categorias-separadas-futuro" style="display:none;"></span>
                 </div>
                 <div class="grafico-container" style="display:none;">
                     <canvas id="grafico-categorias-separadas-futuro"></canvas>
                 </div>
-                <p class="vazio" id="vazio-categorias-separadas-futuro">Nenhum lançamento futuro nas categorias à parte, neste período.</p>
-            </div>
+                <p class="vazio" id="vazio-categorias-separadas-futuro">Nenhum lançamento futuro nas categorias à parte neste período.</p>
+            </section>
 
-            <div class="secao cartao">
+            <section class="secao cartao" aria-labelledby="titulo-entradas">
                 <div class="secao-titulo">
-                    <h3>💵 Entradas por categoria <span id="rotulo-periodo-entradas" style="font-weight:600;color:var(--cor-texto-suave);font-size:0.8125rem;"></span></h3>
-                    <span class="total-grafico" id="total-entradas-categoria" style="display:none;"></span>
+                    <h2 id="titulo-entradas"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Entradas</h2>
                 </div>
-                <p class="dica-campo">Clique numa categoria para ver a evolução mensal só dela; clique de novo para voltar ao total.</p>
-                <div class="grafico-container" style="display:none;">
-                    <canvas id="grafico-entradas-categoria"></canvas>
+                <p class="dica-campo">Clique numa categoria para ver a evolução só dela; clique de novo para voltar ao total.</p>
+                <div class="par-colunas">
+                    <div>
+                        <div class="subtitulo-grafico">
+                            <h4>Por categoria <span id="rotulo-periodo-entradas" class="rotulo-periodo"></span></h4>
+                            <span class="total-grafico" id="total-entradas-categoria" style="display:none;"></span>
+                        </div>
+                        <div class="grafico-container" style="display:none;">
+                            <canvas id="grafico-entradas-categoria"></canvas>
+                        </div>
+                        <p class="vazio" id="vazio-entradas-categoria">Sem dados ainda.</p>
+                    </div>
+                    <div>
+                        <div class="subtitulo-grafico">
+                            <h4>Evolução Jan–Dez <span id="rotulo-ano-entradas" class="rotulo-periodo"></span> <span class="selecao-grafico" id="selecao-entradas"></span></h4>
+                            <span class="total-grafico" id="total-tendencia-entradas" style="display:none;"></span>
+                        </div>
+                        <div class="grafico-container" style="display:none;">
+                            <canvas id="grafico-tendencia-entradas"></canvas>
+                        </div>
+                        <p class="vazio" id="vazio-tendencia-entradas">Sem dados ainda.</p>
+                    </div>
                 </div>
-                <p class="vazio" id="vazio-entradas-categoria">Sem dados ainda.</p>
+            </section>
 
-                <div class="subtitulo-grafico">
-                    <h4>📈 Evolução mensal de entradas — <span id="rotulo-ano-entradas"></span> <span class="selecao-grafico" id="selecao-entradas"></span></h4>
-                    <span class="total-grafico" id="total-tendencia-entradas" style="display:none;"></span>
-                </div>
-                <div class="grafico-container" style="display:none;">
-                    <canvas id="grafico-tendencia-entradas"></canvas>
-                </div>
-                <p class="vazio" id="vazio-tendencia-entradas">Sem dados ainda.</p>
-            </div>
-
-            <div class="secao cartao">
+            <section class="secao cartao" aria-labelledby="titulo-gastos">
                 <div class="secao-titulo">
-                    <h3>📌 Maiores gastos do período por classificação</h3>
-                    <span class="total-grafico" id="total-classificacoes" style="display:none;"></span>
+                    <h2 id="titulo-gastos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg>Gastos</h2>
                 </div>
-                <p class="dica-campo">Clique numa classificação para ver a evolução mensal só dela; clique de novo para voltar ao total.</p>
-                <div class="grafico-container" style="display:none;">
-                    <canvas id="grafico-classificacoes"></canvas>
+                <p class="dica-campo">Clique numa classificação para ver a evolução só dela; clique de novo para voltar ao total.</p>
+                <div class="par-colunas">
+                    <div>
+                        <div class="subtitulo-grafico">
+                            <h4>Maiores gastos por classificação</h4>
+                            <span class="total-grafico" id="total-classificacoes" style="display:none;"></span>
+                        </div>
+                        <div class="grafico-container" style="display:none;">
+                            <canvas id="grafico-classificacoes"></canvas>
+                        </div>
+                        <p class="vazio" id="vazio-classificacoes">Sem dados ainda.</p>
+                    </div>
+                    <div>
+                        <div class="subtitulo-grafico">
+                            <h4>Evolução Jan–Dez <span id="rotulo-ano-gastos" class="rotulo-periodo"></span> <span class="selecao-grafico" id="selecao-gastos"></span></h4>
+                            <span class="total-grafico" id="total-tendencia-gastos" style="display:none;"></span>
+                        </div>
+                        <div class="grafico-container" style="display:none;">
+                            <canvas id="grafico-tendencia-gastos"></canvas>
+                        </div>
+                        <p class="vazio" id="vazio-tendencia-gastos">Sem dados ainda.</p>
+                    </div>
                 </div>
-                <p class="vazio" id="vazio-classificacoes">Sem dados ainda.</p>
+            </section>
 
-                <div class="subtitulo-grafico">
-                    <h4>📈 Evolução mensal de gastos — <span id="rotulo-ano-gastos"></span> <span class="selecao-grafico" id="selecao-gastos"></span></h4>
-                    <span class="total-grafico" id="total-tendencia-gastos" style="display:none;"></span>
-                </div>
-                <div class="grafico-container" style="display:none;">
-                    <canvas id="grafico-tendencia-gastos"></canvas>
-                </div>
-                <p class="vazio" id="vazio-tendencia-gastos">Sem dados ainda.</p>
-            </div>
-
-            <div class="secao cartao">
+            <section class="secao cartao" aria-labelledby="titulo-visoes">
                 <div class="secao-titulo">
-                    <h3>🧩 Suas visões personalizadas</h3>
-                    <button id="btn-nova-visao" class="botao botao-secundario botao-pequeno">➕ Nova visão</button>
+                    <h2 id="titulo-visoes"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg>Suas visões personalizadas</h2>
+                    <button id="btn-nova-visao" class="botao botao-secundario botao-pequeno"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"></use></svg>Nova visão</button>
                 </div>
-                <p class="dica-campo">
-                    Crie recortes só seus, tipo "Transporte: Uber vs Ônibus" ou "Gastos no Pluxe por categoria". Fica salvo neste navegador.
-                </p>
+                <p class="dica-campo">Recortes só seus, como "Transporte: Uber × Ônibus" ou "Gastos no Pluxe por categoria". Ficam salvos neste navegador.</p>
 
-                <div id="form-nova-visao" style="display:none; margin-top: var(--espaco-md);">
-                    <label for="visao-titulo">Título da visão</label>
-                    <input type="text" id="visao-titulo" placeholder="Ex: Transporte: Uber vs Ônibus" maxlength="60">
-
-                    <label for="visao-filtro-campo">Filtrar por</label>
-                    <select id="visao-filtro-campo">
-                        <option value="">Nenhum filtro (usar tudo)</option>
-                        <option value="classificacao_saida">Classificação específica</option>
-                        <option value="banco">Banco específico</option>
-                        <option value="saida">Detalhe específico</option>
-                        <option value="descricao">Descrição específica</option>
-                    </select>
-
-                    <label for="visao-filtro-valor">Valor do filtro (quando aplicável)</label>
-                    <input type="text" id="visao-filtro-valor" placeholder="Ex: TRANSPORTE, PLUXE, UBER... (aceita parte do texto)">
-
-                    <label for="visao-agrupar-por">Agrupar por</label>
-                    <select id="visao-agrupar-por">
-                        <option value="saida">Detalhe (onde gastou/recebeu)</option>
-                        <option value="classificacao_saida">Classificação</option>
-                        <option value="banco">Banco</option>
-                        <option value="descricao">Descrição</option>
-                    </select>
-
-                    <label for="visao-tipo">Tipo de movimentação</label>
-                    <select id="visao-tipo">
-                        <option value="SAIDA">Só saídas</option>
-                        <option value="ENTRADA">Só entradas</option>
-                        <option value="AMBOS">Entradas e saídas</option>
-                    </select>
-
-                    <div style="display:flex; gap: var(--espaco-md); margin-top: var(--espaco-lg);">
-                        <button id="btn-salvar-visao" class="botao botao-primario" style="margin:0;">Adicionar visão</button>
+                <div id="form-nova-visao" style="display:none; margin-top: var(--e-4); max-width: 720px;">
+                    <div class="grade-campos">
+                        <div class="campo campo-inteiro">
+                            <label for="visao-titulo">Título da visão</label>
+                            <input type="text" id="visao-titulo" placeholder="Ex.: Transporte: Uber × Ônibus" maxlength="60">
+                        </div>
+                        <div class="campo">
+                            <label for="visao-filtro-campo">Filtrar por</label>
+                            <select id="visao-filtro-campo">
+                                <option value="">Nenhum filtro (usar tudo)</option>
+                                <option value="classificacao_saida">Classificação específica</option>
+                                <option value="banco">Banco específico</option>
+                                <option value="saida">Detalhe específico</option>
+                                <option value="descricao">Descrição específica</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="visao-filtro-valor">Valor do filtro</label>
+                            <input type="text" id="visao-filtro-valor" placeholder="Ex.: TRANSPORTE, PLUXE, UBER">
+                        </div>
+                        <div class="campo">
+                            <label for="visao-agrupar-por">Agrupar por</label>
+                            <select id="visao-agrupar-por">
+                                <option value="saida">Detalhe (onde gastou/recebeu)</option>
+                                <option value="classificacao_saida">Classificação</option>
+                                <option value="banco">Banco</option>
+                                <option value="descricao">Descrição</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="visao-tipo">Tipo de movimentação</label>
+                            <select id="visao-tipo">
+                                <option value="SAIDA">Só saídas</option>
+                                <option value="ENTRADA">Só entradas</option>
+                                <option value="AMBOS">Entradas e saídas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-acoes" style="justify-content: flex-start; margin-top: var(--e-6);">
+                        <button id="btn-salvar-visao" class="botao botao-primario">Adicionar visão</button>
                         <button id="btn-cancelar-visao" class="botao botao-secundario">Cancelar</button>
                     </div>
                 </div>
 
-                <div id="visoes-personalizadas" style="margin-top: var(--espaco-md); display:flex; flex-direction:column; gap: var(--espaco-md);"></div>
-            </div>
+                <div id="visoes-personalizadas" style="margin-top: var(--e-4); display:flex; flex-direction:column; gap: var(--e-4);"></div>
+            </section>
         </div>
     </main>
 </div>
 
-<nav class="mobile-nav">
-    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
-    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
-    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
-    <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Plano</span></a>
+<nav class="mobile-nav" aria-label="Menu principal">
+    <a href="index.html" data-pagina="lancar" aria-label="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar" aria-label="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+    <a href="transferencia.html" data-pagina="transferencia" aria-label="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes" aria-label="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar</span></a>
+    <a href="dashboard.html" data-pagina="dashboard" aria-label="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dash</span></a>
+    <a href="extrato.html" data-pagina="extrato" aria-label="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+    <a href="investimentos.html" data-pagina="investimentos" aria-label="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento" aria-label="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Plano</span></a>
 </nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"

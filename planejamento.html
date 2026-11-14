@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Planejamento · Meu Financeiro</title>
     <script>
@@ -12,87 +12,64 @@
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="mobile-header">
-    <div class="marca-mobile">
-        <span>💰</span>
-        <span>Meu Financeiro</span>
-    </div>
+    <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
     <div class="mobile-header-acoes">
-        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
-        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
+        <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
     </div>
 </header>
 
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">
-            <span class="logo-icone">💰</span>
-            <span class="logo-texto">Meu Financeiro</span>
-        </div>
-        <nav class="sidebar-links">
-            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
-            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
-            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
-            <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Planejamento</span></a>
+        <div class="sidebar-marca"><a class="marca" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span></a></div>
+        <nav class="sidebar-links" aria-label="Menu principal">
+            <div class="grupo-nav">Registrar</div>
+            <a href="index.html" data-pagina="lancar" title="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar" title="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+            <a href="transferencia.html" data-pagina="transferencia" title="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes" title="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar mês</span></a>
+            <div class="grupo-nav">Acompanhar</div>
+            <a href="dashboard.html" data-pagina="dashboard" title="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dashboard</span></a>
+            <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+            <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
         </nav>
         <div class="sidebar-rodape">
-            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button class="btn-sair botao-sair">🚪 Sair</button>
+            <div class="sidebar-acoes">
+                <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+                <button type="button" class="btn-sair botao-sair" title="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg><span class="rotulo-sair">Sair</span></button>
+            </div>
         </div>
     </aside>
 
-    <main class="conteudo-principal">
+    <main class="conteudo-principal" id="conteudo">
         <div class="pagina">
             <div class="cabecalho-pagina">
                 <div>
-                    <h2>🧭 Planejamento por salário</h2>
-                    <p class="subtitulo">O salário do fim do mês paga as contas até a véspera do salário do dia 15, e o do dia 15 paga as contas até a véspera do próximo. Aqui o sistema faz essa conta por você: quanto precisa para cada ciclo, quanto sobra e quanto dá para investir sem fazer falta depois. Não conta o dinheiro de vale (Alelo, Pluxe) nem transferências entre suas contas.</p>
+                    <h1>Planejamento por salário</h1>
+                    <p class="subtitulo">O salário do fim do mês paga as contas até a véspera do salário do dia 15, e o do dia 15 paga até a véspera do próximo. Aqui o sistema faz essa conta: quanto cada ciclo precisa, quanto sobra e quanto dá para investir sem fazer falta. Não conta vale (Alelo, Pluxe) nem transferências entre suas contas.</p>
                 </div>
-                <div style="display:flex; gap: var(--espaco-sm); flex-wrap:wrap;">
-                    <button id="btn-atualizar" class="botao botao-secundario" style="margin:0;width:auto;" title="Buscar dados mais recentes do Firebase">🔄 Atualizar dados</button>
+                <div class="acoes-pagina">
+                    <button id="btn-atualizar" class="botao botao-secundario" title="Buscar os dados mais recentes do Firebase"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-atualizar"></use></svg>Atualizar dados</button>
                 </div>
-            </div>
-
-            <div class="cartao" style="margin-bottom: var(--espaco-lg);">
-                <div class="filtros">
-                    <div class="campo-filtro">
-                        <label for="filtro-situacao">Ciclos</label>
-                        <select id="filtro-situacao">
-                            <option value="">Todos</option>
-                            <option value="atual">Ciclo atual</option>
-                            <option value="futuro">Ciclos futuros</option>
-                            <option value="encerrado">Ciclos encerrados</option>
-                        </select>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-ano">Ano</label>
-                        <select id="filtro-ano"></select>
-                    </div>
-                    <div class="campo-filtro">
-                        <label>Banco</label>
-                        <div id="filtro-banco"></div>
-                    </div>
-                    <div class="campo-filtro">
-                        <label for="filtro-vale">Vale</label>
-                        <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
-                    </div>
-                    <button id="btn-limpar-filtros" class="botao botao-secundario">Limpar filtros</button>
-                </div>
-                <p class="dica-campo" style="margin-top: var(--espaco-sm);">Banco e Vale mudam todas as contas da página. Ciclos e Ano só escolhem quais bloquinhos de ciclo aparecem.</p>
             </div>
 
             <div class="grade-resumo">
-                <div class="cartao-metrica metrica-neutra" title="Soma do saldo de hoje de todos os bancos, sem vale">
-                    <div class="rotulo">💳 Saldo hoje (sem vale)</div>
+                <div class="cartao-metrica" title="Soma do saldo de hoje de todos os bancos, sem vale">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-carteira"></use></svg>Saldo hoje (sem vale)</div>
                     <div class="valor" id="kpi-saldo-hoje">R$ 0,00</div>
                 </div>
                 <div class="cartao-metrica metrica-saida">
@@ -103,47 +80,78 @@
                     <div class="rotulo" id="kpi-sobra-rotulo">Sobra até o próximo salário</div>
                     <div class="valor" id="kpi-sobra">R$ 0,00</div>
                 </div>
-                <div class="cartao-metrica metrica-entrada" title="O menor saldo que você terá entre hoje e o fim do horizonte, menos o colchão de segurança">
-                    <div class="rotulo">📈 Pode investir sem fazer falta</div>
+                <div class="cartao-metrica metrica-previsto" title="O menor saldo que você terá entre hoje e o fim do horizonte, menos o colchão de segurança">
+                    <div class="rotulo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Pode investir sem fazer falta</div>
                     <div class="valor" id="kpi-investir">R$ 0,00</div>
                 </div>
             </div>
 
-            <div class="secao cartao">
+            <section class="cartao cartao-destaque" aria-labelledby="titulo-recomendacoes">
                 <div class="secao-titulo">
-                    <h3>💡 O que fazer agora</h3>
+                    <h2 id="titulo-recomendacoes"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lampada"></use></svg>O que fazer agora</h2>
                 </div>
-                <ul class="lista-recomendacoes" id="recomendacoes">
+                <ul class="lista-recomendacoes" id="recomendacoes" aria-live="polite">
                     <li>Carregando...</li>
                 </ul>
-            </div>
+            </section>
 
-            <div class="secao cartao">
+            <section class="secao cartao" aria-label="Filtros do planejamento">
+                <details class="painel-filtros" open>
+                    <summary><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-filtro"></use></svg>Filtros</summary>
+                    <div class="filtros">
+                        <div class="campo-filtro">
+                            <label for="filtro-situacao">Ciclos</label>
+                            <select id="filtro-situacao">
+                                <option value="">Todos</option>
+                                <option value="atual">Ciclo atual</option>
+                                <option value="futuro">Ciclos futuros</option>
+                                <option value="encerrado">Ciclos encerrados</option>
+                            </select>
+                        </div>
+                        <div class="campo-filtro">
+                            <label for="filtro-ano">Ano</label>
+                            <select id="filtro-ano"></select>
+                        </div>
+                        <div class="campo-filtro">
+                            <label>Banco</label>
+                            <div id="filtro-banco"></div>
+                        </div>
+                        <div class="campo-filtro">
+                            <label for="filtro-vale">Vale</label>
+                            <select id="filtro-vale" title="Separa o dinheiro de vale (Alelo, Pluxe) do dinheiro dos outros bancos"></select>
+                        </div>
+                        <button id="btn-limpar-filtros" class="botao botao-secundario">Limpar filtros</button>
+                    </div>
+                    <p class="dica-campo" style="margin-top: var(--e-3);">Banco e Vale mudam todas as contas da página. Ciclos e Ano só escolhem quais ciclos aparecem.</p>
+                </details>
+            </section>
+
+            <section class="secao cartao" aria-labelledby="titulo-bancos-ciclo">
                 <div class="secao-titulo">
-                    <h3>🏦 Cada banco até o próximo salário</h3>
+                    <h2 id="titulo-bancos-ciclo"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-banco"></use></svg>Cada banco até o próximo salário</h2>
                 </div>
-                <p class="dica-campo">Saldo de hoje de cada banco, mais o que ainda entra e menos o que ainda sai nele até a véspera do próximo salário. Se algum banco ficar negativo, transfira antes da primeira conta vencer.</p>
+                <p class="dica-campo" style="margin-bottom: var(--e-4);">Saldo de hoje de cada banco, mais o que ainda entra e menos o que ainda sai até a véspera do próximo salário. Se algum banco ficar negativo, transfira antes da primeira conta vencer.</p>
                 <div class="grade-carteiras" id="grade-bancos-ciclo">
                     <p class="vazio">Carregando...</p>
                 </div>
-            </div>
+            </section>
 
-            <div class="secao cartao">
+            <section class="secao cartao" aria-labelledby="titulo-ciclos">
                 <div class="secao-titulo">
-                    <h3>📆 Ciclos de salário</h3>
+                    <h2 id="titulo-ciclos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-calendario"></use></svg>Ciclos de salário</h2>
                 </div>
-                <p class="dica-campo">Cada ciclo começa no dia em que o salário cai e vai até a véspera do próximo. Nos ciclos futuros, o que sobra de um passa para o seguinte. Nos encerrados aparece o que de fato entrou e saiu. Clique num ciclo para abrir os lançamentos dele.</p>
+                <p class="dica-campo" style="margin-bottom: var(--e-4);">Cada ciclo vai do dia em que o salário cai até a véspera do próximo. Nos futuros, o que sobra passa para o seguinte; nos encerrados aparece o que de fato entrou e saiu. Clique num ciclo para ver os lançamentos.</p>
                 <div id="grade-ciclos">
                     <p class="vazio">Carregando...</p>
                 </div>
-            </div>
+            </section>
 
             <details class="secao cartao config-planejamento">
-                <summary><h3>⚙️ Como a conta é feita (ajustes)</h3></summary>
+                <summary><h2><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-ajustes"></use></svg>Como a conta é feita (ajustes)</h2></summary>
                 <div class="config-planejamento-corpo">
                     <div class="campo-filtro">
                         <label for="campo-colchao">Colchão de segurança (R$)</label>
-                        <input type="text" id="campo-colchao" inputmode="decimal" placeholder="Ex: 500">
+                        <input type="text" id="campo-colchao" inputmode="decimal" placeholder="Ex.: 500">
                         <p class="dica-campo" id="dica-colchao">Dinheiro que sempre fica em caixa para imprevistos, mesmo depois de pagar tudo. Nunca é sugerido para investir.</p>
                     </div>
                     <div class="campo-filtro">
@@ -151,27 +159,27 @@
                         <div id="seletor-dia-a-dia"></div>
                         <p class="dica-campo" id="dica-dia-a-dia">Categorias de gastos que ainda não estão lançados (lanche, uber, ônibus...). O sistema reserva a média diária dos últimos 90 dias para os dias que faltam em cada ciclo.</p>
                     </div>
-                    <p class="dica-campo">
-                        • <b>Saldo de hoje</b>: lançamentos do mês passado até hoje. A "virada de mês" do dia 01 é o saldo de abertura, então ele bate com o saldo do Dashboard.<br>
-                        • <b>Contas</b>: saídas previstas (futuras) de cada ciclo, inclusive a fatura do cartão e os aportes já programados.<br>
-                        • <b>Salário</b>: entradas com classificação SALARIO. As datas dos ciclos vêm dos salários já lançados. Depois do último lançado, o sistema supõe os dias 15 e 30 (ou o último dia do mês), com o mesmo valor do último salário de cada um.<br>
-                        • Isto é uma conta do seu fluxo de caixa, não uma recomendação de investimento.
-                    </p>
+                    <ul class="dica-campo" style="padding-left: 18px; margin: 0;">
+                        <li><b>Saldo de hoje</b>: lançamentos do mês passado até hoje. A "virada de mês" do dia 01 é o saldo de abertura, então ele bate com o saldo do Dashboard.</li>
+                        <li><b>Contas</b>: saídas previstas (futuras) de cada ciclo, inclusive a fatura do cartão e os aportes já programados.</li>
+                        <li><b>Salário</b>: entradas com classificação SALARIO. As datas dos ciclos vêm dos salários já lançados; depois do último, o sistema supõe os dias 15 e 30 (ou o último dia do mês), com o mesmo valor do último salário de cada um.</li>
+                        <li>É uma conta do seu fluxo de caixa, não uma recomendação de investimento.</li>
+                    </ul>
                 </div>
             </details>
         </div>
     </main>
 </div>
 
-<nav class="mobile-nav">
-    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
-    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
-    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
-    <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Plano</span></a>
+<nav class="mobile-nav" aria-label="Menu principal">
+    <a href="index.html" data-pagina="lancar" aria-label="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar" aria-label="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+    <a href="transferencia.html" data-pagina="transferencia" aria-label="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes" aria-label="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar</span></a>
+    <a href="dashboard.html" data-pagina="dashboard" aria-label="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dash</span></a>
+    <a href="extrato.html" data-pagina="extrato" aria-label="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+    <a href="investimentos.html" data-pagina="investimentos" aria-label="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento" aria-label="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Plano</span></a>
 </nav>
 
 <script type="module" src="js/planejamento.js"></script>

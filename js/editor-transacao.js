@@ -38,56 +38,77 @@ export function abrirEditorTransacao(transacao, {
     caixa.innerHTML = `
       <h3>${titulo}</h3>
       <form id="form-editor-transacao">
-        <label>Valor (R$)</label>
-        <input type="number" id="editor-valor" step="0.01" min="0.01" required>
+        <div class="grade-campos">
+          <div class="campo">
+            <label for="editor-valor">Valor (R$)</label>
+            <input type="number" id="editor-valor" step="0.01" min="0.01" required inputmode="decimal">
+          </div>
+          <div class="campo">
+            <label for="editor-data">Data</label>
+            <input type="text" id="editor-data" required placeholder="dd/mm/aaaa" inputmode="numeric">
+          </div>
 
-        <label>Data</label>
-        <input type="text" id="editor-data" required placeholder="dd/mm/aaaa">
+          <div class="campo campo-inteiro">
+            <label for="editor-descricao">Descrição</label>
+            <input type="text" id="editor-descricao" required maxlength="120">
+          </div>
 
-        <label>Descrição</label>
-        <input type="text" id="editor-descricao" required maxlength="120">
+          <div class="campo campo-inteiro">
+            <label for="editor-saida">Detalhe <span class="dica-inline">(onde gastou / de onde recebeu)</span></label>
+            <input type="text" id="editor-saida" maxlength="120">
+          </div>
 
-        <label>Detalhe (onde gastou / de onde recebeu)</label>
-        <input type="text" id="editor-saida" maxlength="120">
+          <div class="campo ${contextoInvestimento ? "campo-inteiro" : ""}">
+            <label for="editor-banco">${contextoInvestimento ? "Banco <span class=\"dica-inline\">(conta de onde saiu / para onde voltou)</span>" : "Banco"}</label>
+            <input type="text" id="editor-banco" required maxlength="60">
+          </div>
 
-        <label>${contextoInvestimento ? "Banco (conta de onde o dinheiro saiu / pra onde voltou)" : "Banco"}</label>
-        <input type="text" id="editor-banco" required maxlength="60">
-
-        ${contextoInvestimento ? `
-        <label>Onde está aplicado <span class="dica-inline">(opcional — ex: MERCADO BITCOIN; vazio = descobre pelo Detalhe)</span></label>
-        <input type="text" id="editor-aplicado" maxlength="60" placeholder="Ex: Bradesco, Mercado Bitcoin...">
-        <label>Investimento</label>
-        <input type="text" id="editor-investimento" required maxlength="60" placeholder="Ex: CDB Bradesco...">
-
-        <label>Dono da carteira</label>
-        <input type="text" id="editor-dono" required maxlength="60" placeholder="Ex: Eu, Mayara...">
-        ` : ""}
-
-        <label>Tipo</label>
-        <select id="editor-tipo">
           ${contextoInvestimento ? `
-          <option value="SAIDA">Aporte (dinheiro indo pro investimento)</option>
-          <option value="ENTRADA">Resgate (dinheiro saindo do investimento)</option>
-          ` : `
-          <option value="SAIDA">Saída</option>
-          <option value="ENTRADA">Entrada</option>
+          <div class="campo campo-inteiro">
+            <label for="editor-aplicado">Onde está aplicado <span class="dica-inline">(opcional; vazio = descobre pelo Detalhe)</span></label>
+            <input type="text" id="editor-aplicado" maxlength="60" placeholder="Ex.: Bradesco, Mercado Bitcoin">
+          </div>
+          <div class="campo">
+            <label for="editor-investimento">Investimento</label>
+            <input type="text" id="editor-investimento" required maxlength="60" placeholder="Ex.: CDB Bradesco">
+          </div>
+          <div class="campo">
+            <label for="editor-dono">Dono da carteira</label>
+            <input type="text" id="editor-dono" required maxlength="60" placeholder="Ex.: Eu, Mayara">
+          </div>
+          ` : ""}
+
+          <div class="campo ${contextoInvestimento ? "campo-inteiro" : ""}">
+            <label for="editor-tipo">Tipo</label>
+            <select id="editor-tipo">
+              ${contextoInvestimento ? `
+              <option value="SAIDA">Aporte (dinheiro indo para o investimento)</option>
+              <option value="ENTRADA">Resgate (dinheiro voltando para a conta)</option>
+              ` : `
+              <option value="SAIDA">Saída</option>
+              <option value="ENTRADA">Entrada</option>
+              `}
+            </select>
+          </div>
+
+          ${contextoInvestimento ? "" : `
+          <div class="campo">
+            <label for="editor-tipo-mov">Movimentação</label>
+            <select id="editor-tipo-mov">
+              <option value="EXTERNO">Externo (real)</option>
+              <option value="INTERNO">Interno (entre contas)</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="editor-classificacao">Classificação</label>
+            <input type="text" id="editor-classificacao" required maxlength="60">
+          </div>
           `}
-        </select>
+        </div>
 
-        ${contextoInvestimento ? "" : `
-        <label>Movimentação</label>
-        <select id="editor-tipo-mov">
-          <option value="EXTERNO">Externo (Gasto/Receita real)</option>
-          <option value="INTERNO">Interno (Transferência)</option>
-        </select>
-
-        <label>Classificação</label>
-        <input type="text" id="editor-classificacao" required maxlength="60">
-        `}
-
-        <div class="modal-acoes" style="margin-top:20px;">
+        <div class="modal-acoes" style="margin-top: var(--e-6);">
           <button type="button" id="editor-cancelar" class="botao botao-secundario">Cancelar</button>
-          <button type="submit" class="botao botao-primario" style="margin:0;">${textoSalvar}</button>
+          <button type="submit" class="botao botao-primario">${textoSalvar}</button>
         </div>
       </form>
     `;

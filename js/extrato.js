@@ -7,7 +7,7 @@ import {
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
 import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
@@ -303,13 +303,13 @@ function renderizarTabela(lista) {
         const botaoEditar = document.createElement("button");
         botaoEditar.className = "botao-icone-primario";
         botaoEditar.title = "Editar lançamento";
-        botaoEditar.textContent = "✏️";
+        preencherBotao(botaoEditar, "editar");
         botaoEditar.addEventListener("click", () => editarTransacao(transacao));
 
         const botaoExcluir = document.createElement("button");
         botaoExcluir.className = "botao-icone-perigo";
         botaoExcluir.title = "Excluir lançamento";
-        botaoExcluir.textContent = "🗑";
+        preencherBotao(botaoExcluir, "excluir");
         botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
 
         wrapperAcoes.appendChild(botaoEditar);

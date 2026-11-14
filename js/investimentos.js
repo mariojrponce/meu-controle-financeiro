@@ -28,7 +28,7 @@
 // esta tela já busca o histórico inteiro por padrão — sem recorte de data.
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
 import { BANCOS_SUGERIDOS, mesclarSugestoes } from "./dados-comuns.js";
 import { isoParaBR, brParaISO, normalizarDataDigitada, formatarReais, ligarCampoDataInteligente } from "./utils.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
@@ -676,13 +676,13 @@ function renderizarTabela(lista, haDadosSemFiltro = true) {
         const botaoEditar = document.createElement("button");
         botaoEditar.className = "botao-icone-primario";
         botaoEditar.title = "Editar lançamento";
-        botaoEditar.textContent = "✏️";
+        preencherBotao(botaoEditar, "editar");
         botaoEditar.addEventListener("click", () => editarInvestimento(transacao));
 
         const botaoExcluir = document.createElement("button");
         botaoExcluir.className = "botao-icone-perigo";
         botaoExcluir.title = "Excluir lançamento";
-        botaoExcluir.textContent = "🗑";
+        preencherBotao(botaoExcluir, "excluir");
         botaoExcluir.addEventListener("click", () => excluirInvestimento(transacao));
 
         wrapperAcoes.appendChild(botaoEditar);

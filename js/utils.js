@@ -75,8 +75,11 @@ export function formatarMoeda(valor) {
 
 // "R$" e o valor unidos por um espaço que nunca quebra linha (evita o "R$"
 // aparecer numa linha e o número na linha de baixo em colunas estreitas).
+// Negativo sai como "- R$ 420,90" (guia de identidade: sinal antes do R$).
 export function formatarReais(valor) {
-  return `R$\u00A0${formatarMoeda(valor)}`;
+  const numero = Number(valor) || 0;
+  const negativo = Math.round(numero * 100) < 0;
+  return `${negativo ? "-\u00A0" : ""}R$\u00A0${formatarMoeda(Math.abs(numero))}`;
 }
 
 // ---------- Intervalos de data (usados nos filtros de Extrato e Dashboard) ----------

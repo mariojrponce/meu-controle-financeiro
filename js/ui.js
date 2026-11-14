@@ -89,3 +89,23 @@ export function confirmarAcao({ titulo, mensagem, textoConfirmar = "Excluir", te
     ligarFechamentoPorFundo(fundo, () => finalizar(false));
   });
 }
+
+// Ícone linear do conjunto do sistema (assets/icones.svg) — o mesmo traço em
+// todas as telas, no lugar de emojis (que mudam de cara em cada aparelho).
+export function icone(nome, classe = "icone") {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", classe);
+  svg.setAttribute("aria-hidden", "true");
+  const uso = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  uso.setAttribute("href", `assets/icones.svg#i-${nome}`);
+  svg.appendChild(uso);
+  return svg;
+}
+
+// Põe ícone (+ texto opcional) num botão, com rótulo acessível.
+export function preencherBotao(botao, nomeIcone, texto = "") {
+  botao.replaceChildren(icone(nomeIcone));
+  if (texto) botao.appendChild(document.createTextNode(texto));
+  else if (botao.title) botao.setAttribute("aria-label", botao.title);
+  return botao;
+}

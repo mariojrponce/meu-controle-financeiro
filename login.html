@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Entrar · Meu Financeiro</title>
     <script>
@@ -12,65 +12,45 @@
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
     <link rel="stylesheet" href="style.css">
-    <style>
-        body.tela-login {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: var(--cor-fundo);
-            padding: var(--espaco-md);
-        }
-        .login-caixa {
-            width: 100%;
-            max-width: 400px;
-            padding: var(--espaco-xl);
-            text-align: center;
-        }
-        .login-logo {
-            font-size: 3rem;
-            margin-bottom: var(--espaco-xs);
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.15));
-        }
-        .login-caixa h1 {
-            font-size: 1.5rem;
-            margin-bottom: var(--espaco-xs);
-        }
-        .login-caixa p.subtitulo {
-            text-align: center;
-            margin-bottom: var(--espaco-lg);
-        }
-        #erro {
-            color: var(--cor-perigo);
-            font-size: 0.8125rem;
-            margin-top: var(--espaco-sm);
-            min-height: 20px;
-            text-align: left;
-            font-weight: 600;
-        }
-        form { text-align: left; }
-    </style>
 </head>
 <body class="tela-login">
 
-<div class="cartao login-caixa">
-    <div class="login-logo">💰</div>
-    <h1>Meu Financeiro</h1>
-    <p class="subtitulo">Entre para continuar</p>
+<main class="cartao login-caixa">
+    <div class="login-marca">
+        <span class="marca marca-grande" role="img" aria-label="Meu Financeiro">
+            <span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span>
+        </span>
+    </div>
+    <h1 class="visualmente-oculto">Entrar no Meu Financeiro</h1>
+    <p class="login-assinatura">Organização e clareza para acompanhar suas finanças.</p>
 
-    <form id="form-login">
-        <label for="email">E-mail</label>
-        <input type="email" id="email" required autocomplete="username" placeholder="voce@email.com">
+    <form id="form-login" novalidate>
+        <label for="email" style="margin-top: 0;">E-mail</label>
+        <input type="email" id="email" required autocomplete="username" placeholder="voce@email.com" autofocus>
 
         <label for="senha">Senha</label>
-        <input type="password" id="senha" required autocomplete="current-password" placeholder="••••••••">
+        <div class="campo-com-botao">
+            <input type="password" id="senha" required autocomplete="current-password" placeholder="Sua senha">
+            <button type="button" class="botao-campo" id="btn-mostrar-senha" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-olho"></use></svg></button>
+        </div>
 
-        <div id="erro"></div>
+        <div id="erro" class="mensagem-erro" role="alert" aria-live="assertive"></div>
 
-        <button type="submit" class="botao botao-primario">Entrar</button>
+        <button type="submit" class="botao botao-primario botao-largo">Entrar</button>
     </form>
-</div>
+
+    <div class="login-rodape">
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+    </div>
+</main>
 
 <script type="module" src="js/login.js"></script>
 <script type="module">

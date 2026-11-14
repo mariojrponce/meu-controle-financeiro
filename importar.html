@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Importar · Meu Financeiro</title>
     <script>
@@ -12,119 +12,69 @@
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .caixa-upload {
-            border: 2px dashed var(--cor-borda);
-            border-radius: var(--raio);
-            padding: var(--espaco-xl);
-            text-align: center;
-            background: var(--cor-superficie-elevada);
-            transition: all 0.2s ease;
-        }
-        .caixa-upload:hover, .caixa-upload.arrastando {
-            border-color: var(--cor-primaria);
-            background: var(--cor-primaria-suave);
-        }
-        .caixa-upload input[type="file"] { max-width: 380px; margin: var(--espaco-md) auto 0; }
-        .resumo-linhas { display: flex; gap: var(--espaco-sm); margin: var(--espaco-md) 0; flex-wrap: wrap; }
-        .pilula { padding: 6px 14px; border-radius: var(--raio-pilula); font-weight: 700; font-size: 0.8125rem; border: 1.5px solid transparent; background: var(--cor-superficie-elevada); color: var(--cor-texto); cursor: default; }
-        button.pilula { cursor: pointer; min-height: 0; }
-        button.pilula.ativa { border-color: var(--cor-primaria); box-shadow: var(--sombra-destaque); }
-        .pilula-ok { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
-        .pilula-erro { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
-        .pilula-aviso { background: var(--cor-aviso-suave); color: var(--cor-aviso); }
-        .pilula-info { background: var(--cor-info-suave); color: var(--cor-info); }
-        .status-ok { color: var(--cor-sucesso); font-weight: 700; }
-        .status-erro { color: var(--cor-perigo); font-weight: 700; cursor: help; }
-        .modelo-link { display: inline-flex; align-items: center; gap: var(--espaco-sm); margin-top: var(--espaco-sm); }
-
-        /* ---- Importar extratos ---- */
-        .lista-arquivos { display: grid; gap: var(--espaco-sm); margin-top: var(--espaco-md); }
-        .arquivo-lido { border: 1px solid var(--cor-borda); border-radius: var(--raio-pequeno); padding: 10px 14px; background: var(--cor-superficie); }
-        .arquivo-lido-topo { display: flex; justify-content: space-between; gap: var(--espaco-sm); flex-wrap: wrap; font-weight: 700; }
-        .arquivo-lido-nome { color: var(--cor-texto-suave); font-weight: 400; font-size: 0.8125rem; overflow-wrap: anywhere; }
-        .arquivo-lido ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.8125rem; color: var(--cor-texto-suave); }
-        .arquivo-lido.com-erro { border-color: var(--cor-perigo); }
-        .ok-texto { color: var(--cor-sucesso); font-weight: 700; }
-        .erro-texto { color: var(--cor-perigo); font-weight: 700; }
-        .saldos-conferencia { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--espaco-sm); margin-top: var(--espaco-md); }
-        .saldo-banco { border: 1.5px solid var(--cor-borda); border-radius: var(--raio-pequeno); padding: 10px 14px; font-size: 0.875rem; }
-        .saldo-banco.ok { border-color: var(--cor-sucesso); }
-        .saldo-banco.diferente { border-color: var(--cor-perigo); }
-        .saldo-banco b { display: block; margin-bottom: 4px; }
-        #tabela-revisao td { vertical-align: top; }
-        #tabela-revisao input, #tabela-revisao select { min-height: 36px; padding: 6px 8px; font-size: 0.8125rem; min-width: 150px; }
-        #tabela-revisao td { padding: 10px 10px; }
-        #tabela-revisao select.acao-linha { min-width: 175px; }
-        #tabela-revisao select.mov-linha { min-width: 105px; }
-        #tabela-revisao .texto-banco { white-space: normal; min-width: 180px; max-width: 260px; font-size: 0.8125rem; }
-        #tabela-revisao .texto-banco small, #tabela-revisao .motivo { display: block; color: var(--cor-texto-suave); font-size: 0.75rem; white-space: normal; margin-top: 2px; }
-        #tabela-revisao td.situacao { white-space: normal; min-width: 250px; max-width: 320px; }
-        #tabela-revisao tr.linha-inativa td { opacity: 0.55; }
-        #tabela-revisao tr.linha-problema td:first-child { box-shadow: inset 4px 0 0 var(--cor-perigo); }
-        .confianca { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-        .confianca-alta { background: var(--cor-sucesso); }
-        .confianca-media { background: var(--cor-aviso); }
-        .confianca-baixa, .confianca-nenhuma { background: var(--cor-perigo); }
-        .confianca-manual { background: var(--cor-info); }
-        .barra-gravar { display: flex; gap: var(--espaco-sm); align-items: center; flex-wrap: wrap; margin-top: var(--espaco-md); }
-        .faltantes { margin-top: var(--espaco-lg); }
-        .ultima-importacao { margin-top: var(--espaco-md); padding: 12px 14px; border-radius: var(--raio-pequeno); background: var(--cor-sucesso-suave); display: flex; gap: var(--espaco-sm); align-items: center; flex-wrap: wrap; justify-content: space-between; }
-        details.secao-planilha > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
-        details.config-titular { margin-top: var(--espaco-md); font-size: 0.875rem; }
-        details.config-titular summary { cursor: pointer; color: var(--cor-texto-suave); }
-        details.config-titular textarea { min-height: 70px; margin-top: var(--espaco-sm); }
-    </style>
 </head>
 <body>
 
 <header class="mobile-header">
-    <div class="marca-mobile">
-        <span>💰</span>
-        <span>Meu Financeiro</span>
-    </div>
+    <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
     <div class="mobile-header-acoes">
-        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
-        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
+        <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
     </div>
 </header>
 
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">
-            <span class="logo-icone">💰</span>
-            <span class="logo-texto">Meu Financeiro</span>
-        </div>
-        <nav class="sidebar-links">
-            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
-            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
-            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
-            <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Planejamento</span></a>
+        <div class="sidebar-marca"><a class="marca" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span></a></div>
+        <nav class="sidebar-links" aria-label="Menu principal">
+            <div class="grupo-nav">Registrar</div>
+            <a href="index.html" data-pagina="lancar" title="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar" title="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+            <a href="transferencia.html" data-pagina="transferencia" title="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes" title="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar mês</span></a>
+            <div class="grupo-nav">Acompanhar</div>
+            <a href="dashboard.html" data-pagina="dashboard" title="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dashboard</span></a>
+            <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+            <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
         </nav>
         <div class="sidebar-rodape">
-            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button class="btn-sair botao-sair">🚪 Sair</button>
+            <div class="sidebar-acoes">
+                <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+                <button type="button" class="btn-sair botao-sair" title="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg><span class="rotulo-sair">Sair</span></button>
+            </div>
         </div>
     </aside>
 
-    <main class="conteudo-principal">
+    <main class="conteudo-principal" id="conteudo">
         <div class="pagina">
-            <h2>Importar lançamentos</h2>
-            <p class="subtitulo">Suba os extratos dos seus bancos. O sistema lê linha por linha, sugere a classificação a partir do seu histórico, reconhece o que já foi lançado e confere o saldo — você revisa e só então grava.</p>
+            <h1>Importar lançamentos</h1>
+            <p class="subtitulo">Suba os extratos dos seus bancos. O sistema lê linha por linha, sugere a classificação a partir do seu histórico, reconhece o que já foi lançado e confere o saldo. Você revisa e só então grava.</p>
 
-            <div class="cartao">
-                <h3>Extratos do banco</h3>
+            <section class="cartao" aria-labelledby="titulo-extratos">
+                <ol class="etapas" id="etapas-importacao" aria-label="Etapas da importação">
+                    <li class="etapa-atual" data-etapa="1">Selecionar extratos</li>
+                    <li class="separador-etapa" aria-hidden="true"></li>
+                    <li data-etapa="2">Revisar e classificar</li>
+                    <li class="separador-etapa" aria-hidden="true"></li>
+                    <li data-etapa="3">Conferir saldo e gravar</li>
+                </ol>
+
+                <h2 id="titulo-extratos" class="visualmente-oculto">Extratos do banco</h2>
                 <div class="caixa-upload" id="zona-extratos">
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--cor-texto);">📤 Selecione um ou mais extratos</div>
-                    <p class="dica-campo" style="margin: 6px auto 0;">
+                    <label for="input-extratos" class="titulo-upload"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-upload"></use></svg>Selecione ou arraste um ou mais extratos</label>
+                    <p class="dica-campo">
                         Nubank (.csv) · Banco do Brasil (.csv) · Bradesco conta e fatura do cartão, fechada ou aberta (.pdf ou print do app) · Pluxee (.pdf) ·
-                        Santander extrato ou comprovante do PIX do salário (.pdf). Pode subir todos juntos — assim as transferências entre suas contas são reconhecidas dos dois lados.
+                        Santander extrato ou comprovante do PIX do salário (.pdf). Pode subir todos juntos: assim as transferências entre suas contas são reconhecidas dos dois lados.
                     </p>
                     <input type="file" id="input-extratos" accept=".csv,.pdf,.png,.jpg,.jpeg,.webp" multiple>
                 </div>
@@ -132,6 +82,7 @@
                 <details class="config-titular" id="config-titular">
                     <summary>Seu nome como aparece nos bancos (para reconhecer transferências entre suas contas)</summary>
                     <p class="dica-campo">Um nome por linha. É preenchido sozinho quando você sobe um PDF do Bradesco ou do Santander; fica salvo só neste navegador.</p>
+                    <label for="titular-nomes" class="visualmente-oculto">Seu nome nos bancos</label>
                     <textarea id="titular-nomes" placeholder="SEU NOME COMPLETO"></textarea>
                 </details>
 
@@ -140,40 +91,40 @@
                 <div id="area-revisao"></div>
                 <div id="area-faltantes"></div>
                 <div id="area-ultima-importacao"></div>
-            </div>
+            </section>
 
-            <div class="cartao" style="margin-top: var(--espaco-lg);">
+            <section class="cartao" aria-label="Importar planilha">
                 <details class="secao-planilha">
                     <summary>Importar uma planilha no formato do sistema (.xlsx / .csv)</summary>
-                    <p class="dica-campo">
+                    <p class="dica-campo" style="margin-top: var(--e-3);">
                         Para lançar em lote a partir de uma planilha sua. As colunas precisam ser:
                         <code>data, valor, descricao, saida, banco, tipo, tipo_mov, classificacao_saida</code>.
                     </p>
-                    <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
-                    <div class="caixa-upload" style="margin-top: var(--espaco-md);">
-                        <div style="font-weight: 700; color: var(--cor-texto);">📤 Selecione a planilha preenchida</div>
+                    <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-baixar"></use></svg>Baixar modelo (.xlsx)</a>
+                    <div class="caixa-upload" style="margin-top: var(--e-4);">
+                        <label for="input-arquivo" class="titulo-upload"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-upload"></use></svg>Selecione a planilha preenchida</label>
                         <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
                     </div>
 
                     <div id="resumo-importacao"></div>
                     <div id="area-preview"></div>
 
-                    <button id="btn-importar" class="botao botao-primario" style="display:none;">Importar lançamentos válidos</button>
+                    <button id="btn-importar" class="botao botao-primario" style="display:none; margin-top: var(--e-4);">Importar lançamentos válidos</button>
                 </details>
-            </div>
+            </section>
         </div>
     </main>
 </div>
 
-<nav class="mobile-nav">
-    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
-    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
-    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
-    <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Plano</span></a>
+<nav class="mobile-nav" aria-label="Menu principal">
+    <a href="index.html" data-pagina="lancar" aria-label="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar" aria-label="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+    <a href="transferencia.html" data-pagina="transferencia" aria-label="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes" aria-label="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar</span></a>
+    <a href="dashboard.html" data-pagina="dashboard" aria-label="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dash</span></a>
+    <a href="extrato.html" data-pagina="extrato" aria-label="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+    <a href="investimentos.html" data-pagina="investimentos" aria-label="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento" aria-label="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Plano</span></a>
 </nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"

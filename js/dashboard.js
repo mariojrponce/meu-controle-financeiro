@@ -8,7 +8,7 @@ import {
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
 import { obterTransacoes } from "./dados-carteira.js";
-import { mostrarToast } from "./ui.js";
+import { mostrarToast, preencherBotao } from "./ui.js";
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import {
     obterCategoriasSeparadas, salvarCategoriasSeparadas,
@@ -16,8 +16,7 @@ import {
 } from "./preferencias-dashboard.js";
 import {
     renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema,
-    mostrarTotalGrafico, somarValores
-} from "./graficos.js";
+    mostrarTotalGrafico, somarValores, corDoTema } from "./graficos.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
 
 const NOME_PAGINA = "dashboard";
@@ -208,7 +207,7 @@ function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
         const dados = dadosPorCategoria[categoria];
         const cartao = document.createElement("div");
         cartao.className = "cartao-carteira";
-        cartao.style.borderTopColor = "#d97706";
+        cartao.style.borderTopColor = "var(--cor-alerta-acento)";
 
         const cabecalho = document.createElement("div");
         cabecalho.style.display = "flex";
@@ -218,12 +217,12 @@ function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
         const nome = document.createElement("div");
         nome.className = "nome-banco";
         nome.style.marginBottom = "0";
-        nome.textContent = `🍱 ${categoria}`;
+        nome.textContent = categoria;
 
         const botaoRemover = document.createElement("button");
         botaoRemover.className = "botao-icone-perigo";
         botaoRemover.title = "Remover dos separados";
-        botaoRemover.textContent = "🗑";
+        preencherBotao(botaoRemover, "excluir");
         botaoRemover.addEventListener("click", () => removerCategoriaSeparada(categoria));
 
         cabecalho.appendChild(nome);
@@ -341,7 +340,7 @@ function renderizarVisoesPersonalizadas(lista) {
         titulo.className = "secao-titulo";
 
         const h4 = document.createElement("h3");
-        h4.style.fontSize = "15px";
+        
         const descricaoFiltro = visao.filtroCampo
             ? ` (${ROTULOS_CAMPO[visao.filtroCampo]}: ${visao.filtroValor || "—"})`
             : "";
@@ -349,7 +348,7 @@ function renderizarVisoesPersonalizadas(lista) {
 
         const botaoRemover = document.createElement("button");
         botaoRemover.className = "botao botao-secundario botao-pequeno";
-        botaoRemover.textContent = "🗑 Remover";
+        preencherBotao(botaoRemover, "excluir", "Remover");
         botaoRemover.addEventListener("click", () => {
             const restantes = obterVisoesPersonalizadas(usuario.uid).filter(v => v.id !== visao.id);
             salvarVisoesPersonalizadas(usuario.uid, restantes);
@@ -394,7 +393,7 @@ function renderizarVisoesPersonalizadas(lista) {
         container.appendChild(bloco);
 
         alternarEstadoVazio(idCanvas, idVazio, temDados);
-        if (temDados) renderizarGraficoBarras(idCanvas, dados, { cor: "#059669" });
+        if (temDados) renderizarGraficoBarras(idCanvas, dados, { cor: corDoTema("--cor-primaria") });
     });
 }
 
@@ -840,8 +839,9 @@ function aplicarFiltros() {
     const temEntradas = Object.keys(entradaPorClassificacao).length > 0;
     alternarEstadoVazio("grafico-entradas-categoria", "vazio-entradas-categoria", temEntradas, "Nenhuma entrada classificada neste período.");
     if (temEntradas) {
+        // Barras = série principal → azul da marca; a cor semântica fica na linha de evolução.
         renderizarGraficoBarras("grafico-entradas-categoria", entradaPorClassificacao, {
-            cor: "#059669",
+            cor: corDoTema("--cor-primaria"),
             selecionado: selecaoEntradas,
             aoClicar: (categoria) => {
                 selecaoEntradas = selecaoEntradas === categoria ? null : categoria;
@@ -855,7 +855,7 @@ function aplicarFiltros() {
     alternarEstadoVazio("grafico-classificacoes", "vazio-classificacoes", temGastos, "Nenhum gasto classificado neste período.");
     if (temGastos) {
         renderizarGraficoBarras("grafico-classificacoes", gastoPorClassificacao, {
-            cor: "#dc2626",
+            cor: corDoTema("--cor-primaria"),
             selecionado: selecaoGastos,
             aoClicar: (categoria) => {
                 selecaoGastos = selecaoGastos === categoria ? null : categoria;
@@ -870,7 +870,7 @@ function aplicarFiltros() {
     document.getElementById("rotulo-ano-entradas").textContent = `jan a dez/${anoEvolucao}`;
     mostrarSelecaoGrafico("selecao-entradas", selecaoEntradas, () => { selecaoEntradas = null; aplicarFiltros(); });
     alternarEstadoVazio("grafico-tendencia-entradas", "vazio-tendencia-entradas", temTendenciaEntradas, `Sem entradas em ${anoEvolucao} para montar a evolução mensal.`);
-    if (temTendenciaEntradas) renderizarGraficoLinha("grafico-tendencia-entradas", rotulosMesesDoAno(anoEvolucao), entradaPorMes, { cor: "#059669" });
+    if (temTendenciaEntradas) renderizarGraficoLinha("grafico-tendencia-entradas", rotulosMesesDoAno(anoEvolucao), entradaPorMes, { cor: corDoTema("--cor-entrada") });
     mostrarTotalGrafico("total-tendencia-entradas", temTendenciaEntradas ? totalEmReais(entradaPorMes) : "");
 
     const gastoPorMes = calcularEvolucaoAnual(listaAno, "SAIDA", categoriasSeparadas, selecaoGastos);
@@ -878,7 +878,7 @@ function aplicarFiltros() {
     document.getElementById("rotulo-ano-gastos").textContent = `jan a dez/${anoEvolucao}`;
     mostrarSelecaoGrafico("selecao-gastos", selecaoGastos, () => { selecaoGastos = null; aplicarFiltros(); });
     alternarEstadoVazio("grafico-tendencia-gastos", "vazio-tendencia-gastos", temTendencia, `Sem gastos em ${anoEvolucao} para montar a evolução mensal.`);
-    if (temTendencia) renderizarGraficoLinha("grafico-tendencia-gastos", rotulosMesesDoAno(anoEvolucao), gastoPorMes, { cor: "#dc2626" });
+    if (temTendencia) renderizarGraficoLinha("grafico-tendencia-gastos", rotulosMesesDoAno(anoEvolucao), gastoPorMes, { cor: corDoTema("--cor-saida") });
     mostrarTotalGrafico("total-tendencia-gastos", temTendencia ? totalEmReais(gastoPorMes) : "");
 
     const categoriasFuturas = Object.keys(porCategoriaSeparadaFutura);
@@ -888,8 +888,8 @@ function aplicarFiltros() {
     const saidasFuturasSeparadas = categoriasFuturas.map((c) => porCategoriaSeparadaFutura[c].saidas);
     if (temFuturoSeparado) {
         renderizarGraficoBarrasAgrupadas("grafico-categorias-separadas-futuro", categoriasFuturas, [
-            { nome: "Entradas previstas", valores: entradasFuturasSeparadas, cor: "#2a78d6" },
-            { nome: "Saídas previstas", valores: saidasFuturasSeparadas, cor: "#eb6834" }
+            { nome: "Entradas previstas", valores: entradasFuturasSeparadas, cor: corDoTema("--cor-previsto") },
+            { nome: "Saídas previstas", valores: saidasFuturasSeparadas, cor: corDoTema("--cor-alerta-acento") }
         ]);
     }
     mostrarTotalGrafico("total-categorias-separadas-futuro", temFuturoSeparado

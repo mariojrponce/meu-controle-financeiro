@@ -1,6 +1,6 @@
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes, normalizarNomeBanco } from "./dados-comuns.js";
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
@@ -106,13 +106,13 @@ function renderizarUltimos(lista) {
         const botaoEditar = document.createElement("button");
         botaoEditar.className = "botao-icone-primario";
         botaoEditar.title = "Editar lançamento";
-        botaoEditar.textContent = "✏️";
+        preencherBotao(botaoEditar, "editar");
         botaoEditar.addEventListener("click", () => editarTransacao(transacao));
 
         const botaoExcluir = document.createElement("button");
         botaoExcluir.className = "botao-icone-perigo";
         botaoExcluir.title = "Excluir lançamento";
-        botaoExcluir.textContent = "🗑";
+        preencherBotao(botaoExcluir, "excluir");
         botaoExcluir.addEventListener("click", () => excluirTransacao(transacao));
 
         wrapperAcoes.appendChild(botaoEditar);
@@ -176,7 +176,7 @@ formulario.addEventListener("submit", async function (evento) {
     const dataNormalizada = normalizarDataDigitada(campoData.value);
     if (dataNormalizada) campoData.value = dataNormalizada;
 
-    const botaoSalvar = formulario.querySelector("button");
+    const botaoSalvar = formulario.querySelector("button[type=submit]");
 
     const valor = parseFloat(document.getElementById("valor").value);
     const dataISO = brParaISO(campoData.value);

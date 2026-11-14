@@ -2,7 +2,7 @@
 <html lang="pt-BR" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Transferência interna · Meu Financeiro</title>
     <script>
@@ -12,73 +12,94 @@
             document.documentElement.setAttribute("data-theme", t);
         })();
     </script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="mobile-header">
-    <div class="marca-mobile">
-        <span>💰</span>
-        <span>Meu Financeiro</span>
-    </div>
+    <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
     <div class="mobile-header-acoes">
-        <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️</button>
-        <button class="btn-sair botao-sair" title="Sair da conta">🚪</button>
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
+        <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
     </div>
 </header>
 
 <div class="layout">
     <aside class="sidebar">
-        <div class="sidebar-marca">
-            <span class="logo-icone">💰</span>
-            <span class="logo-texto">Meu Financeiro</span>
-        </div>
-        <nav class="sidebar-links">
-            <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-            <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-            <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-            <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-            <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transferência</span></a>
-            <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar mês</span></a>
-            <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Investimentos</span></a>
-            <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Planejamento</span></a>
+        <div class="sidebar-marca"><a class="marca" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span></a></div>
+        <nav class="sidebar-links" aria-label="Menu principal">
+            <div class="grupo-nav">Registrar</div>
+            <a href="index.html" data-pagina="lancar" title="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar" title="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+            <a href="transferencia.html" data-pagina="transferencia" title="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes" title="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar mês</span></a>
+            <div class="grupo-nav">Acompanhar</div>
+            <a href="dashboard.html" data-pagina="dashboard" title="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dashboard</span></a>
+            <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+            <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
         </nav>
         <div class="sidebar-rodape">
-            <button class="btn-alternar-tema" title="Alternar tema de leitura">☀️ <span class="tema-rotulo">Claro</span></button>
             <div class="sidebar-email"></div>
-            <button class="btn-sair botao-sair">🚪 Sair</button>
+            <div class="sidebar-acoes">
+                <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+                <button type="button" class="btn-sair botao-sair" title="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg><span class="rotulo-sair">Sair</span></button>
+            </div>
         </div>
     </aside>
 
-    <main class="conteudo-principal">
+    <main class="conteudo-principal" id="conteudo">
         <div class="pagina">
-            <h2>Transferência interna</h2>
-            <p class="subtitulo">Controle rápido de transferências entre seus próprios bancos (ex: PIX de um banco para outro) — cria os dois lançamentos automaticamente, do jeito que o Extrato já entende.</p>
+            <h1>Transferência interna</h1>
+            <p class="subtitulo">Dinheiro entre os seus próprios bancos (ex.: PIX de um banco para outro). Cria os dois lançamentos de uma vez, do jeito que o Extrato entende.</p>
 
             <div class="grade-lancar">
-                <div class="cartao">
+                <section class="cartao" aria-labelledby="titulo-form-transf">
+                    <h2 id="titulo-form-transf" class="visualmente-oculto">Dados da transferência</h2>
                     <form id="form-transferencia">
-                        <label for="valor">Valor (R$)</label>
-                        <input type="number" id="valor" step="0.01" min="0.01" required placeholder="0,00">
+                        <div class="grade-campos">
+                            <div class="campo">
+                                <label for="valor">Valor (R$)</label>
+                                <input type="number" id="valor" step="0.01" min="0.01" required placeholder="0,00" inputmode="decimal" autofocus>
+                            </div>
+                            <div class="campo">
+                                <label for="data">Data</label>
+                                <input type="text" id="data" required placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                        </div>
 
-                        <label for="data">Data</label>
-                        <input type="text" id="data" required placeholder="dd/mm/aaaa">
+                        <div class="par-direcional">
+                            <div class="campo">
+                                <label for="banco-origem">De <span class="dica-inline">(sai daqui)</span></label>
+                                <input type="text" id="banco-origem" required maxlength="60" placeholder="Banco de origem">
+                            </div>
+                            <span class="seta-direcional" aria-hidden="true"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-seta"></use></svg></span>
+                            <div class="campo">
+                                <label for="banco-destino">Para <span class="dica-inline">(entra aqui)</span></label>
+                                <input type="text" id="banco-destino" required maxlength="60" placeholder="Banco de destino">
+                            </div>
+                        </div>
 
-                        <label for="banco-origem">Banco de origem (de onde sai)</label>
-                        <input type="text" id="banco-origem" required maxlength="60" placeholder="Digite ou escolha uma sugestão...">
+                        <label for="detalhe">Detalhe <span class="dica-inline">(opcional)</span></label>
+                        <input type="text" id="detalhe" maxlength="120" placeholder="Ex.: Controle de gastos, valor para completar">
 
-                        <label for="banco-destino">Banco de destino (para onde vai)</label>
-                        <input type="text" id="banco-destino" required maxlength="60" placeholder="Digite ou escolha uma sugestão...">
-
-                        <label for="detalhe">Detalhe (opcional)</label>
-                        <input type="text" id="detalhe" maxlength="120" placeholder="Ex: Controle de gastos, Valor para completar">
+                        <p class="resumo-direcional" id="resumo-transferencia" aria-live="polite"></p>
 
                         <button type="submit" class="botao botao-primario">Transferir</button>
                     </form>
-                </div>
+                </section>
 
-                <div class="cartao">
-                    <h3 style="margin-bottom: var(--espaco-md);">Últimas transferências internas</h3>
+                <section class="cartao" aria-labelledby="titulo-ultimas">
+                    <div class="secao-titulo">
+                        <h2 id="titulo-ultimas">Últimas transferências internas</h2>
+                    </div>
                     <div class="tabela-scroll">
                         <table id="tabela-ultimas">
                             <thead>
@@ -86,8 +107,8 @@
                                     <th data-chave="data" data-tipo="texto" class="th-ordenavel">Data</th>
                                     <th data-chave="descricao" data-tipo="texto" class="th-ordenavel">Descrição</th>
                                     <th data-chave="banco" data-tipo="texto" class="th-ordenavel">Banco</th>
-                                    <th data-chave="valor" data-tipo="numero" class="th-ordenavel" style="text-align: right;">Valor (R$)</th>
-                                    <th class="col-acoes">Ações</th>
+                                    <th data-chave="valor" data-tipo="numero" class="th-ordenavel">Valor</th>
+                                    <th class="col-acoes"><span class="visualmente-oculto">Ações</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -95,21 +116,21 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
     </main>
 </div>
 
-<nav class="mobile-nav">
-    <a href="index.html" data-pagina="lancar"><span class="icone">➕</span><span>Lançar</span></a>
-    <a href="importar.html" data-pagina="importar"><span class="icone">📥</span><span>Importar</span></a>
-    <a href="extrato.html" data-pagina="extrato"><span class="icone">📋</span><span>Extrato</span></a>
-    <a href="dashboard.html" data-pagina="dashboard"><span class="icone">📊</span><span>Dashboard</span></a>
-    <a href="transferencia.html" data-pagina="transferencia"><span class="icone">🔀</span><span>Transf.</span></a>
-    <a href="virar-mes.html" data-pagina="virar-mes"><span class="icone">🔁</span><span>Virar</span></a>
-    <a href="investimentos.html" data-pagina="investimentos"><span class="icone">📈</span><span>Invest.</span></a>
-    <a href="planejamento.html" data-pagina="planejamento"><span class="icone">🧭</span><span>Plano</span></a>
+<nav class="mobile-nav" aria-label="Menu principal">
+    <a href="index.html" data-pagina="lancar" aria-label="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar" aria-label="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+    <a href="transferencia.html" data-pagina="transferencia" aria-label="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes" aria-label="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar</span></a>
+    <a href="dashboard.html" data-pagina="dashboard" aria-label="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dash</span></a>
+    <a href="extrato.html" data-pagina="extrato" aria-label="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+    <a href="investimentos.html" data-pagina="investimentos" aria-label="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento" aria-label="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Plano</span></a>
 </nav>
 
 <script type="module" src="js/transferencia.js"></script>

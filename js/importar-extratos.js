@@ -270,7 +270,13 @@ function celulaSituacao(linha) {
 
 function linhaDaTabela(linha) {
   const m = linha.movimento;
-  const tr = el("tr", { classe: [linha.acao === ACAO.NADA ? "linha-inativa" : "", problemasDaLinha(linha).length ? "linha-problema" : ""].join(" ").trim() });
+  // Cor da linha (guia de identidade): pronta = verde, precisa de atenção = laranja, erro = vermelho.
+  const temProblema = problemasDaLinha(linha).length > 0;
+  const classeLinha = linha.acao === ACAO.NADA ? "linha-inativa"
+    : temProblema ? "linha-problema"
+    : precisaAtencao(linha) ? "linha-atencao"
+    : "linha-pronta";
+  const tr = el("tr", { classe: classeLinha });
 
   const select = el("select", { classe: "acao-linha" });
   opcoesDeAcao(linha).forEach(([valor, rotulo]) => {
@@ -487,7 +493,7 @@ function renderizarUltimaImportacao() {
   const ultima = estado.ultimaImportacao;
   if (!ultima) return;
   const caixa = el("div", { classe: "ultima-importacao" });
-  caixa.appendChild(el("span", { texto: `✅ Importação ${ultima.importacaoId} gravada: ${ultima.idsCriados.length} lançamento(s) novo(s)${ultima.corrigidos.length ? `, ${ultima.corrigidos.length} corrigido(s)` : ""}.` }));
+  caixa.appendChild(el("span", { texto: `✓ Importação ${ultima.importacaoId} gravada: ${ultima.idsCriados.length} lançamento(s) novo(s)${ultima.corrigidos.length ? `, ${ultima.corrigidos.length} corrigido(s)` : ""}.` }));
   const desfazer = el("button", { classe: "botao botao-secundario botao-pequeno", texto: "Desfazer esta importação" });
   desfazer.addEventListener("click", async () => {
     const ok = await confirmarAcao({
@@ -522,7 +528,22 @@ function limparTudo({ manterUltima = false } = {}) {
   renderizarTudo();
 }
 
+// Etapas no topo: 1 selecionar → 2 revisar → 3 conferir e gravar.
+function marcarEtapas() {
+  const etapas = document.querySelectorAll("#etapas-importacao li[data-etapa]");
+  const gravou = !estado.resultado && estado.ultimaImportacao;
+  const atual = gravou ? 4 : estado.resultado ? 2 : 1;
+  etapas.forEach((li) => {
+    const n = Number(li.dataset.etapa);
+    li.classList.toggle("etapa-feita", n < atual);
+    li.classList.toggle("etapa-atual", n === atual || (atual === 2 && n === 3));
+    if (n === atual) li.setAttribute("aria-current", "step");
+    else li.removeAttribute("aria-current");
+  });
+}
+
 function renderizarTudo() {
+  marcarEtapas();
   renderizarArquivos();
   if (estado.resultado) {
     renderizarSaldos();

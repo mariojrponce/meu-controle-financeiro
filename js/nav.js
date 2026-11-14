@@ -15,6 +15,12 @@ function temaAutomaticoPorHorario() {
 export function inicializarTema() {
   const temaSalvo = localStorage.getItem("tema_meu_financeiro");
   aplicarTema(temaSalvo || temaAutomaticoPorHorario());
+  document.querySelectorAll(".btn-alternar-tema").forEach((btn) => {
+    btn.onclick = (evento) => {
+      evento.preventDefault();
+      alternarProximoTema();
+    };
+  });
 }
 
 // Só aplica visualmente — não grava no localStorage. Se gravasse aqui, o
@@ -38,31 +44,45 @@ function alternarProximoTema() {
   }, 350);
 }
 
+const TEMAS = {
+  light: { icone: "sol", rotulo: "Claro", proximo: "Trocar para o tema Escuro (noite)" },
+  dark: { icone: "lua", rotulo: "Escuro", proximo: "Trocar para o tema Sépia (leitura confortável)" },
+  sepia: { icone: "sepia", rotulo: "Sépia", proximo: "Trocar para o tema Claro" }
+};
+
 function atualizarIconeBotaoTema(tema) {
-  const btns = document.querySelectorAll(".btn-alternar-tema");
-  btns.forEach((btn) => {
-    if (tema === "dark") {
-      btn.innerHTML = `🌙 <span class="tema-rotulo">Escuro</span>`;
-      btn.title = "Alternar para tema Sépia (Conforto visual)";
-    } else if (tema === "sepia") {
-      btn.innerHTML = `📜 <span class="tema-rotulo">Sépia</span>`;
-      btn.title = "Alternar para tema Claro";
-    } else {
-      btn.innerHTML = `☀️ <span class="tema-rotulo">Claro</span>`;
-      btn.title = "Alternar para tema Escuro (Modo noturno)";
-    }
+  const info = TEMAS[tema] ?? TEMAS.light;
+  document.querySelectorAll(".btn-alternar-tema").forEach((btn) => {
+    const rotulo = btn.querySelector(".tema-rotulo");
+    const classeRotulo = rotulo?.className ?? "tema-rotulo";
+    btn.innerHTML = `<svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-${info.icone}"></use></svg><span class="${classeRotulo}">${info.rotulo}</span>`;
+    btn.title = info.proximo;
+    btn.setAttribute("aria-label", `Tema ${info.rotulo}. ${info.proximo}`);
   });
+}
+
+// No celular, a barra de filtros começa recolhida (o conteúdo vem primeiro).
+function recolherFiltrosNoCelular() {
+  if (!window.matchMedia("(max-width: 767px)").matches) return;
+  document.querySelectorAll("details.painel-filtros[open]").forEach((d) => d.removeAttribute("open"));
 }
 
 export function renderizarNav(paginaAtiva, emailUsuario) {
   inicializarTema();
+  recolherFiltrosNoCelular();
 
   document.querySelectorAll(".sidebar-links a, .mobile-nav a").forEach((link) => {
-    link.classList.toggle("ativo", link.dataset.pagina === paginaAtiva);
+    const ativo = link.dataset.pagina === paginaAtiva;
+    link.classList.toggle("ativo", ativo);
+    if (ativo) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
   });
 
   const spanEmail = document.querySelector(".sidebar-email");
-  if (spanEmail) spanEmail.textContent = emailUsuario ?? "";
+  if (spanEmail) {
+    spanEmail.textContent = emailUsuario ?? "";
+    spanEmail.title = emailUsuario ?? "";
+  }
 
   const botoesSair = document.querySelectorAll(".btn-sair, .botao-sair, #btn-sair");
   botoesSair.forEach((btn) => {
@@ -72,12 +92,5 @@ export function renderizarNav(paginaAtiva, emailUsuario) {
     };
   });
 
-  const botoesTema = document.querySelectorAll(".btn-alternar-tema");
-  botoesTema.forEach((btn) => {
-    btn.onclick = (evento) => {
-      evento.preventDefault();
-      alternarProximoTema();
-    };
-  });
 }
 

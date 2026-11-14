@@ -1,6 +1,7 @@
 // cores-bancos.js
 // Cores aproximadas da identidade visual de cada banco/carteira, usadas
-// nos cartões do dashboard. Se o banco não estiver na lista, usa a cor padrão.
+// nos cartões do dashboard. São cores de DADO (identificam o banco, como
+// numa legenda), por isso ficam aqui e não nos tokens do tema. Se o banco não estiver na lista, usa a cor padrão.
 
 const CORES_CONHECIDAS = [
   { chave: "NUBANK", cor: "#8A05BE" },
@@ -28,7 +29,8 @@ const CORES_CONHECIDAS = [
   { chave: "SAFRA", cor: "#7A1FA2" }
 ];
 
-const COR_PADRAO = "#059669";
+// Banco sem cor conhecida: usa a cor primária do tema (token do style.css).
+const COR_PADRAO = "var(--cor-primaria)";
 
 function normalizar(texto) {
   return texto

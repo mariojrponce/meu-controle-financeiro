@@ -22,7 +22,8 @@
 | **Importação** | SheetJS (XLSX) | CDN (`cdn.jsDelivr.net`) | Parser de arquivos Excel (`.xlsx`/`.csv`) |
 | **Extratos PDF** | pdf.js 4.10.38 (legacy) | Local (`js/vendor/pdfjs/`) | Texto + posição dos PDFs dos bancos, no navegador (sem servidor/CDN) |
 | **OCR** | tesseract.js 5.1.1 + modelo `por` | Local (`js/vendor/tesseract/`) | Lê a fatura aberta do Bradesco (imagem), só carregado quando precisa |
-| **Estilização** | CSS3 Vanilla | `style.css` | Variáveis CSS, layout responsivo (Flexbox/Grid), suporte a temas |
+| **Estilização** | CSS3 Vanilla | `style.css` | Design System v4 da identidade visual: tokens CSS (`--brand-*`, `--bg-*`, `--texto-*`, semântica financeira) em 3 temas (claro/escuro/sépia), Inter + Nunito (marca) via Google Fonts |
+| **Marca e ícones** | PNG + SVG | `assets/brand/`, `assets/icones.svg` | Símbolo da carteira (e versão sépia), favicons, conjunto de ícones lineares |
 
 ---
 
@@ -37,7 +38,10 @@
 ├── planejamento.html / js/planejamento.js # Planejamento por ciclo de salário (quanto precisa, quanto sobra, quanto dá p/ investir)
 ├── login.html / js/login.js             # Tela de login e registro via Firebase Auth
 ├── firestore.rules                      # Regras de segurança e validações de esquema do Firestore
-├── style.css                            # Estilos globais e componentes UI
+├── style.css                            # Design System v4: tokens dos 3 temas + componentes (regra: telas só usam var(--...))
+├── assets/brand/                        # Símbolo da carteira (normal e sépia), logo horizontal, favicons e ícones de app
+├── assets/icones.svg                    # Ícones lineares (<use href="assets/icones.svg#i-nome">)
+├── identidade visual/                   # Manual de marca (PDF) + guias de UX/UI e de implementação — referência do visual
 └── js/
     ├── auth-guard.js                    # Proteção de rotas (redireciona para login.html se deslogado)
     ├── combobox.js                      # Componente de autocompletar inteligente
@@ -53,7 +57,7 @@
     ├── preferencias-dashboard.js        # Persistência de filtros do dashboard no localStorage
     ├── preferencias-filtros.js          # Persistência de filtros do extrato no localStorage
     ├── tabela-ordenavel.js              # Utilitário para ordenação interativa de tabelas HTML
-    ├── ui.js                            # Sistema de Toast Notifications e modais
+    ├── ui.js                            # Toast, modal de confirmação e ícones (icone(), preencherBotao())
     ├── utils.js                         # Formatação de moeda (BRL), datas (BR/ISO) e ordenações
     ├── vale.js                          # Identifica bancos de vale (Alelo, Pluxe...) e o filtro Tudo/Só vale/Sem vale
     ├── extratos/                        # Importação de extratos — SEM DOM e SEM Firebase (testável no Node)

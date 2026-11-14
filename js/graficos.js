@@ -48,16 +48,33 @@ function destruir(idCanvas) {
     }
 }
 
-function obterEstiloTema() {
-    const ehDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const ehSepia = document.documentElement.getAttribute("data-theme") === "sepia";
+// Cores dos gráficos vêm dos tokens do tema (style.css) — nada fixo aqui.
+// Assim o gráfico acompanha Claro/Escuro/Sépia sozinho.
+export function corDoTema(token) {
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+}
 
+export function obterPaletaGraficos() {
     return {
-        corTexto: ehDark ? "#f1f5f9" : ehSepia ? "#2c221e" : "#0f172a",
-        corTextoSuave: ehDark ? "#94a3b8" : ehSepia ? "#7c6853" : "#64748b",
-        corGrid: ehDark ? "rgba(255, 255, 255, 0.08)" : ehSepia ? "rgba(44, 34, 30, 0.12)" : "rgba(15, 23, 42, 0.08)",
-        corTooltipBg: ehDark ? "#1d283d" : ehSepia ? "#f5e6c7" : "#0f172a",
-        corTooltipTexto: ehDark ? "#f1f5f9" : ehSepia ? "#2c221e" : "#ffffff"
+        azulPrincipal: corDoTema("--cor-primaria"),
+        azulApoio: corDoTema("--brand-azul-claro"),
+        entrada: corDoTema("--cor-entrada"),
+        saida: corDoTema("--cor-saida"),
+        previsto: corDoTema("--cor-previsto"),
+        alerta: corDoTema("--cor-alerta-acento"),
+        texto: corDoTema("--texto-corpo"),
+        grade: corDoTema("--borda-sutil")
+    };
+}
+
+function obterEstiloTema() {
+    return {
+        corTexto: corDoTema("--texto-corpo"),
+        corTextoSuave: corDoTema("--texto-secundario"),
+        corGrid: corDoTema("--borda-sutil"),
+        corTooltipBg: corDoTema("--texto-principal"),
+        corTooltipTexto: corDoTema("--bg-superficie"),
+        corFundo: corDoTema("--bg-superficie")
     };
 }
 
@@ -106,7 +123,7 @@ export function alternarEstadoVazio(idCanvas, idVazio, temDados, mensagemVazia) 
 // aoClicar(rotulo): chamado ao clicar em qualquer ponto da linha de uma
 // categoria (barra, espaço vazio ou o nome no eixo). Com `selecionado`, as
 // outras barras ficam apagadas para destacar a escolhida.
-export function renderizarGraficoBarras(idCanvas, dados, { cor = "#059669", selecionado = null, aoClicar = null } = {}) {
+export function renderizarGraficoBarras(idCanvas, dados, { cor = corDoTema("--cor-primaria"), selecionado = null, aoClicar = null } = {}) {
     destruir(idCanvas);
     const canvas = obterCanvas(idCanvas);
     if (!canvas) return;
@@ -272,7 +289,7 @@ export function renderizarGraficoBarrasAgrupadas(idCanvas, categorias, series) {
 }
 
 // Gráfico de linha — tendência de evolução temporal
-export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#ef4444" } = {}) {
+export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = corDoTema("--cor-saida") } = {}) {
     destruir(idCanvas);
     const canvas = obterCanvas(idCanvas);
     if (!canvas) return;
@@ -291,7 +308,7 @@ export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = "#ef4
                 pointRadius: 4.5,
                 pointHoverRadius: 7,
                 pointBackgroundColor: cor,
-                pointBorderColor: "#ffffff",
+                pointBorderColor: obterEstiloTema().corFundo,
                 pointBorderWidth: 1.5,
                 fill: true,
                 tension: 0.35
