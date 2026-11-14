@@ -45,8 +45,17 @@ export function mesLimiteDaComparacao(ano, hojeISO) {
   return Number(ano) === anoHoje ? Number(hojeISO.slice(5, 7)) : 12;
 }
 
+// Mês a mês: diferença e percentual de cada mês contra o mesmo mês do ano anterior.
+export function variacaoMensal(meses, anterior) {
+  return meses.map((valor, i) => variacao(valor, anterior[i]));
+}
+
 // lista: lançamentos já filtrados (banco, vale, texto...) de QUALQUER data.
-export function calcularEvolucaoPorCategoria(lista, { ano, tipo, categoriasSeparadas = new Set(), hojeISO }) {
+// classificar(t): em que categoria o lançamento entra (padrão: a classificação
+// gravada). O Dashboard passa finalidadeDe (finalidade.js) para equiparar os
+// nomes que mudaram de um ano para o outro; `origens` guarda de onde veio o
+// que foi trazido de outra classificação: { nomeOriginal: { atual, anterior } }.
+export function calcularEvolucaoPorCategoria(lista, { ano, tipo, categoriasSeparadas = new Set(), hojeISO, classificar = (t) => t.classificacao_saida }) {
   const anoAtual = String(ano);
   const anoAnterior = String(Number(ano) - 1);
   const mesLimite = mesLimiteDaComparacao(anoAtual, hojeISO);
@@ -60,10 +69,16 @@ export function calcularEvolucaoPorCategoria(lista, { ano, tipo, categoriasSepar
     if (anoLancamento !== anoAtual && anoLancamento !== anoAnterior) return;
     const mes = mesDe(t.data);
     if (!mes) return;
-    const nome = t.classificacao_saida || SEM_CLASSIFICACAO;
-    if (!porCategoria.has(nome)) porCategoria.set(nome, { nome, meses: Array(12).fill(0), anterior: Array(12).fill(0) });
+    const original = t.classificacao_saida || SEM_CLASSIFICACAO;
+    const nome = classificar(t) || SEM_CLASSIFICACAO;
+    if (!porCategoria.has(nome)) porCategoria.set(nome, { nome, meses: Array(12).fill(0), anterior: Array(12).fill(0), origens: {} });
     const linha = porCategoria.get(nome);
-    (anoLancamento === anoAtual ? linha.meses : linha.anterior)[mes - 1] += t.valor;
+    const ehAnoAtual = anoLancamento === anoAtual;
+    (ehAnoAtual ? linha.meses : linha.anterior)[mes - 1] += t.valor;
+    if (original !== nome) {
+      linha.origens[original] ??= { atual: 0, anterior: 0 };
+      linha.origens[original][ehAnoAtual ? "atual" : "anterior"] += t.valor;
+    }
   });
 
   const categorias = [...porCategoria.values()].map((c) => {

@@ -53,3 +53,57 @@ test("ano que já passou compara o ano inteiro; sentido da variação depende do
   assert.equal(sentidoDaVariacao("ENTRADA", 0), "igual");
   assert.deepEqual(variacao(10, 0), { diferenca: 10, percentual: null });
 });
+
+// ---------- Equiparação por finalidade (finalidade.js) ----------
+import { finalidadeDe } from "../js/finalidade.js";
+import { variacaoMensal } from "../js/evolucao-categorias.js";
+
+const g = (classificacao, descricao, saida, tipo = "SAIDA") => ({ classificacao_saida: classificacao, descricao, saida, tipo });
+
+test("finalidade: TRANSPORTE antigo se divide em UBER (corridas, inclui 99) e ONIBUS (passe)", () => {
+  assert.equal(finalidadeDe(g("TRANSPORTE", "IR PARA SERVIÇO", "99 TAXI")), "UBER");
+  assert.equal(finalidadeDe(g("TRANSPORTE", "VOLTAR PRA CASA", "UBER")), "UBER");
+  assert.equal(finalidadeDe(g("TRANSPORTE", "RECARGA CARTEIRINHA ONIBUS", "ZPLMB TECNOLOGIA")), "ONIBUS");
+  assert.equal(finalidadeDe(g("TRANSPORTE", "COLOCAR DE PASSE", "SAQUE DINHEIRO")), "ONIBUS");
+  assert.equal(finalidadeDe(g("TRANSPORTE", "RECARGA CARTEIRA CIDADÃO", "TRANSPORTE PUBLICO")), "ONIBUS");
+  assert.equal(finalidadeDe(g("ONIBUS", "RECARGA PASSE ONIBUS", "PIU")), "ONIBUS");
+  assert.equal(finalidadeDe(g("UBER", "IR PARA SERVIÇO", "UBER")), "UBER");
+});
+
+test("finalidade: contas do mês, compras de casa, lanche de casa e investimentos", () => {
+  assert.equal(finalidadeDe(g("IMPOSTOS", "DESP MENSAL", "DAS/MEI JANEIRO/2025")), "DESP MENSAL");
+  assert.equal(finalidadeDe(g("IMPOSTOS", "IRRF TESOURO DIRETO", "IMPOSTOS")), "IMPOSTOS");
+  assert.equal(finalidadeDe(g("DESPESAS", "DESP MENSAL", "SPOTIFY")), "DESP MENSAL");
+  assert.equal(finalidadeDe(g("DESPESAS", "CREDITO CELULAR", "RECARGA FACIL")), "DESP MENSAL");
+  assert.equal(finalidadeDe(g("DESPESAS", "PAGAMENTO AMAZON PRIME", "AMAZON PRIME")), "DESPESAS");
+  assert.equal(finalidadeDe(g("DESPESAS", "CORTE CABELO", "STHILOS CABELEIREIROS")), "DIVERSOS");
+  assert.equal(finalidadeDe(g("COMPRAS CASA", "COMPRAS CASA SEMANA", "GIGANTE CASH")), "COMPRAS CASA 108N");
+  assert.equal(finalidadeDe(g("COMPRAS CASA", "LANCHE CASA NOITE", "GIGANTE CASH")), "CASA LANCHE");
+  assert.equal(finalidadeDe(g("LANCHE", "COMPRAS LANCHE CASA", "QUARTETTO SUPER.")), "CASA LANCHE");
+  assert.equal(finalidadeDe(g("LANCHE", "LANCHE TARDE", "SUPER BIG")), "LANCHE");
+  assert.equal(finalidadeDe(g("INVESTIMENTOS", "M039", "EMPRESTIMO MRV")), "INVESTIMENTOS");
+  assert.equal(finalidadeDe(g("INVESTIMENTOS", "VALOR SEGUROS/ENCARGOS", "COBRANÇAS CAIXA")), "INVESTIMENTOS");
+  assert.equal(finalidadeDe(g("INVESTIMENTOS", "TESOURO SELIC 29", "NUBANK INVESTIMENTOS")), "INVESTIMENTO");
+  assert.equal(finalidadeDe(g("NUBANK CAIXINHA", "GUARDAR PARA GÁS", "NUBANK CAIXINHA")), "INVESTIMENTO");
+  assert.equal(finalidadeDe(g("RENDA FIXA", "CDB DI", "BRADESCO INVESTIMENTO")), "INVESTIMENTO");
+  // Recebimento não usa as regras de gasto
+  assert.equal(finalidadeDe(g("INVESTIMENTO", "RESGATE PARA DESPESAS", "BRADESCO INVESTIMENTO", "ENTRADA")), "RESGATES DE INVEST.");
+  assert.equal(finalidadeDe(g("SALARIO", "X", "Y", "ENTRADA")), "SALARIO");
+});
+
+test("evolução com finalidade: UBER de 2026 compara com as corridas que estavam em TRANSPORTE", () => {
+  const lista = [
+    { ...t("2026-03-01", 30, "UBER"), descricao: "IR PARA SERVIÇO", saida: "UBER" },
+    { ...t("2025-03-01", 20, "TRANSPORTE"), descricao: "IR PARA SERVIÇO", saida: "99 TAXI" },
+    { ...t("2025-03-05", 50, "TRANSPORTE"), descricao: "RECARGA PASSE ONIBUS", saida: "ZPLMB TECNOLOGIA" }
+  ];
+  const r = calcularEvolucaoPorCategoria(lista, { ano: 2026, tipo: "SAIDA", hojeISO: "2026-11-14", classificar: finalidadeDe });
+  assert.deepEqual(r.categorias.map((c) => c.nome), ["UBER", "ONIBUS"]);
+  const uber = r.categorias[0];
+  assert.equal(uber.periodoAnterior, 20);
+  assert.deepEqual(uber.origens, { TRANSPORTE: { atual: 0, anterior: 20 } });
+  const mensal = variacaoMensal(uber.meses, uber.anterior);
+  assert.equal(mensal[2].diferenca, 10);
+  assert.equal(mensal[2].percentual, 0.5);
+  assert.equal(mensal[0].percentual, null);
+});

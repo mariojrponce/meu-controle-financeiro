@@ -18,7 +18,8 @@ import {
     renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema,
     mostrarTotalGrafico, somarValores, corDoTema, renderizarGraficoComparativo } from "./graficos.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
-import { calcularEvolucaoPorCategoria, sentidoDaVariacao } from "./evolucao-categorias.js";
+import { calcularEvolucaoPorCategoria, sentidoDaVariacao, variacaoMensal } from "./evolucao-categorias.js";
+import { finalidadeDe } from "./finalidade.js";
 
 const NOME_PAGINA = "dashboard";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -689,7 +690,7 @@ function totalEmReais(valores) {
 
 // ---------- Evolução por categoria (todas as categorias, mês a mês, × ano anterior) ----------
 const MESES_CURTOS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-const estadoEvolucaoCat = { tipo: "SAIDA", categoria: null, contexto: null };
+const estadoEvolucaoCat = { tipo: "SAIDA", categoria: null, contexto: null, equiparar: true };
 
 function valorCompacto(valor) {
     if (Math.abs(valor) < 0.5) return "–";
@@ -721,7 +722,10 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
     const { lista, ano, categoriasSeparadas } = contexto;
     const tipo = estadoEvolucaoCat.tipo;
     const ehGasto = tipo === "SAIDA";
-    const r = calcularEvolucaoPorCategoria(lista, { ano, tipo, categoriasSeparadas, hojeISO: hojeISO() });
+    const r = calcularEvolucaoPorCategoria(lista, {
+        ano, tipo, categoriasSeparadas, hojeISO: hojeISO(),
+        classificar: estadoEvolucaoCat.equiparar ? finalidadeDe : undefined
+    });
     if (estadoEvolucaoCat.categoria && !r.categorias.some((c) => c.nome === estadoEvolucaoCat.categoria)) estadoEvolucaoCat.categoria = null;
 
     document.querySelectorAll("#secao-evolucao-categorias .alternador-opcao").forEach((b) => {
@@ -783,60 +787,116 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
         document.getElementById("nota-evolucao-cat").textContent = "";
         return;
     }
+    // Cada categoria ocupa 4 linhas: ano anterior (apagado), ano atual (em
+    // destaque), diferença em R$ e em % — mês a mês e no período comparável.
     const ehPrevisto = (i) => i >= r.mesLimite;
     const thead = document.createElement("thead");
     const cab = document.createElement("tr");
-    cab.appendChild(celula("th", "Categoria"));
+    cab.appendChild(celula("th", "Categoria", "col-nome"));
+    cab.appendChild(celula("th", "", "col-rotulo"));
     MESES_CURTOS.forEach((m, i) => cab.appendChild(celula("th", m, ehPrevisto(i) ? "col-previsto" : "", ehPrevisto(i) ? "Mês que ainda não chegou: só lançamentos previstos" : "")));
-    cab.appendChild(celula("th", periodoAtual, "col-comparacao col-separador"));
-    cab.appendChild(celula("th", periodoAnterior, "col-comparacao"));
-    cab.appendChild(celula("th", "Diferença", "col-comparacao"));
-    cab.appendChild(celula("th", "%", "col-comparacao"));
+    cab.appendChild(celula("th", r.mesLimite < 12 ? `Jan–${MESES_CURTOS[r.mesLimite - 1]}` : "Ano", "col-comparacao col-separador", `Soma dos meses comparáveis: ${periodoAtual} × ${periodoAnterior}`));
     thead.appendChild(cab);
     tabela.appendChild(thead);
 
-    const linhaDe = (nome, meses, item, tag = "td") => {
-        const tr = document.createElement("tr");
-        tr.appendChild(celula(tag, nome));
-        meses.forEach((v, i) => {
-            const classes = [Math.abs(v) < 0.5 ? "zero" : "", ehPrevisto(i) ? "col-previsto" : ""].join(" ").trim();
-            tr.appendChild(celula(tag, valorCompacto(v), classes, `${nome} · ${MESES_CURTOS[i]}/${r.ano}: ${formatarReais(v)}${item.anterior ? ` (em ${r.anoAnterior}: ${formatarReais(item.anterior[i])})` : ""}`));
-        });
-        const sentidoLinha = sentidoDaVariacao(tipo, item.diferenca);
-        const v = textoVariacao(item.diferenca, item.percentual);
-        tr.appendChild(celula(tag, valorCompacto(item.periodoAtual), "col-comparacao col-separador", formatarReais(item.periodoAtual)));
-        tr.appendChild(celula(tag, valorCompacto(item.periodoAnterior), "col-comparacao", formatarReais(item.periodoAnterior)));
-        const dif = Math.abs(item.diferenca) < 0.5 ? "–" : `${item.diferenca > 0 ? "+" : "-"} ${valorCompacto(Math.abs(item.diferenca))}`;
-        tr.appendChild(celula(tag, dif, `col-comparacao variacao variacao-${sentidoLinha}`, formatarReais(item.diferenca)));
-        tr.appendChild(celula(tag, `${v.seta} ${v.pct}`.trim(), `col-comparacao variacao variacao-${sentidoLinha}`));
-        return tr;
+    const textoDiferenca = (d) => (Math.abs(d) < 0.5 ? "–" : `${d > 0 ? "+" : "-"} ${valorCompacto(Math.abs(d))}`);
+    const textoPercentual = (d, p) => {
+        if (Math.abs(d) < 0.5) return "–";
+        const v = textoVariacao(d, p);
+        return `${v.seta} ${v.pct}`;
+    };
+    const descreverOrigens = (item) => {
+        const origens = Object.entries(item.origens ?? {});
+        if (!origens.length) return "";
+        return "Inclui o que estava classificado como: " + origens
+            .map(([nome, v]) => `${nome} (${[v.atual > 0 ? `${formatarReais(v.atual)} em ${r.ano}` : "", v.anterior > 0 ? `${formatarReais(v.anterior)} em ${r.anoAnterior}` : ""].filter(Boolean).join(", ")})`)
+            .join("; ");
     };
 
-    const tbody = document.createElement("tbody");
+    // Monta as 4 linhas de uma categoria (ou do total) dentro de `grupo` (tbody/tfoot).
+    const montarGrupo = (grupo, nome, item) => {
+        const mensal = variacaoMensal(item.meses, item.anterior);
+        const sentidoPeriodo = sentidoDaVariacao(tipo, item.diferenca);
+        const linhas = [
+            {
+                classe: "linha-anterior", rotulo: r.anoAnterior,
+                mes: (i) => ({ texto: valorCompacto(item.anterior[i]), classe: Math.abs(item.anterior[i]) < 0.5 ? "zero" : "", titulo: `${nome} · ${MESES_CURTOS[i]}/${r.anoAnterior}: ${formatarReais(item.anterior[i])}` }),
+                periodo: { texto: valorCompacto(item.periodoAnterior), titulo: `${periodoAnterior}: ${formatarReais(item.periodoAnterior)}` }
+            },
+            {
+                classe: "linha-atual", rotulo: r.ano,
+                mes: (i) => ({ texto: valorCompacto(item.meses[i]), classe: [Math.abs(item.meses[i]) < 0.5 ? "zero" : "", ehPrevisto(i) ? "col-previsto" : ""].join(" ").trim(), titulo: `${nome} · ${MESES_CURTOS[i]}/${r.ano}: ${formatarReais(item.meses[i])}${ehPrevisto(i) ? " (previsto)" : ""}` }),
+                periodo: { texto: valorCompacto(item.periodoAtual), titulo: `${periodoAtual}: ${formatarReais(item.periodoAtual)}` }
+            },
+            {
+                classe: "linha-diferenca", rotulo: "Dif. R$",
+                // Mês que ainda não chegou não tem o que comparar (só previstos).
+                mes: (i) => (ehPrevisto(i)
+                    ? { texto: "–", classe: "zero", titulo: "Mês que ainda não chegou" }
+                    : { texto: textoDiferenca(mensal[i].diferenca), classe: `variacao variacao-${sentidoDaVariacao(tipo, mensal[i].diferenca)}`, titulo: `${nome} · ${MESES_CURTOS[i]}: ${formatarReais(item.meses[i])} em ${r.ano} × ${formatarReais(item.anterior[i])} em ${r.anoAnterior}` }),
+                periodo: { texto: textoDiferenca(item.diferenca), classe: `variacao variacao-${sentidoPeriodo}`, titulo: formatarReais(item.diferenca) }
+            },
+            {
+                classe: "linha-percentual", rotulo: "Dif. %",
+                mes: (i) => (ehPrevisto(i)
+                    ? { texto: "–", classe: "zero", titulo: "Mês que ainda não chegou" }
+                    : { texto: textoPercentual(mensal[i].diferenca, mensal[i].percentual), classe: `variacao variacao-${sentidoDaVariacao(tipo, mensal[i].diferenca)}`, titulo: mensal[i].percentual === null && mensal[i].diferenca > 0 ? `Sem ${palavra.toLowerCase()} em ${MESES_CURTOS[i]}/${r.anoAnterior}` : "" }),
+                periodo: { texto: textoPercentual(item.diferenca, item.percentual), classe: `variacao variacao-${sentidoPeriodo}` }
+            }
+        ];
+        linhas.forEach((linha, n) => {
+            const tr = document.createElement("tr");
+            tr.className = linha.classe;
+            if (n === 0) {
+                const origem = descreverOrigens(item);
+                const tdNome = celula("td", nome, "col-nome", origem);
+                tdNome.rowSpan = linhas.length;
+                if (origem) tdNome.appendChild(celula("span", "≈", "marca-equiparada"));
+                tr.appendChild(tdNome);
+            }
+            tr.appendChild(celula("td", linha.rotulo, "col-rotulo"));
+            MESES_CURTOS.forEach((_, i) => {
+                const c = linha.mes(i);
+                tr.appendChild(celula("td", c.texto, c.classe, c.titulo));
+            });
+            tr.appendChild(celula("td", linha.periodo.texto, `col-comparacao col-separador ${linha.periodo.classe ?? ""}`.trim(), linha.periodo.titulo ?? ""));
+            grupo.appendChild(tr);
+        });
+    };
+
     r.categorias.forEach((c) => {
-        const tr = linhaDe(c.nome, c.meses, c);
-        tr.tabIndex = 0;
-        tr.title = "Clique para ver esta categoria no gráfico";
-        if (c.nome === estadoEvolucaoCat.categoria) tr.classList.add("selecionada");
+        const tbody = document.createElement("tbody");
+        tbody.className = "grupo-categoria";
+        montarGrupo(tbody, c.nome, c);
+        tbody.tabIndex = 0;
+        tbody.setAttribute("aria-label", `${c.nome}: clique para ver no gráfico`);
+        if (c.nome === estadoEvolucaoCat.categoria) tbody.classList.add("selecionada");
         const escolher = () => {
             estadoEvolucaoCat.categoria = estadoEvolucaoCat.categoria === c.nome ? null : c.nome;
             renderizarEvolucaoCategorias();
             document.getElementById("grafico-evolucao-cat").scrollIntoView({ behavior: "smooth", block: "center" });
         };
-        tr.addEventListener("click", escolher);
-        tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); escolher(); } });
-        tbody.appendChild(tr);
+        tbody.addEventListener("click", escolher);
+        tbody.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); escolher(); } });
+        tabela.appendChild(tbody);
     });
-    tabela.appendChild(tbody);
     const tfoot = document.createElement("tfoot");
-    tfoot.appendChild(linhaDe("Total", r.total.meses, r.total));
+    montarGrupo(tfoot, "Total", r.total);
     tabela.appendChild(tfoot);
 
+    const temEquiparadas = r.categorias.some((c) => Object.keys(c.origens ?? {}).length);
     document.getElementById("nota-evolucao-cat").textContent = (r.mesLimite < 12
         ? `A comparação usa os mesmos meses nos dois anos (${periodoAtual} × ${periodoAnterior}); ${MESES_CURTOS[r.mesLimite - 1].toLowerCase()}/${r.ano} ainda está em andamento. Meses em azul e itálico ainda não chegaram (só previstos). `
         : `Ano inteiro de ${r.ano} × ${r.anoAnterior}. `)
+        + `Cada categoria tem a linha de ${r.anoAnterior} (mais clara), a de ${r.ano} (em destaque) e a diferença de cada mês em R$ e em %. `
+        + (temEquiparadas ? "Categorias com ≈ incluem lançamentos que tinham outra classificação (passe o mouse no nome para ver de onde vieram). " : "")
         + `Valores em R$ sem centavos (passe o mouse para ver o valor exato). ${ehGasto ? "Gasto subindo aparece em vermelho; caindo, em verde." : "Recebimento subindo aparece em verde; caindo, em vermelho."} Usa os filtros de banco, vale, movimentação e texto; não conta transferências internas nem as categorias à parte.`;
 }
+
+document.getElementById("equiparar-categorias").addEventListener("change", (e) => {
+    estadoEvolucaoCat.equiparar = e.target.checked;
+    renderizarEvolucaoCategorias();
+});
 
 document.querySelectorAll("#secao-evolucao-categorias .alternador-opcao").forEach((botao) => {
     botao.addEventListener("click", () => {

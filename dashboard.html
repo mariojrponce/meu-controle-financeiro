@@ -287,13 +287,17 @@
                     </div>
                 </div>
                 <p class="dica-campo" id="dica-evolucao-cat">Todas as categorias mês a mês, comparadas com os mesmos meses do ano anterior. Clique numa categoria da tabela para vê-la no gráfico.</p>
+                <label class="opcao-equiparar" title="A forma de classificar mudou de um ano para o outro (ex.: TRANSPORTE virou UBER e ONIBUS). Ligado, cada lançamento entra na categoria que você usa hoje, pela finalidade do gasto.">
+                    <input type="checkbox" id="equiparar-categorias" checked>
+                    <span>Equiparar categorias pela finalidade <small>(ex.: o que era TRANSPORTE entra em UBER e ONIBUS)</small></span>
+                </label>
 
                 <div class="grade-resumo resumo-comparativo" id="resumo-evolucao-cat" style="margin-top: var(--e-4);"></div>
 
                 <div class="subtitulo-grafico" style="margin-top: 0;">
                     <h4><span id="titulo-grafico-evolucao-cat">Total de gastos por mês</span> <span class="selecao-grafico" id="selecao-evolucao-cat"></span></h4>
                 </div>
-                <div class="grafico-container" style="height: 280px;">
+                <div class="grafico-container" style="height: 340px;">
                     <canvas id="grafico-evolucao-cat"></canvas>
                 </div>
                 <p class="vazio" id="vazio-evolucao-cat" style="display:none;">Sem lançamentos neste ano nem no anterior.</p>

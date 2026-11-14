@@ -54,6 +54,7 @@
     ├── importacao.js                    # Processamento de linhas da planilha importada
     ├── planejamento-calculo.js          # Conta dos ciclos de salário (sem DOM, testável no Node)
     ├── evolucao-categorias.js           # Dashboard: categorias mês a mês × mesmo período do ano anterior (sem DOM, testável)
+    ├── finalidade.js                    # Equipara categorias de anos diferentes pela finalidade (TRANSPORTE → UBER/ONIBUS...) — só na visão, sem DOM
     ├── nav.js                           # Componente de cabeçalho e navegação comum
     ├── preferencias-dashboard.js        # Persistência de filtros do dashboard no localStorage
     ├── preferencias-filtros.js          # Persistência de filtros do extrato no localStorage

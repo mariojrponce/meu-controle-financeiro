@@ -2053,45 +2053,88 @@ body.tela-login {
 .cartao-metrica .valor.variacao-piorou { color: var(--cor-saida); }
 .cartao-metrica .valor.variacao-melhorou { color: var(--cor-entrada); }
 
-/* Matriz categorias × meses */
-.tabela-matriz { font-size: 0.8125rem; }
-.tabela-matriz th, .tabela-matriz td { padding: 8px 8px; height: 38px; }
-.tabela-matriz th { font-size: 0.6875rem; text-align: right; }
-.tabela-matriz th:first-child, .tabela-matriz td:first-child { text-align: left; }
-.tabela-matriz td { text-align: right; font-variant-numeric: tabular-nums; color: var(--texto-corpo); }
-.tabela-matriz td.zero { color: var(--texto-secundario); opacity: 0.5; }
-.tabela-matriz .col-previsto { color: var(--cor-previsto); }
-.tabela-matriz th.col-previsto { font-style: italic; }
+/* Matriz categorias × meses — cada categoria em 4 linhas:
+   ano anterior (apagado), ano atual (destaque), diferença em R$ e em % */
+.tabela-matriz { font-size: 0.8125rem; border-collapse: separate; border-spacing: 0; }
+.tabela-matriz th, .tabela-matriz td { padding: 3px 4px; height: 26px; border-bottom: none; }
+.tabela-matriz th { font-size: 0.6875rem; text-align: right; height: 34px; border-bottom: 1px solid var(--borda-sutil); }
+.tabela-matriz td { text-align: right; font-variant-numeric: tabular-nums; color: var(--texto-corpo); white-space: nowrap; }
+.tabela-matriz td.zero { color: var(--texto-secundario); opacity: 0.45; }
+.tabela-matriz th.col-previsto { font-style: italic; color: var(--cor-previsto); }
+.tabela-matriz .linha-atual td.col-previsto { color: var(--cor-previsto); font-style: italic; }
 .tabela-matriz .col-comparacao { background: color-mix(in srgb, var(--bg-superficie-alt) 70%, transparent); }
 .tabela-matriz th.col-comparacao { background: var(--bg-superficie-alt); }
 .tabela-matriz .col-separador { border-left: 2px solid var(--borda-sutil); }
 
-/* Primeira coluna fixa ao rolar no celular */
-.tabela-matriz th:first-child, .tabela-matriz td:first-child {
+/* Nome da categoria (ocupa as 4 linhas) e rótulo da linha — fixos ao rolar de lado */
+.tabela-matriz .col-nome {
   position: sticky;
   left: 0;
   z-index: 1;
+  width: 132px;
+  min-width: 132px;
+  max-width: 132px;
+  padding-left: 8px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: anywhere;
   background: var(--bg-superficie);
   font-weight: 600;
   color: var(--texto-principal);
-  max-width: 220px;
-  white-space: normal;
 }
-.tabela-matriz th:first-child { background: var(--bg-superficie-alt); }
-
-.tabela-matriz tbody tr { cursor: pointer; }
-.tabela-matriz tbody tr:hover td, .tabela-matriz tbody tr:hover td:first-child { background: var(--bg-superficie-alt); }
-.tabela-matriz tbody tr.selecionada td, .tabela-matriz tbody tr.selecionada td:first-child { background: var(--cor-primaria-suave); }
-.tabela-matriz tbody tr.selecionada td:first-child { box-shadow: inset 3px 0 0 var(--cor-primaria); }
-.tabela-matriz tbody tr:focus-visible { outline: 2px solid var(--borda-foco); outline-offset: -2px; }
-
-.tabela-matriz tfoot td {
-  font-weight: 700;
-  color: var(--texto-principal);
-  border-top: 2px solid var(--borda-sutil);
-  background: var(--bg-superficie-alt);
+.tabela-matriz .col-rotulo {
+  position: sticky;
+  left: 132px;
+  z-index: 1;
+  text-align: left;
+  background: var(--bg-superficie);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  border-right: 1px solid var(--borda-sutil);
 }
-.tabela-matriz tfoot td:first-child { background: var(--bg-superficie-alt); }
+.tabela-matriz th.col-nome, .tabela-matriz th.col-rotulo { background: var(--bg-superficie-alt); z-index: 2; }
+.tabela-matriz .marca-equiparada { margin-left: 4px; color: var(--cor-primaria); font-weight: 700; cursor: help; }
+
+/* Ano anterior mais clarinho; ano atual em destaque */
+.tabela-matriz .linha-anterior td { color: var(--texto-secundario); opacity: 0.75; padding-top: 7px; }
+.tabela-matriz .linha-anterior td.col-nome { opacity: 1; color: var(--texto-principal); }
+.tabela-matriz .linha-anterior td.zero { opacity: 0.4; }
+.tabela-matriz .linha-atual td { font-weight: 700; color: var(--texto-principal); font-size: 0.84375rem; }
+.tabela-matriz .linha-atual td.zero { font-weight: 400; color: var(--texto-secundario); }
+.tabela-matriz .linha-atual td.col-rotulo { color: var(--texto-principal); font-size: 0.6875rem; }
+.tabela-matriz .linha-diferenca td, .tabela-matriz .linha-percentual td { font-size: 0.6875rem; }
+.tabela-matriz td.col-rotulo { width: 1%; padding-right: 8px; }
+.tabela-matriz .linha-percentual td { padding-bottom: 7px; border-bottom: 1px solid var(--borda-sutil); }
+.tabela-matriz .grupo-categoria .col-nome, .tabela-matriz tfoot .col-nome { border-bottom: 1px solid var(--borda-sutil); }
+
+.tabela-matriz .grupo-categoria { cursor: pointer; }
+.tabela-matriz .grupo-categoria:hover td { background: var(--bg-superficie-alt); }
+.tabela-matriz .grupo-categoria.selecionada td { background: var(--cor-primaria-suave); }
+.tabela-matriz .grupo-categoria.selecionada .col-nome { box-shadow: inset 3px 0 0 var(--cor-primaria); }
+.tabela-matriz .grupo-categoria:focus-visible { outline: 2px solid var(--borda-foco); outline-offset: -2px; }
+
+.tabela-matriz tfoot td { background: var(--bg-superficie-alt); }
+.tabela-matriz tfoot tr:first-child td { border-top: 2px solid var(--borda-sutil); }
+.tabela-matriz tfoot .col-nome { font-weight: 700; }
+
+.opcao-equiparar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+  margin-top: var(--e-2);
+  font-size: 0.8125rem;
+  color: var(--texto-corpo);
+  cursor: pointer;
+}
+.opcao-equiparar input { width: 16px; height: 16px; accent-color: var(--cor-primaria); }
+.opcao-equiparar small { color: var(--texto-secundario); }
+
+@media (max-width: 767px) {
+  .tabela-matriz .col-nome { width: 104px; min-width: 104px; max-width: 104px; font-size: 0.75rem; }
+  .tabela-matriz .col-rotulo { left: 104px; padding-left: 4px; padding-right: 4px; }
+}
 
 @media (max-width: 767px) {
   .secao-titulo .alternador { width: 100%; }

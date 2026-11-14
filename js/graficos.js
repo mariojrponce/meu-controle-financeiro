@@ -361,8 +361,11 @@ export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = corDo
     instancias.set(idCanvas, grafico);
 }
 
-// Duas linhas mês a mês: este ano (cor semântica, cheia) × ano anterior
-// (cinza tracejado). O tooltip mostra os dois valores e a diferença.
+// Duas linhas mês a mês: este ano (cor semântica, cheia, em destaque) × ano
+// anterior (a mesma cor bem clarinha, tracejada). Cada ponto leva o rótulo do
+// valor — o do ano atual forte, o do ano anterior apagado — e os dois rótulos
+// do mesmo mês fogem um do outro (o maior vai para cima, o menor para baixo).
+// O tooltip mostra os dois valores e a diferença.
 export function renderizarGraficoComparativo(idCanvas, rotulos, { atual, anterior, nomeAtual, nomeAnterior, cor, limite = 12 }) {
     destruir(idCanvas);
     const canvas = obterCanvas(idCanvas);
@@ -371,6 +374,20 @@ export function renderizarGraficoComparativo(idCanvas, rotulos, { atual, anterio
     const { corTexto, corTextoSuave, corGrid, corTooltipBg, corTooltipTexto, corFundo } = obterEstiloTema();
     // Meses depois do limite (ainda não chegaram) = previsto: ponto vazado.
     const raioPonto = (ctx) => (ctx.dataIndex >= limite ? 3 : 4);
+    const corAnterior = `${cor}73`;
+    const rotuloValor = (valor) => Math.round(valor).toLocaleString("pt-BR");
+    // Sem rótulo nos meses zerados; "auto" esconde o que encavalar (telas estreitas).
+    const mostrarRotulo = (ctx) => (Math.abs(ctx.dataset.data[ctx.dataIndex]) >= 0.5 ? "auto" : false);
+    const rotuloComum = {
+        display: mostrarRotulo,
+        formatter: rotuloValor,
+        anchor: "center",
+        offset: 6,
+        padding: { top: 1, bottom: 1, left: 3, right: 3 },
+        borderRadius: 3,
+        backgroundColor: `${corFundo}CC`,
+        clamp: true
+    };
 
     const grafico = new Chart(canvas, {
         type: "line",
@@ -390,21 +407,36 @@ export function renderizarGraficoComparativo(idCanvas, rotulos, { atual, anterio
                     pointBorderWidth: 1.5,
                     segment: { borderDash: (ctx) => (ctx.p1DataIndex >= limite ? [3, 3] : undefined) },
                     fill: true,
-                    tension: 0.3
+                    tension: 0.3,
+                    order: 1,
+                    datalabels: {
+                        ...rotuloComum,
+                        color: cor,
+                        font: { family: "Inter, sans-serif", size: 11, weight: "700" },
+                        align: (ctx) => (atual[ctx.dataIndex] >= anterior[ctx.dataIndex] ? "top" : "bottom")
+                    }
                 },
                 {
                     label: nomeAnterior,
                     data: anterior,
-                    borderColor: corTextoSuave,
+                    borderColor: corAnterior,
                     backgroundColor: "transparent",
                     borderWidth: 2,
                     borderDash: [6, 4],
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    pointBackgroundColor: corTextoSuave,
-                    pointBorderColor: corTextoSuave,
+                    pointBackgroundColor: corAnterior,
+                    pointBorderColor: "transparent",
                     fill: false,
-                    tension: 0.3
+                    tension: 0.3,
+                    order: 2,
+                    datalabels: {
+                        ...rotuloComum,
+                        color: corTextoSuave,
+                        opacity: 0.8,
+                        font: { family: "Inter, sans-serif", size: 10, weight: "500" },
+                        align: (ctx) => (atual[ctx.dataIndex] >= anterior[ctx.dataIndex] ? "bottom" : "top")
+                    }
                 }
             ]
         },
@@ -412,14 +444,16 @@ export function renderizarGraficoComparativo(idCanvas, rotulos, { atual, anterio
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: "index", intersect: false },
-            layout: { padding: { top: 8, left: 4, right: 12, bottom: 4 } },
+            layout: { padding: { top: 8, left: 4, right: 20, bottom: 4 } },
             scales: {
                 x: {
+                    offset: true,
                     grid: { display: false },
                     ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11, weight: "600" } }
                 },
                 y: {
                     beginAtZero: true,
+                    suggestedMax: maiorValorComFolga([...atual, ...anterior]),
                     grid: { color: corGrid },
                     ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11 } }
                 }
@@ -449,7 +483,7 @@ export function renderizarGraficoComparativo(idCanvas, rotulos, { atual, anterio
                         }
                     }
                 },
-                datalabels: { display: false }
+                datalabels: {}
             }
         }
     });
