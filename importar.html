@@ -22,18 +22,59 @@
             background: var(--cor-superficie-elevada);
             transition: all 0.2s ease;
         }
-        .caixa-upload:hover {
+        .caixa-upload:hover, .caixa-upload.arrastando {
             border-color: var(--cor-primaria);
             background: var(--cor-primaria-suave);
         }
         .caixa-upload input[type="file"] { max-width: 380px; margin: var(--espaco-md) auto 0; }
-        .resumo-linhas { display: flex; gap: var(--espaco-md); margin: var(--espaco-md) 0; flex-wrap: wrap; }
-        .pilula { padding: 8px 16px; border-radius: var(--raio-pilula); font-weight: 700; font-size: 0.8125rem; }
+        .resumo-linhas { display: flex; gap: var(--espaco-sm); margin: var(--espaco-md) 0; flex-wrap: wrap; }
+        .pilula { padding: 6px 14px; border-radius: var(--raio-pilula); font-weight: 700; font-size: 0.8125rem; border: 1.5px solid transparent; background: var(--cor-superficie-elevada); color: var(--cor-texto); cursor: default; }
+        button.pilula { cursor: pointer; min-height: 0; }
+        button.pilula.ativa { border-color: var(--cor-primaria); box-shadow: var(--sombra-destaque); }
         .pilula-ok { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
         .pilula-erro { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
+        .pilula-aviso { background: var(--cor-aviso-suave); color: var(--cor-aviso); }
+        .pilula-info { background: var(--cor-info-suave); color: var(--cor-info); }
         .status-ok { color: var(--cor-sucesso); font-weight: 700; }
         .status-erro { color: var(--cor-perigo); font-weight: 700; cursor: help; }
         .modelo-link { display: inline-flex; align-items: center; gap: var(--espaco-sm); margin-top: var(--espaco-sm); }
+
+        /* ---- Importar extratos ---- */
+        .lista-arquivos { display: grid; gap: var(--espaco-sm); margin-top: var(--espaco-md); }
+        .arquivo-lido { border: 1px solid var(--cor-borda); border-radius: var(--raio-pequeno); padding: 10px 14px; background: var(--cor-superficie); }
+        .arquivo-lido-topo { display: flex; justify-content: space-between; gap: var(--espaco-sm); flex-wrap: wrap; font-weight: 700; }
+        .arquivo-lido-nome { color: var(--cor-texto-suave); font-weight: 400; font-size: 0.8125rem; overflow-wrap: anywhere; }
+        .arquivo-lido ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.8125rem; color: var(--cor-texto-suave); }
+        .arquivo-lido.com-erro { border-color: var(--cor-perigo); }
+        .ok-texto { color: var(--cor-sucesso); font-weight: 700; }
+        .erro-texto { color: var(--cor-perigo); font-weight: 700; }
+        .saldos-conferencia { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--espaco-sm); margin-top: var(--espaco-md); }
+        .saldo-banco { border: 1.5px solid var(--cor-borda); border-radius: var(--raio-pequeno); padding: 10px 14px; font-size: 0.875rem; }
+        .saldo-banco.ok { border-color: var(--cor-sucesso); }
+        .saldo-banco.diferente { border-color: var(--cor-perigo); }
+        .saldo-banco b { display: block; margin-bottom: 4px; }
+        #tabela-revisao td { vertical-align: top; }
+        #tabela-revisao input, #tabela-revisao select { min-height: 36px; padding: 6px 8px; font-size: 0.8125rem; min-width: 150px; }
+        #tabela-revisao td { padding: 10px 10px; }
+        #tabela-revisao select.acao-linha { min-width: 175px; }
+        #tabela-revisao select.mov-linha { min-width: 105px; }
+        #tabela-revisao .texto-banco { white-space: normal; min-width: 180px; max-width: 260px; font-size: 0.8125rem; }
+        #tabela-revisao .texto-banco small, #tabela-revisao .motivo { display: block; color: var(--cor-texto-suave); font-size: 0.75rem; white-space: normal; margin-top: 2px; }
+        #tabela-revisao td.situacao { white-space: normal; min-width: 250px; max-width: 320px; }
+        #tabela-revisao tr.linha-inativa td { opacity: 0.55; }
+        #tabela-revisao tr.linha-problema td:first-child { box-shadow: inset 4px 0 0 var(--cor-perigo); }
+        .confianca { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+        .confianca-alta { background: var(--cor-sucesso); }
+        .confianca-media { background: var(--cor-aviso); }
+        .confianca-baixa, .confianca-nenhuma { background: var(--cor-perigo); }
+        .confianca-manual { background: var(--cor-info); }
+        .barra-gravar { display: flex; gap: var(--espaco-sm); align-items: center; flex-wrap: wrap; margin-top: var(--espaco-md); }
+        .faltantes { margin-top: var(--espaco-lg); }
+        .ultima-importacao { margin-top: var(--espaco-md); padding: 12px 14px; border-radius: var(--raio-pequeno); background: var(--cor-sucesso-suave); display: flex; gap: var(--espaco-sm); align-items: center; flex-wrap: wrap; justify-content: space-between; }
+        details.secao-planilha > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+        details.config-titular { margin-top: var(--espaco-md); font-size: 0.875rem; }
+        details.config-titular summary { cursor: pointer; color: var(--cor-texto-suave); }
+        details.config-titular textarea { min-height: 70px; margin-top: var(--espaco-sm); }
     </style>
 </head>
 <body>
@@ -75,28 +116,50 @@
     <main class="conteudo-principal">
         <div class="pagina">
             <h2>Importar lançamentos</h2>
-            <p class="subtitulo">Suba um arquivo .csv, .txt ou .xlsx com suas transações. Você confere tudo antes de importar de verdade.</p>
+            <p class="subtitulo">Suba os extratos dos seus bancos. O sistema lê linha por linha, sugere a classificação a partir do seu histórico, reconhece o que já foi lançado e confere o saldo — você revisa e só então grava.</p>
 
             <div class="cartao">
-                <h3>1. Baixe o modelo</h3>
-                <p class="dica-campo">
-                    Preencha o modelo com seus dados (uma linha por transação) e depois suba o arquivo aqui embaixo.
-                    As colunas precisam ser: <code>data, valor, descricao, saida, banco, tipo, tipo_mov, classificacao_saida</code>.
-                </p>
-                <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
+                <h3>Extratos do banco</h3>
+                <div class="caixa-upload" id="zona-extratos">
+                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--cor-texto);">📤 Selecione um ou mais extratos</div>
+                    <p class="dica-campo" style="margin: 6px auto 0;">
+                        Nubank (.csv) · Banco do Brasil (.csv) · Bradesco conta e fatura fechada do cartão (.pdf) · Pluxee (.pdf) ·
+                        Santander extrato ou comprovante do PIX do salário (.pdf). Pode subir todos juntos — assim as transferências entre suas contas são reconhecidas dos dois lados.
+                    </p>
+                    <input type="file" id="input-extratos" accept=".csv,.pdf" multiple>
+                </div>
+
+                <details class="config-titular" id="config-titular">
+                    <summary>Seu nome como aparece nos bancos (para reconhecer transferências entre suas contas)</summary>
+                    <p class="dica-campo">Um nome por linha. É preenchido sozinho quando você sobe um PDF do Bradesco ou do Santander; fica salvo só neste navegador.</p>
+                    <textarea id="titular-nomes" placeholder="SEU NOME COMPLETO"></textarea>
+                </details>
+
+                <div id="area-arquivos"></div>
+                <div id="area-saldos"></div>
+                <div id="area-revisao"></div>
+                <div id="area-faltantes"></div>
+                <div id="area-ultima-importacao"></div>
             </div>
 
             <div class="cartao" style="margin-top: var(--espaco-lg);">
-                <h3>2. Suba o arquivo preenchido</h3>
-                <div class="caixa-upload">
-                    <div style="font-weight: 700; font-size: 1.1rem; color: var(--cor-texto);">📤 Selecione o arquivo .csv, .txt ou .xlsx</div>
-                    <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
-                </div>
+                <details class="secao-planilha">
+                    <summary>Importar uma planilha no formato do sistema (.xlsx / .csv)</summary>
+                    <p class="dica-campo">
+                        Para lançar em lote a partir de uma planilha sua. As colunas precisam ser:
+                        <code>data, valor, descricao, saida, banco, tipo, tipo_mov, classificacao_saida</code>.
+                    </p>
+                    <a class="botao botao-secundario modelo-link" href="modelo-carteira.xlsx" download>⬇️ Baixar modelo (.xlsx)</a>
+                    <div class="caixa-upload" style="margin-top: var(--espaco-md);">
+                        <div style="font-weight: 700; color: var(--cor-texto);">📤 Selecione a planilha preenchida</div>
+                        <input type="file" id="input-arquivo" accept=".csv,.txt,.xlsx,.xls">
+                    </div>
 
-                <div id="resumo-importacao"></div>
-                <div id="area-preview"></div>
+                    <div id="resumo-importacao"></div>
+                    <div id="area-preview"></div>
 
-                <button id="btn-importar" class="botao botao-primario" style="display:none;">Importar lançamentos válidos</button>
+                    <button id="btn-importar" class="botao botao-primario" style="display:none;">Importar lançamentos válidos</button>
+                </details>
             </div>
         </div>
     </main>
@@ -117,6 +180,7 @@
         integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script type="module" src="js/importar.js"></script>
+<script type="module" src="js/importar-extratos.js"></script>
 
 </body>
 </html>

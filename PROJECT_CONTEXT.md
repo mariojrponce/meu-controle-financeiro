@@ -20,6 +20,7 @@
 | **Backend & Auth** | Firebase SDK v10.12.2 | CDN (`gstatic.com`) | Autenticação (Auth) e Banco de Dados (Firestore) |
 | **Gráficos** | Chart.js | CDN (`jsdelivr.net`) | Gráficos de rosca/barras no Dashboard |
 | **Importação** | SheetJS (XLSX) | CDN (`cdn.jsDelivr.net`) | Parser de arquivos Excel (`.xlsx`/`.csv`) |
+| **Extratos PDF** | pdf.js 4.10.38 (legacy) | Local (`js/vendor/pdfjs/`) | Texto + posição dos PDFs dos bancos, no navegador (sem servidor/CDN) |
 | **Estilização** | CSS3 Vanilla | `style.css` | Variáveis CSS, layout responsivo (Flexbox/Grid), suporte a temas |
 
 ---
@@ -30,7 +31,8 @@
 ├── index.html / js/app.js               # Lançamento rápido de transações + lista dos últimos 10
 ├── dashboard.html / js/dashboard.js     # Visão geral, saldos por banco, totais do mês e relatórios
 ├── extrato.html / js/extrato.js         # Extrato completo com filtros por período/banco/tipo e exportação
-├── importar.html / js/importar.js       # Importação em lote de transações via planilha Excel
+├── importar.html / js/importar-extratos.js # Importação automática de EXTRATOS dos bancos (revisão linha a linha)
+├── importar.html / js/importar.js       # (seção recolhida) importação em lote via planilha Excel no formato do sistema
 ├── planejamento.html / js/planejamento.js # Planejamento por ciclo de salário (quanto precisa, quanto sobra, quanto dá p/ investir)
 ├── login.html / js/login.js             # Tela de login e registro via Firebase Auth
 ├── firestore.rules                      # Regras de segurança e validações de esquema do Firestore
@@ -52,7 +54,15 @@
     ├── tabela-ordenavel.js              # Utilitário para ordenação interativa de tabelas HTML
     ├── ui.js                            # Sistema de Toast Notifications e modais
     ├── utils.js                         # Formatação de moeda (BRL), datas (BR/ISO) e ordenações
-    └── vale.js                          # Identifica bancos de vale (Alelo, Pluxe...) e o filtro Tudo/Só vale/Sem vale
+    ├── vale.js                          # Identifica bancos de vale (Alelo, Pluxe...) e o filtro Tudo/Só vale/Sem vale
+    ├── extratos/                        # Importação de extratos — SEM DOM e SEM Firebase (testável no Node)
+    │   ├── comum.js                     # Números/datas pt-BR, CSV, movimento padronizado, conferências
+    │   ├── texto-pdf.js                 # Texto do PDF com posição (x,y) via pdf.js; carregarPdfjs() no navegador
+    │   ├── leitores/                    # Um leitor por banco/formato + index.js (identifica o arquivo sozinho)
+    │   ├── classificador.js             # Sugere descrição/detalhe/classificação aprendendo com o histórico
+    │   └── conciliacao.js               # Regras (cartão, CDB, salário, transferências), casa com a base, confere saldo
+    └── vendor/pdfjs/                    # pdf.js 4.10.38 (build legacy, Apache-2.0) servido pelo próprio site
+testes/                                  # `npm test` (node --test). Testes com extratos reais só rodam com modelo-extratos/ (fora do git)
 ```
 
 ---

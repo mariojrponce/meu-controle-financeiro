@@ -1,0 +1,6 @@
+# Dados pessoais — NUNCA publicar no GitHub (o repositório alimenta o GitHub Pages).
+# Extratos reais usados como modelo para os leitores e os testes:
+modelo-extratos/
+# Backups da base do Firestore / planilhas exportadas:
+backup-*/
+*.backup.json

@@ -142,6 +142,62 @@ export async function importarTransacoes(usuario, listaDeDados, aoProgredir) {
   salvarCache(usuario.uid, [...cacheAtual, ...novosDocs]);
 }
 
+// ---------- Importação de extratos bancários (tela Importar) ----------
+
+const MAX_OPERACOES_LOTE = 450; // o Firestore aceita até 500 operações por lote
+
+// Executa as operações em lotes. Cada lote é atômico (tudo ou nada); um
+// extrato normal (< 450 linhas) cabe num lote só.
+async function executarEmLotes(operacoes, aoProgredir) {
+  let feitas = 0;
+  for (let i = 0; i < operacoes.length; i += MAX_OPERACOES_LOTE) {
+    const fatia = operacoes.slice(i, i + MAX_OPERACOES_LOTE);
+    const lote = writeBatch(db);
+    fatia.forEach((op) => op(lote));
+    await lote.commit();
+    feitas += fatia.length;
+    aoProgredir?.(feitas, operacoes.length);
+  }
+}
+
+// criar: lista de dados de lançamentos novos.
+// corrigir: [{ id, dados }] — atualiza valor/data de lançamentos existentes.
+// Devolve os ids criados (para poder desfazer).
+export async function gravarImportacaoExtratos(usuario, { criar, corrigir }, aoProgredir) {
+  const agora = Date.now();
+  const referencias = criar.map(() => doc(collection(db, NOME_COLECAO)));
+  const operacoes = [
+    ...criar.map((dados, i) => (lote) => lote.set(referencias[i], { userId: usuario.uid, ...dados, criadoEm: serverTimestamp() })),
+    ...corrigir.map(({ id, dados }) => (lote) => lote.update(doc(db, NOME_COLECAO, id), dados))
+  ];
+  await executarEmLotes(operacoes, aoProgredir);
+
+  const novos = criar.map((dados, i) => ({ id: referencias[i].id, userId: usuario.uid, ...dados, criadoEmMs: agora + i }));
+  const porId = new Map(corrigir.map((c) => [c.id, c.dados]));
+  const cacheAtual = (lerCache(usuario.uid) ?? []).map((t) => (porId.has(t.id) ? { ...t, ...porId.get(t.id) } : t));
+  salvarCache(usuario.uid, [...cacheAtual, ...novos]);
+  return referencias.map((r) => r.id);
+}
+
+// Desfaz uma importação: apaga os lançamentos criados e devolve os valores
+// anteriores dos que foram corrigidos.
+export async function desfazerImportacaoExtratos(usuario, { idsCriados = [], corrigidos = [] }) {
+  const operacoes = [
+    ...idsCriados.map((id) => (lote) => lote.delete(doc(db, NOME_COLECAO, id))),
+    ...corrigidos.map(({ id, anterior }) => (lote) => lote.update(doc(db, NOME_COLECAO, id), anterior))
+  ];
+  await executarEmLotes(operacoes);
+
+  const apagados = new Set(idsCriados);
+  const voltar = new Map(corrigidos.map((c) => [c.id, c.anterior]));
+  const cacheAtual = lerCache(usuario.uid);
+  if (cacheAtual) {
+    salvarCache(usuario.uid, cacheAtual
+      .filter((t) => !apagados.has(t.id))
+      .map((t) => (voltar.has(t.id) ? { ...t, ...voltar.get(t.id) } : t)));
+  }
+}
+
 export function invalidarCache(usuario) {
   try { localStorage.removeItem(chaveCache(usuario.uid)); } catch { /* ignora */ }
 }

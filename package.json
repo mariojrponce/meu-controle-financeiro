@@ -1,0 +1,7 @@
+{
+  "name": "meu-financeiro",
+  "private": true,
+  "type": "module",
+  "description": "Sem dependências e sem build: este arquivo existe só para os testes (node --test).",
+  "scripts": { "test": "node --test testes/" }
+}
