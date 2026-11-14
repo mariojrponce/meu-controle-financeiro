@@ -4,7 +4,7 @@
 
 Fluxo principal da tela Importar: você sobe os extratos, o sistema lê linha por linha, sugere
 tudo, compara com o que já está lançado e confere o saldo. **Nada é gravado antes da revisão.**
-Tudo roda no navegador (pdf.js fica em `js/vendor/pdfjs/`): sem servidor, sem CDN, sem IA.
+Tudo roda no navegador (pdf.js em `js/vendor/pdfjs/`, OCR Tesseract em `js/vendor/tesseract/`): sem servidor, sem CDN, sem IA.
 
 ### Formatos lidos
 
@@ -13,13 +13,27 @@ Tudo roda no navegador (pdf.js fica em `js/vendor/pdfjs/`): sem servidor, sem CD
 | Nubank conta | `.csv` do app (o PDF não — o CSV tem id único por transação) | sem totais no CSV; rendimento do mês só sai no PDF (lançar à mão) |
 | Banco do Brasil | `.csv` (Latin-1) | saldo anterior + movimentos = saldo final |
 | Bradesco conta | PDF "Bradesco Celular" | totais de crédito/débito, saldo final e **saldo linha a linha** |
-| Bradesco cartão | PDF da **fatura fechada** (a aberta é imagem) | compras − créditos = total da fatura |
+| Bradesco cartão | PDF da **fatura fechada** | compras − créditos = total da fatura; parcelas futuras = "Total para as próximas faturas" |
+| Bradesco cartão (aberta) | PDF da **fatura aberta** do app (é imagem) ou **print** da tela (PNG/JPG) → **OCR** | saldo anterior + compras − créditos = "Total para" (pega dígito lido errado) |
 | Pluxee | PDF do app | só o "Saldo total" (comparado com o sistema) |
 | Santander | PDF "Extrato Consolidado Inteligente" ou **comprovante do PIX** | totais de crédito/débito |
-| Caixa | PDF é imagem → **não lido** (lançar à mão) | — |
+| Caixa | PDF é imagem → **não lido** (lançar à mão, decisão do usuário) | — |
 
-O arquivo é identificado sozinho. Arquivos não suportados (investimentos CDB, habitação, PDF-imagem,
-comprovantes de outros bancos) aparecem com a explicação do porquê.
+O arquivo é identificado sozinho. Arquivos não suportados (investimentos CDB, habitação, PDF-imagem que não
+seja a fatura aberta, comprovantes de outros bancos) aparecem com a explicação do porquê.
+
+### Fatura aberta por OCR (`js/extratos/ocr.js`, `leitores/bradesco-fatura-aberta-ocr.js`)
+- PDF sem texto ou imagem → o pdf.js desenha a página, a imagem é ampliada até ~1900 px, vira cinza com
+  contraste (o valor em azul claro é o que o OCR mais erra) e o Tesseract lê as palavras com posição.
+- Primeira leitura no modo "bloco" (psm 6); se a conferência não fechar, segunda no modo "colunas" (psm 4).
+  Página em branco é pulada. Leva ~2 s; na primeira vez baixa ~5 MB (depois fica em cache).
+- `SALDO ANTERIOR` (fatura fechada) **não** vira lançamento: a data dele é o vencimento anterior, e as compras
+  em aberto vão para o **vencimento seguinte** (17/11 → 17/12).
+- Pode importar a aberta várias vezes no mês: o que já entrou é reconhecido (`id_externo` ou valor + vencimento +
+  data da compra no fim da descrição). Quando a fatura fechar, o PDF fechado reconhece as compras já lançadas.
+- Valor fora da coluna "R$" (o OCR perdeu o número) = linha ilegível, nunca o "R$ 0,00" da cotação.
+- O mesmo movimento em dois arquivos do lote (PDF e print da mesma fatura) entra uma vez só.
+- Print de celular muito pequeno (≲ 700 px de largura) pode não fechar a conta → a tela avisa; use o PDF do app.
 
 ### Regras de decisão (em ordem)
 
@@ -28,6 +42,7 @@ comprovantes de outros bancos) aparecem com a explicação do porquê.
 | `GASTOS CARTAO DE CREDITO` / pagamento de fatura no extrato da conta | **Ignorado** (as compras entram pela fatura; senão contaria 2×) |
 | Compra na fatura do Bradesco | banco BRADESCO, **data = vencimento**, detalhe `BRADESCO CREDITO`, descrição `LUGAR - O QUE - dd/mm` (data da compra) |
 | Parcela (`06/10`) | copia descrição/classificação da parcela anterior (`P5/P10 - AMAZON - 15/05` → `P6/P10 ...`) |
+| Parcelas que ainda vão cair (fatura fechada) | **projetadas** nos vencimentos seguintes (07/10 … 10/10) com o valor do banco; se você já lançou à mão, aparecem como já lançadas (ou "corrigir" se o valor difere) |
 | `RESG/VENCTO CDB` / `APLICACAO CDB` | EXTERNO, `INVESTIMENTO`, detalhe `<BANCO> INVESTIMENTO`, `investimento = CDB <BANCO>` |
 | PIX de/para **você mesmo** (nome ou CPF do titular) | INTERNO, `CONTROLE INTERNO`, `PIX PARA <BANCO>` / `PIX DE <BANCO>` (banco descoberto pelo código no texto do Nubank ou pela outra ponta: outro extrato do lote ou lançamento interno já no sistema, até 3 dias) |
 | PIX vindo do **Santander** (conta-salário) | EXTERNO, `SALARIO` (confirmado pelo extrato ou comprovante do Santander; sem eles, pela proximidade de um salário no sistema) |

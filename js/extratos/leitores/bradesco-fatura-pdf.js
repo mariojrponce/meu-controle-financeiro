@@ -1,5 +1,5 @@
 // Bradesco — fatura FECHADA do cartão de crédito (PDF com texto).
-// (A "fatura aberta" do app é imagem; não serve.)
+// (A "fatura aberta" do app é imagem: tem leitor próprio, por OCR.)
 //
 // Como o sistema já faz hoje: cada compra vira um lançamento no banco
 // BRADESCO, com a DATA DE VENCIMENTO da fatura, detalhe "BRADESCO CREDITO" e
@@ -9,9 +9,49 @@
 // Página 2:  Data   Histórico de Lançamentos   Cidade   US$   R$  │ painel lateral (x > 355)
 //            06/10  FAST LANCHES BUFFET E      PALMAS        8,00 │ Compras R$ 20.000,00 ...
 //            15/05  AMAZON BR  06/10           SAO PAULO   345,79   ← parcela 6 de 10
-import { compactar, novoMovimento, numeroBR, ehNumeroBR, brParaIso, isoDe, conferencia, somar, textoDaLinha, numerarIdsRepetidos } from "../comum.js";
+import { compactar, novoMovimento, numeroBR, ehNumeroBR, brParaIso, isoDe, somarMeses, conferencia, somar, textoDaLinha, numerarIdsRepetidos } from "../comum.js";
 
 const LIMITE_X_LANCAMENTOS = 355; // à direita disso é o painel de limites/taxas
+
+// Parcelas que ainda vão cair: "AMAZON 06/10" nesta fatura → 07/10 a 10/10 nas
+// próximas, com o mesmo valor. O banco informa a soma delas ("Total para as
+// próximas faturas"), que serve de conferência. Entram como lançamentos
+// futuros (previstos): se você já lançou à mão, aparecem como "já lançado".
+function projetarParcelas(movimentos, vencimento) {
+  const futuras = [];
+  movimentos.forEach((m) => {
+    if (!m.parcela || m.tipo !== "SAIDA") return;
+    const [atual, total] = m.parcela.split("/").map(Number);
+    for (let n = atual + 1; n <= total; n++) {
+      const parcela = `${String(n).padStart(2, "0")}/${String(total).padStart(2, "0")}`;
+      const data = somarMeses(vencimento, n - atual);
+      futuras.push(novoMovimento({
+        banco: "BRADESCO",
+        data,
+        valor: -m.valor,
+        historico: m.historico,
+        contraparte: m.contraparte,
+        idExterno: `BRADESCO-CARTAO-PARCELA|${m.dataOriginal}|${compactar(m.contraparte)}|${parcela}`,
+        dataOriginal: m.dataOriginal,
+        parcela,
+        extra: { ...m.extra, parcelaFutura: true }
+      }));
+    }
+  });
+  return futuras;
+}
+
+function acharTotalProximasFaturas(paginas) {
+  for (const pagina of paginas) {
+    for (const linha of pagina.linhas) {
+      const i = linha.partes.findIndex((p) => /Total para as pr[óo]ximas faturas/i.test(p.t));
+      if (i === -1) continue;
+      const numero = linha.partes.slice(i + 1).find((p) => ehNumeroBR(p.t));
+      if (numero) return numeroBR(numero.t);
+    }
+  }
+  return null;
+}
 
 function acharVencimento(paginas) {
   for (const pagina of paginas) {
@@ -118,12 +158,19 @@ export const leitorBradescoFaturaPdf = {
       avisos.push("Não achei o total da fatura para conferir.");
     }
 
+    const parcelasFuturas = projetarParcelas(movimentos, vencimento);
+    const totalProximas = acharTotalProximasFaturas(arquivo.paginas);
+    if (totalProximas !== null && (totalProximas > 0 || parcelasFuturas.length)) {
+      conferencias.push(conferencia("Parcelas futuras = total para as próximas faturas", totalProximas, somar(parcelasFuturas, "SAIDA")));
+    }
+
     return {
       banco: "BRADESCO",
       cartaoCredito: true,
       vencimento,
       periodo: { inicio: vencimento, fim: vencimento },
       movimentos: numerarIdsRepetidos(movimentos),
+      parcelasFuturas: numerarIdsRepetidos(parcelasFuturas),
       saldoFinal: null,
       conferencias,
       avisos,

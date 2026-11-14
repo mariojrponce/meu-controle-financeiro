@@ -1,0 +1,9 @@
+OCR (leitura de texto em imagem) — roda no navegador, sem servidor.
+
+tesseract.js       5.1.1  (Apache-2.0)  tesseract.esm.min.js, worker.min.js, LICENSE
+tesseract.js-core  5.1.1  (Apache-2.0)  core/*.wasm.js  (motor Tesseract compilado em WebAssembly;
+                                        o navegador baixa só UM dos dois: com SIMD ou sem)
+@tesseract.js-data/por 1.0.0 (MIT; modelo tessdata_best_int 4.0.0, Apache-2.0)  lang/por.traineddata.gz
+
+Só é baixado quando você sobe um extrato que é imagem (fatura aberta do Bradesco).
+Fonte: npm (https://www.npmjs.com/package/tesseract.js).

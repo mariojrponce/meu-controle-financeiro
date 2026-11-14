@@ -220,11 +220,18 @@ function candidatosNaBase(movimento, base) {
     && (ehCartao ? ehDocCartao(d) : !ehDocCartao(d)));
 }
 
+// Desempate quando há vários lançamentos com o mesmo valor: nome parecido e,
+// no cartão, a data da compra no fim da descrição ("... - 11/11").
 function parecidoTexto(movimento, doc) {
+  let pontos = 0;
   const alvo = compactar(chaveTexto(movimento.contraparte || movimento.historico));
   const texto = compactar(doc.texto_banco || `${doc.saida} ${doc.descricao}`);
-  if (!alvo || !texto) return 0;
-  return texto.includes(alvo.slice(0, 5)) ? 1 : 0;
+  if (alvo && texto && texto.includes(alvo.slice(0, 5))) pontos += 1;
+  if (movimento.dataOriginal && ehDocCartao(doc)) {
+    const ddmm = `${movimento.dataOriginal.slice(8, 10)}/${movimento.dataOriginal.slice(5, 7)}`;
+    if ((doc.descricao ?? "").trim().endsWith(ddmm)) pontos += 2;
+  }
+  return pontos;
 }
 
 function casarComBase(linhas, base, hoje) {
@@ -302,6 +309,8 @@ function acharFaltantes(extratos, base, usados, hoje) {
     base.forEach((d) => {
       if (usados.has(d.id) || d.banco !== e.banco || ehVirada(d)) return;
       if (e.cartaoCredito) {
+        // A fatura aberta ainda não mostra as parcelas do mês (só aparecem no fechamento).
+        if (e.faturaAberta && /^P\d+\/P\d+/i.test((d.descricao ?? "").trim())) return;
         if (ehDocCartao(d) && d.data === e.vencimento) faltantes.push({ extrato: e.arquivo, doc: d });
         return;
       }
@@ -384,24 +393,46 @@ export function prepararImportacao({ extratos, base, titularSalvo = {}, hoje }) 
   const contexto = { titular, movimentosLote, movimentosReferencia, base };
 
   const linhas = [];
-  importaveis.forEach((extrato) => {
-    extrato.movimentos.forEach((movimento) => {
-      const motivoIgnorar = regraIgnorar(movimento);
-      if (motivoIgnorar) {
-        linhas.push({ movimento, arquivo: extrato.arquivo, status: STATUS.IGNORADO, acao: ACAO.NADA, sugestao: null, motivoStatus: motivoIgnorar, correspondente: null });
-        return;
-      }
-      const textoBanco = chaveTexto(movimento.contraparte || movimento.historico);
-      const porRegra = regraInvestimento(movimento)
-        ?? regraTransferenciaPropria(movimento, contexto)
-        ?? regraParcela(movimento, base);
-      const sugestao = porRegra
-        ? { tipo_mov: "EXTERNO", ...porRegra, textoBanco }
-        : { tipo_mov: "EXTERNO", ...sugerirClassificacao(modelo, movimento) };
-      linhas.push({ movimento, arquivo: extrato.arquivo, status: STATUS.NOVO, acao: ACAO.LANCAR, sugestao, motivoStatus: "", correspondente: null });
-    });
-  });
+  const idsNoLote = new Set();
+  const novaLinha = (movimento, extrato) => {
+    // o mesmo movimento em dois arquivos (ex.: a fatura aberta em PDF e em print)
+    if (movimento.idExterno && idsNoLote.has(movimento.idExterno)) {
+      linhas.push({ movimento, arquivo: extrato.arquivo, status: STATUS.IGNORADO, acao: ACAO.NADA, sugestao: null, motivoStatus: "Repetido: este movimento já veio em outro arquivo desta importação.", correspondente: null });
+      return;
+    }
+    if (movimento.idExterno) idsNoLote.add(movimento.idExterno);
+    const motivoIgnorar = regraIgnorar(movimento);
+    if (motivoIgnorar) {
+      linhas.push({ movimento, arquivo: extrato.arquivo, status: STATUS.IGNORADO, acao: ACAO.NADA, sugestao: null, motivoStatus: motivoIgnorar, correspondente: null });
+      return;
+    }
+    const textoBanco = chaveTexto(movimento.contraparte || movimento.historico);
+    const porRegra = regraInvestimento(movimento)
+      ?? regraTransferenciaPropria(movimento, contexto)
+      ?? regraParcela(movimento, base);
+    const sugestao = porRegra
+      ? { tipo_mov: "EXTERNO", ...porRegra, textoBanco }
+      : { tipo_mov: "EXTERNO", ...sugerirClassificacao(modelo, movimento) };
+    linhas.push({ movimento, arquivo: extrato.arquivo, status: STATUS.NOVO, acao: ACAO.LANCAR, sugestao, motivoStatus: "", correspondente: null });
+  };
+  importaveis.forEach((extrato) => extrato.movimentos.forEach((m) => novaLinha(m, extrato)));
 
+  // Parcelas futuras projetadas pela fatura fechada. Se a mesma parcela já
+  // veio de verdade em outro arquivo (ou de outra fatura projetando a mesma),
+  // fica só uma.
+  const chaveParcela = (m) => `${m.dataOriginal}|${compactar(m.contraparte)}|${m.parcela}`;
+  const parcelasVistas = new Set(movimentosLote.filter((m) => m.parcela).map(chaveParcela));
+  importaveis.forEach((extrato) => (extrato.parcelasFuturas ?? []).forEach((m) => {
+    if (parcelasVistas.has(chaveParcela(m))) return;
+    parcelasVistas.add(chaveParcela(m));
+    novaLinha(m, extrato);
+  }));
+
+  linhas.forEach((l) => {
+    if (l.movimento.extra?.parcelaFutura && l.status === STATUS.NOVO) {
+      l.motivoStatus = `Parcela ${l.movimento.parcela} prevista para a fatura de ${br(l.movimento.data)}.`;
+    }
+  });
   const usados = casarComBase(linhas, base, hoje);
   linhas.forEach((l) => {
     if (l.status === STATUS.JA_LANCADO || l.status === STATUS.IGNORADO) l.acao = ACAO.NADA;

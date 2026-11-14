@@ -7,9 +7,7 @@ import { exigirLogin } from "./auth-guard.js";
 import { mostrarToast, confirmarAcao } from "./ui.js";
 import { formatarReais, isoParaBR, hojeISO } from "./utils.js";
 import { obterTransacoes, gravarImportacaoExtratos, desfazerImportacaoExtratos, excluirTransacaoPorId } from "./dados-carteira.js";
-import { decodificarTexto } from "./extratos/comum.js";
-import { carregarPdfjs, extrairPaginasPdf } from "./extratos/texto-pdf.js";
-import { lerExtrato } from "./extratos/leitores/index.js";
+import { lerArquivoExtrato, EXTENSOES_ACEITAS } from "./extratos/ler-arquivo.js";
 import { prepararImportacao, conferirSaldos, montarGravacao, problemasDaLinha, STATUS, ACAO } from "./extratos/conciliacao.js";
 
 const usuario = await exigirLogin(); // a navegação já é montada pelo importar.js
@@ -61,15 +59,9 @@ campoTitular.addEventListener("change", () => {
 
 // ---------------------------------------------------------------- leitura dos arquivos
 
-async function lerArquivo(arquivo) {
-  const bytes = new Uint8Array(await arquivo.arrayBuffer());
-  const ehPdf = arquivo.name.toLowerCase().endsWith(".pdf");
-  if (ehPdf) {
-    const pdfjs = await carregarPdfjs();
-    const paginas = await extrairPaginasPdf(pdfjs, bytes);
-    return lerExtrato({ nome: arquivo.name, tipo: "pdf", paginas });
-  }
-  return lerExtrato({ nome: arquivo.name, tipo: "csv", texto: decodificarTexto(bytes) });
+function avisarLeitura(texto) {
+  areaArquivos.innerHTML = "";
+  areaArquivos.appendChild(el("p", { classe: "vazio", texto }));
 }
 
 async function adicionarArquivos(lista) {
@@ -78,7 +70,7 @@ async function adicionarArquivos(lista) {
   for (const arquivo of lista) {
     let lido;
     try {
-      lido = await lerArquivo(arquivo);
+      lido = await lerArquivoExtrato(arquivo, { aoProgredir: avisarLeitura });
     } catch (erro) {
       console.error("Erro ao ler", arquivo.name, erro);
       lido = { erro: "Não consegui abrir este arquivo (está corrompido ou protegido por senha?)." };
@@ -106,7 +98,7 @@ zona.addEventListener("dragleave", () => zona.classList.remove("arrastando"));
 zona.addEventListener("drop", (e) => {
   e.preventDefault();
   zona.classList.remove("arrastando");
-  adicionarArquivos([...e.dataTransfer.files].filter((f) => /\.(csv|pdf)$/i.test(f.name)));
+  adicionarArquivos([...e.dataTransfer.files].filter((f) => EXTENSOES_ACEITAS.test(f.name)));
 });
 
 // Roda a conciliação de novo (arquivo novo, titular mudou) mantendo o que você já editou.

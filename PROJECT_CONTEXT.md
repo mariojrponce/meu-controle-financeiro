@@ -21,6 +21,7 @@
 | **Gráficos** | Chart.js | CDN (`jsdelivr.net`) | Gráficos de rosca/barras no Dashboard |
 | **Importação** | SheetJS (XLSX) | CDN (`cdn.jsDelivr.net`) | Parser de arquivos Excel (`.xlsx`/`.csv`) |
 | **Extratos PDF** | pdf.js 4.10.38 (legacy) | Local (`js/vendor/pdfjs/`) | Texto + posição dos PDFs dos bancos, no navegador (sem servidor/CDN) |
+| **OCR** | tesseract.js 5.1.1 + modelo `por` | Local (`js/vendor/tesseract/`) | Lê a fatura aberta do Bradesco (imagem), só carregado quando precisa |
 | **Estilização** | CSS3 Vanilla | `style.css` | Variáveis CSS, layout responsivo (Flexbox/Grid), suporte a temas |
 
 ---
@@ -58,10 +59,14 @@
     ├── extratos/                        # Importação de extratos — SEM DOM e SEM Firebase (testável no Node)
     │   ├── comum.js                     # Números/datas pt-BR, CSV, movimento padronizado, conferências
     │   ├── texto-pdf.js                 # Texto do PDF com posição (x,y) via pdf.js; carregarPdfjs() no navegador
+    │   ├── ocr.js                       # Imagem → texto com posição (Tesseract); tratamento da imagem
+    │   ├── ler-arquivo.js               # File → extrato (CSV, PDF com texto, PDF-imagem/print via OCR)
     │   ├── leitores/                    # Um leitor por banco/formato + index.js (identifica o arquivo sozinho)
     │   ├── classificador.js             # Sugere descrição/detalhe/classificação aprendendo com o histórico
     │   └── conciliacao.js               # Regras (cartão, CDB, salário, transferências), casa com a base, confere saldo
-    └── vendor/pdfjs/                    # pdf.js 4.10.38 (build legacy, Apache-2.0) servido pelo próprio site
+    └── vendor/                          # Bibliotecas servidas pelo próprio site (sem CDN)
+        ├── pdfjs/                       # pdf.js 4.10.38 (build legacy, Apache-2.0)
+        └── tesseract/                   # tesseract.js 5.1.1 + core WASM + por.traineddata (Apache-2.0)
 testes/                                  # `npm test` (node --test). Testes com extratos reais só rodam com modelo-extratos/ (fora do git)
 ```
 

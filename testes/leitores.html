@@ -14,12 +14,10 @@
 <body>
     <h1>Teste dos leitores de extrato (sem login, nada é gravado)</h1>
     <p>Ferramenta de desenvolvimento: mostra o que cada leitor entende de um arquivo. Não acessa o Firebase.</p>
-    <input type="file" id="arquivos" multiple accept=".csv,.pdf">
+    <input type="file" id="arquivos" multiple accept=".csv,.pdf,.png,.jpg,.jpeg,.webp">
     <pre id="saida">Escolha um ou mais arquivos.</pre>
     <script type="module">
-        import { decodificarTexto } from "../js/extratos/comum.js";
-        import { carregarPdfjs, extrairPaginasPdf } from "../js/extratos/texto-pdf.js";
-        import { lerExtrato } from "../js/extratos/leitores/index.js";
+        import { lerArquivoExtrato } from "../js/extratos/ler-arquivo.js";
         import { prepararImportacao } from "../js/extratos/conciliacao.js";
 
         const saida = document.getElementById("saida");
@@ -28,14 +26,13 @@
             const extratos = [];
             for (const arquivo of e.target.files) {
                 try {
-                    const bytes = new Uint8Array(await arquivo.arrayBuffer());
-                    const r = arquivo.name.toLowerCase().endsWith(".pdf")
-                        ? lerExtrato({ nome: arquivo.name, tipo: "pdf", paginas: await extrairPaginasPdf(await carregarPdfjs(), bytes) })
-                        : lerExtrato({ nome: arquivo.name, tipo: "csv", texto: decodificarTexto(bytes) });
+                    const inicio = performance.now();
+                    const r = await lerArquivoExtrato(arquivo, { aoProgredir: (t) => { saida.textContent = t; } });
+                    console.log(`[leitores] ${arquivo.name}: ${Math.round(performance.now() - inicio)} ms`);
                     if (r.erro) { linhas.push(`✗ ${arquivo.name}: ${r.erro}`); continue; }
                     extratos.push(r.extrato);
                     const ok = r.extrato.conferencias.every((c) => c.ok);
-                    linhas.push(`${ok ? "✓" : "✗"} ${arquivo.name} → ${r.leitor.id}: ${r.extrato.movimentos.length} movimentos; conferências: ${r.extrato.conferencias.map((c) => `${c.rotulo}=${c.ok ? "ok" : "ERRO"}`).join(", ") || "—"}`);
+                    linhas.push(`${ok ? "✓" : "✗"} ${arquivo.name} → ${r.leitor.id}: ${r.extrato.movimentos.length} movimentos${r.extrato.parcelasFuturas?.length ? ` + ${r.extrato.parcelasFuturas.length} parcelas futuras` : ""}; conferências: ${r.extrato.conferencias.map((c) => `${c.rotulo}=${c.ok ? "ok" : "ERRO"}`).join(", ") || "—"}`);
                 } catch (erro) {
                     linhas.push(`✗ ${arquivo.name}: ERRO ${erro.message}`);
                     console.error(erro);
@@ -43,7 +40,7 @@
             }
             const r = prepararImportacao({ extratos, base: [], hoje: new Date().toISOString().slice(0, 10) });
             linhas.push("", `Titular reconhecido: ${r.titular.nomes.join(" / ") || "—"}`, `Linhas para revisão: ${r.linhas.length}`);
-            r.linhas.slice(0, 15).forEach((l) => linhas.push(`  ${l.movimento.banco} ${l.movimento.data} ${l.movimento.tipo} ${l.movimento.valor.toFixed(2)} | ${l.movimento.contraparte || l.movimento.historico} → ${l.sugestao?.descricao ?? l.motivoStatus} [${l.sugestao?.tipo_mov ?? ""}]`));
+            r.linhas.slice(0, 40).forEach((l) => linhas.push(`  ${l.movimento.banco} ${l.movimento.data} ${l.movimento.tipo} ${l.movimento.valor.toFixed(2)} | ${l.movimento.dataOriginal ?? ""} ${l.movimento.parcela ?? ""} ${l.movimento.contraparte || l.movimento.historico} → ${l.sugestao?.descricao ?? l.motivoStatus} [${l.sugestao?.tipo_mov ?? ""}]`));
             saida.textContent = linhas.join("\n");
             window.__resultadoTeste = linhas.join("\n");
         });

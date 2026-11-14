@@ -63,6 +63,13 @@ export function isoDe(dia, mes, ano) {
 }
 
 // "dd/mm/aaaa" → "aaaa-mm-dd" (ou null)
+// "2026-11-17" + 1 mês → "2026-12-17" (dia preservado; vencimento do cartão).
+export function somarMeses(iso, meses) {
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  const total = ano * 12 + (mes - 1) + meses;
+  return isoDe(dia, (total % 12) + 1, Math.floor(total / 12));
+}
+
 export function brParaIso(texto) {
   const m = String(texto ?? "").trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   return m ? isoDe(m[1], m[2], m[3]) : null;
