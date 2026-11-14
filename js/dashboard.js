@@ -16,8 +16,9 @@ import {
 } from "./preferencias-dashboard.js";
 import {
     renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema,
-    mostrarTotalGrafico, somarValores, corDoTema } from "./graficos.js";
+    mostrarTotalGrafico, somarValores, corDoTema, renderizarGraficoComparativo } from "./graficos.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
+import { calcularEvolucaoPorCategoria, sentidoDaVariacao } from "./evolucao-categorias.js";
 
 const NOME_PAGINA = "dashboard";
 const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -686,6 +687,166 @@ function totalEmReais(valores) {
     return `Total: ${formatarReais(somarValores(valores))}`;
 }
 
+// ---------- Evolução por categoria (todas as categorias, mês a mês, × ano anterior) ----------
+const MESES_CURTOS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const estadoEvolucaoCat = { tipo: "SAIDA", categoria: null, contexto: null };
+
+function valorCompacto(valor) {
+    if (Math.abs(valor) < 0.5) return "–";
+    return Math.round(valor).toLocaleString("pt-BR");
+}
+
+function textoVariacao(diferenca, percentual) {
+    if (Math.abs(diferenca) < 0.005) return { seta: "", pct: "0%" };
+    const seta = diferenca > 0 ? "▲" : "▼";
+    const pct = percentual === null ? "novo" : `${Math.abs(Math.round(percentual * 100))}%`;
+    return { seta, pct };
+}
+
+function celula(tag, texto, classe = "", titulo = "") {
+    const el = document.createElement(tag);
+    el.textContent = texto;
+    if (classe) el.className = classe;
+    if (titulo) el.title = titulo;
+    return el;
+}
+
+function rotuloPeriodo(mesLimite, ano) {
+    return mesLimite === 12 ? String(ano) : `jan–${MESES_CURTOS[mesLimite - 1].toLowerCase()}/${String(ano).slice(2)}`;
+}
+
+function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
+    if (!contexto) return;
+    estadoEvolucaoCat.contexto = contexto;
+    const { lista, ano, categoriasSeparadas } = contexto;
+    const tipo = estadoEvolucaoCat.tipo;
+    const ehGasto = tipo === "SAIDA";
+    const r = calcularEvolucaoPorCategoria(lista, { ano, tipo, categoriasSeparadas, hojeISO: hojeISO() });
+    if (estadoEvolucaoCat.categoria && !r.categorias.some((c) => c.nome === estadoEvolucaoCat.categoria)) estadoEvolucaoCat.categoria = null;
+
+    document.querySelectorAll("#secao-evolucao-categorias .alternador-opcao").forEach((b) => {
+        const ativo = b.dataset.tipo === tipo;
+        b.classList.toggle("ativo", ativo);
+        b.setAttribute("aria-pressed", String(ativo));
+    });
+
+    const periodoAtual = rotuloPeriodo(r.mesLimite, r.ano);
+    const periodoAnterior = rotuloPeriodo(r.mesLimite, r.anoAnterior);
+    const palavra = ehGasto ? "Gastos" : "Recebimentos";
+
+    // Resumo: este período × mesmo período do ano anterior (do total ou da categoria escolhida)
+    const resumo = document.getElementById("resumo-evolucao-cat");
+    resumo.innerHTML = "";
+    const foco = r.categorias.find((c) => c.nome === estadoEvolucaoCat.categoria) ?? r.total;
+    const nomeFoco = foco === r.total ? palavra : foco.nome;
+    const sentido = sentidoDaVariacao(tipo, foco.diferenca);
+    const { seta, pct } = textoVariacao(foco.diferenca, foco.percentual);
+    const leitura = sentido === "igual" ? "igual ao ano anterior"
+        : ehGasto ? (foco.diferenca > 0 ? "você está gastando mais" : "você está gastando menos")
+        : (foco.diferenca > 0 ? "você está recebendo mais" : "você está recebendo menos");
+    [
+        { rotulo: `${nomeFoco} ${periodoAtual}`, valor: formatarReais(foco.periodoAtual), meta: r.mesLimite < 12 ? "Até o mês atual (inclui previstos do mês)" : "Ano inteiro" },
+        { rotulo: `Mesmo período de ${r.anoAnterior}`, valor: formatarReais(foco.periodoAnterior), meta: periodoAnterior },
+        { rotulo: "Variação", valor: `${foco.diferenca > 0 ? "+" : foco.diferenca < 0 ? "-" : ""} ${formatarReais(Math.abs(foco.diferenca))}`.trim(), meta: `${seta} ${pct} · ${leitura}`.trim(), classe: `variacao-${sentido}` }
+    ].forEach((k) => {
+        const cartao = document.createElement("div");
+        cartao.className = "cartao-metrica";
+        cartao.appendChild(celula("div", k.rotulo, "rotulo"));
+        cartao.appendChild(celula("div", k.valor, `valor ${k.classe ?? ""}`.trim()));
+        cartao.appendChild(celula("div", k.meta, `kpi-meta ${k.classe ?? ""}`.trim()));
+        resumo.appendChild(cartao);
+    });
+
+    // Gráfico: total (ou a categoria escolhida) este ano × ano anterior
+    const escolhida = r.categorias.find((c) => c.nome === estadoEvolucaoCat.categoria);
+    const serie = escolhida ?? { meses: r.total.meses, anterior: r.total.anterior };
+    const temDados = r.categorias.length > 0;
+    document.getElementById("titulo-grafico-evolucao-cat").textContent = escolhida ? `${escolhida.nome} por mês` : `Total de ${palavra.toLowerCase()} por mês`;
+    mostrarSelecaoGrafico("selecao-evolucao-cat", estadoEvolucaoCat.categoria, () => { estadoEvolucaoCat.categoria = null; renderizarEvolucaoCategorias(); });
+    alternarEstadoVazio("grafico-evolucao-cat", "vazio-evolucao-cat", temDados, `Sem ${palavra.toLowerCase()} em ${r.ano} nem em ${r.anoAnterior}.`);
+    if (temDados) {
+        renderizarGraficoComparativo("grafico-evolucao-cat", MESES_CURTOS, {
+            atual: serie.meses,
+            anterior: serie.anterior,
+            nomeAtual: r.ano,
+            nomeAnterior: r.anoAnterior,
+            cor: corDoTema(ehGasto ? "--cor-saida" : "--cor-entrada"),
+            limite: r.mesLimite
+        });
+    }
+
+    // Tabela: todas as categorias × 12 meses + comparação
+    const tabela = document.getElementById("tabela-evolucao-cat");
+    tabela.innerHTML = "";
+    document.getElementById("area-tabela-evolucao-cat").style.display = temDados ? "" : "none";
+    if (!temDados) {
+        document.getElementById("nota-evolucao-cat").textContent = "";
+        return;
+    }
+    const ehPrevisto = (i) => i >= r.mesLimite;
+    const thead = document.createElement("thead");
+    const cab = document.createElement("tr");
+    cab.appendChild(celula("th", "Categoria"));
+    MESES_CURTOS.forEach((m, i) => cab.appendChild(celula("th", m, ehPrevisto(i) ? "col-previsto" : "", ehPrevisto(i) ? "Mês que ainda não chegou: só lançamentos previstos" : "")));
+    cab.appendChild(celula("th", periodoAtual, "col-comparacao col-separador"));
+    cab.appendChild(celula("th", periodoAnterior, "col-comparacao"));
+    cab.appendChild(celula("th", "Diferença", "col-comparacao"));
+    cab.appendChild(celula("th", "%", "col-comparacao"));
+    thead.appendChild(cab);
+    tabela.appendChild(thead);
+
+    const linhaDe = (nome, meses, item, tag = "td") => {
+        const tr = document.createElement("tr");
+        tr.appendChild(celula(tag, nome));
+        meses.forEach((v, i) => {
+            const classes = [Math.abs(v) < 0.5 ? "zero" : "", ehPrevisto(i) ? "col-previsto" : ""].join(" ").trim();
+            tr.appendChild(celula(tag, valorCompacto(v), classes, `${nome} · ${MESES_CURTOS[i]}/${r.ano}: ${formatarReais(v)}${item.anterior ? ` (em ${r.anoAnterior}: ${formatarReais(item.anterior[i])})` : ""}`));
+        });
+        const sentidoLinha = sentidoDaVariacao(tipo, item.diferenca);
+        const v = textoVariacao(item.diferenca, item.percentual);
+        tr.appendChild(celula(tag, valorCompacto(item.periodoAtual), "col-comparacao col-separador", formatarReais(item.periodoAtual)));
+        tr.appendChild(celula(tag, valorCompacto(item.periodoAnterior), "col-comparacao", formatarReais(item.periodoAnterior)));
+        const dif = Math.abs(item.diferenca) < 0.5 ? "–" : `${item.diferenca > 0 ? "+" : "-"} ${valorCompacto(Math.abs(item.diferenca))}`;
+        tr.appendChild(celula(tag, dif, `col-comparacao variacao variacao-${sentidoLinha}`, formatarReais(item.diferenca)));
+        tr.appendChild(celula(tag, `${v.seta} ${v.pct}`.trim(), `col-comparacao variacao variacao-${sentidoLinha}`));
+        return tr;
+    };
+
+    const tbody = document.createElement("tbody");
+    r.categorias.forEach((c) => {
+        const tr = linhaDe(c.nome, c.meses, c);
+        tr.tabIndex = 0;
+        tr.title = "Clique para ver esta categoria no gráfico";
+        if (c.nome === estadoEvolucaoCat.categoria) tr.classList.add("selecionada");
+        const escolher = () => {
+            estadoEvolucaoCat.categoria = estadoEvolucaoCat.categoria === c.nome ? null : c.nome;
+            renderizarEvolucaoCategorias();
+            document.getElementById("grafico-evolucao-cat").scrollIntoView({ behavior: "smooth", block: "center" });
+        };
+        tr.addEventListener("click", escolher);
+        tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); escolher(); } });
+        tbody.appendChild(tr);
+    });
+    tabela.appendChild(tbody);
+    const tfoot = document.createElement("tfoot");
+    tfoot.appendChild(linhaDe("Total", r.total.meses, r.total));
+    tabela.appendChild(tfoot);
+
+    document.getElementById("nota-evolucao-cat").textContent = (r.mesLimite < 12
+        ? `A comparação usa os mesmos meses nos dois anos (${periodoAtual} × ${periodoAnterior}); ${MESES_CURTOS[r.mesLimite - 1].toLowerCase()}/${r.ano} ainda está em andamento. Meses em azul e itálico ainda não chegaram (só previstos). `
+        : `Ano inteiro de ${r.ano} × ${r.anoAnterior}. `)
+        + `Valores em R$ sem centavos (passe o mouse para ver o valor exato). ${ehGasto ? "Gasto subindo aparece em vermelho; caindo, em verde." : "Recebimento subindo aparece em verde; caindo, em vermelho."} Usa os filtros de banco, vale, movimentação e texto; não conta transferências internas nem as categorias à parte.`;
+}
+
+document.querySelectorAll("#secao-evolucao-categorias .alternador-opcao").forEach((botao) => {
+    botao.addEventListener("click", () => {
+        if (estadoEvolucaoCat.tipo === botao.dataset.tipo) return;
+        estadoEvolucaoCat.tipo = botao.dataset.tipo;
+        estadoEvolucaoCat.categoria = null;
+        renderizarEvolucaoCategorias();
+    });
+});
+
 // ---------- Filtro principal ----------
 function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
@@ -895,6 +1056,8 @@ function aplicarFiltros() {
     mostrarTotalGrafico("total-categorias-separadas-futuro", temFuturoSeparado
         ? `Entradas: ${formatarReais(somarValores(entradasFuturasSeparadas))} · Saídas: ${formatarReais(somarValores(saidasFuturasSeparadas))}`
         : "");
+
+    renderizarEvolucaoCategorias({ lista: listaSemPeriodo, ano: anoEvolucao, categoriasSeparadas });
 
     renderizarPrevistos(listaFutura);
     renderizarVisoesPersonalizadas(lista);

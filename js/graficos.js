@@ -360,3 +360,98 @@ export function renderizarGraficoLinha(idCanvas, rotulos, valores, { cor = corDo
     });
     instancias.set(idCanvas, grafico);
 }
+
+// Duas linhas mês a mês: este ano (cor semântica, cheia) × ano anterior
+// (cinza tracejado). O tooltip mostra os dois valores e a diferença.
+export function renderizarGraficoComparativo(idCanvas, rotulos, { atual, anterior, nomeAtual, nomeAnterior, cor, limite = 12 }) {
+    destruir(idCanvas);
+    const canvas = obterCanvas(idCanvas);
+    if (!canvas) return;
+
+    const { corTexto, corTextoSuave, corGrid, corTooltipBg, corTooltipTexto, corFundo } = obterEstiloTema();
+    // Meses depois do limite (ainda não chegaram) = previsto: ponto vazado.
+    const raioPonto = (ctx) => (ctx.dataIndex >= limite ? 3 : 4);
+
+    const grafico = new Chart(canvas, {
+        type: "line",
+        data: {
+            labels: rotulos,
+            datasets: [
+                {
+                    label: nomeAtual,
+                    data: atual,
+                    borderColor: cor,
+                    backgroundColor: `${cor}18`,
+                    borderWidth: 2.5,
+                    pointRadius: raioPonto,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: (ctx) => (ctx.dataIndex >= limite ? corFundo : cor),
+                    pointBorderColor: cor,
+                    pointBorderWidth: 1.5,
+                    segment: { borderDash: (ctx) => (ctx.p1DataIndex >= limite ? [3, 3] : undefined) },
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: nomeAnterior,
+                    data: anterior,
+                    borderColor: corTextoSuave,
+                    backgroundColor: "transparent",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: corTextoSuave,
+                    pointBorderColor: corTextoSuave,
+                    fill: false,
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            layout: { padding: { top: 8, left: 4, right: 12, bottom: 4 } },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11, weight: "600" } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: corGrid },
+                    ticks: { color: corTextoSuave, font: { family: "Inter, sans-serif", size: 11 } }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: "top",
+                    align: "end",
+                    labels: { color: corTexto, usePointStyle: true, pointStyle: "line", boxWidth: 24, font: { family: "Inter, sans-serif", size: 12, weight: "600" } }
+                },
+                tooltip: {
+                    backgroundColor: corTooltipBg,
+                    titleColor: corTooltipTexto,
+                    bodyColor: corTooltipTexto,
+                    footerColor: corTooltipTexto,
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: (itens) => `${itens[0].label}${itens[0].dataIndex >= limite ? " (previsto)" : ""}`,
+                        label: (ctx) => ` ${ctx.dataset.label}: ${formatarReais(ctx.parsed.y)}`,
+                        footer: (itens) => {
+                            if (itens.length < 2) return "";
+                            const diferenca = itens[0].parsed.y - itens[1].parsed.y;
+                            const sinal = diferenca > 0 ? "+" : diferenca < 0 ? "-" : "";
+                            return `Diferença: ${sinal} ${formatarReais(Math.abs(diferenca))}`;
+                        }
+                    }
+                },
+                datalabels: { display: false }
+            }
+        }
+    });
+    instancias.set(idCanvas, grafico);
+}

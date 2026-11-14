@@ -2000,3 +2000,103 @@ body.tela-login {
   margin: var(--e-6) 0 var(--e-2);
 }
 #area-arquivos h3:first-child { margin-top: var(--e-5); }
+
+/* ----------------------------------------------------------------------------
+   Dashboard — previstos sem rolagem lateral e Evolução por categoria
+   ---------------------------------------------------------------------------- */
+
+/* Tabela ocupa a largura toda: textos quebram linha em vez de criar rolagem */
+.tabela-sem-rolagem table { table-layout: auto; }
+.tabela-sem-rolagem th, .tabela-sem-rolagem td { white-space: normal; }
+.tabela-sem-rolagem td:first-child { min-width: 110px; }
+.tabela-sem-rolagem td:first-child .selo-previsto,
+.tabela-sem-rolagem td:first-child .selo-vencimento { margin: 4px 4px 0 0; }
+.tabela-sem-rolagem td:first-child { line-height: 1.6; }
+.tabela-sem-rolagem td.entrada, .tabela-sem-rolagem td.saida { white-space: nowrap; width: 1%; }
+#tabela-previstos td:nth-child(2) { min-width: 0; }
+
+/* Alternador (botões segmentados) */
+.alternador {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--raio-controle);
+  background: var(--bg-superficie-alt);
+  border: 1px solid var(--borda-sutil);
+}
+.alternador-opcao {
+  min-height: 32px;
+  padding: 0 var(--e-3);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--texto-secundario);
+  font: 600 0.8125rem/1 var(--fonte);
+  cursor: pointer;
+}
+.alternador-opcao:hover { color: var(--texto-principal); }
+.alternador-opcao.ativo {
+  background: var(--bg-superficie);
+  color: var(--cor-primaria);
+  box-shadow: var(--sombra-card);
+}
+
+/* Resumo da comparação com o ano anterior */
+.resumo-comparativo { margin-bottom: var(--e-4); }
+.resumo-comparativo .cartao-metrica { box-shadow: none; background: var(--bg-superficie-alt); }
+
+/* Variação: cor + seta + texto (subir gasto = pior; subir recebimento = melhor) */
+.variacao { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.variacao-piorou { color: var(--cor-saida); }
+.variacao-melhorou { color: var(--cor-entrada); }
+.variacao-igual { color: var(--texto-secundario); }
+.cartao-metrica .valor.variacao-piorou { color: var(--cor-saida); }
+.cartao-metrica .valor.variacao-melhorou { color: var(--cor-entrada); }
+
+/* Matriz categorias × meses */
+.tabela-matriz { font-size: 0.8125rem; }
+.tabela-matriz th, .tabela-matriz td { padding: 8px 8px; height: 38px; }
+.tabela-matriz th { font-size: 0.6875rem; text-align: right; }
+.tabela-matriz th:first-child, .tabela-matriz td:first-child { text-align: left; }
+.tabela-matriz td { text-align: right; font-variant-numeric: tabular-nums; color: var(--texto-corpo); }
+.tabela-matriz td.zero { color: var(--texto-secundario); opacity: 0.5; }
+.tabela-matriz .col-previsto { color: var(--cor-previsto); }
+.tabela-matriz th.col-previsto { font-style: italic; }
+.tabela-matriz .col-comparacao { background: color-mix(in srgb, var(--bg-superficie-alt) 70%, transparent); }
+.tabela-matriz th.col-comparacao { background: var(--bg-superficie-alt); }
+.tabela-matriz .col-separador { border-left: 2px solid var(--borda-sutil); }
+
+/* Primeira coluna fixa ao rolar no celular */
+.tabela-matriz th:first-child, .tabela-matriz td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg-superficie);
+  font-weight: 600;
+  color: var(--texto-principal);
+  max-width: 220px;
+  white-space: normal;
+}
+.tabela-matriz th:first-child { background: var(--bg-superficie-alt); }
+
+.tabela-matriz tbody tr { cursor: pointer; }
+.tabela-matriz tbody tr:hover td, .tabela-matriz tbody tr:hover td:first-child { background: var(--bg-superficie-alt); }
+.tabela-matriz tbody tr.selecionada td, .tabela-matriz tbody tr.selecionada td:first-child { background: var(--cor-primaria-suave); }
+.tabela-matriz tbody tr.selecionada td:first-child { box-shadow: inset 3px 0 0 var(--cor-primaria); }
+.tabela-matriz tbody tr:focus-visible { outline: 2px solid var(--borda-foco); outline-offset: -2px; }
+
+.tabela-matriz tfoot td {
+  font-weight: 700;
+  color: var(--texto-principal);
+  border-top: 2px solid var(--borda-sutil);
+  background: var(--bg-superficie-alt);
+}
+.tabela-matriz tfoot td:first-child { background: var(--bg-superficie-alt); }
+
+@media (max-width: 767px) {
+  .secao-titulo .alternador { width: 100%; }
+  .secao-titulo .alternador-opcao { flex: 1; min-height: 40px; }
+}
+.tabela-matriz td.variacao-piorou { color: var(--cor-saida); }
+.tabela-matriz td.variacao-melhorou { color: var(--cor-entrada); }
+.tabela-matriz td.variacao-igual { color: var(--texto-secundario); }

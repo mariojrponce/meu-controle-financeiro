@@ -168,33 +168,28 @@
                     <h2 id="titulo-radar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-relogio"></use></svg>Radar de previstos</h2>
                 </div>
                 <p class="dica-campo">O que está agendado neste período e ainda não entrou no saldo. Vencimentos em até 7 dias aparecem com aviso.</p>
-                <div class="par-colunas">
-                    <div>
-                        <h3 class="subtitulo-detalhe">Lista por data</h3>
-                        <div class="tabela-scroll">
-                            <table id="tabela-previstos">
-                                <thead>
-                                    <tr>
-                                        <th>Data</th>
-                                        <th>Descrição</th>
-                                        <th>Banco</th>
-                                        <th>Classificação</th>
-                                        <th class="col-valor">Valor</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td colspan="5" class="vazio">Carregando...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="subtitulo-detalhe">A descontar por banco</h3>
-                        <p class="dica-campo">Quanto ainda sai (e entra) de cada banco. Deixe o saldo pronto antes do débito.</p>
-                        <div class="grade-carteiras" id="grade-previstos-banco" style="margin-top: var(--e-3);">
-                            <p class="vazio">Carregando...</p>
-                        </div>
-                    </div>
+                <h3 class="subtitulo-detalhe">A descontar por banco</h3>
+                <p class="dica-campo">Quanto ainda sai (e entra) de cada banco. Deixe o saldo pronto antes do débito.</p>
+                <div class="grade-carteiras" id="grade-previstos-banco" style="margin-top: var(--e-3);">
+                    <p class="vazio">Carregando...</p>
+                </div>
+
+                <h3 class="subtitulo-detalhe" style="margin-top: var(--e-6);">Lista por data</h3>
+                <div class="tabela-scroll tabela-sem-rolagem">
+                    <table id="tabela-previstos">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Banco</th>
+                                <th>Classificação</th>
+                                <th class="col-valor">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="5" class="vazio">Carregando...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <h3 class="subtitulo-detalhe" style="margin-top: var(--e-6);">Dia a dia, por banco</h3>
@@ -281,6 +276,32 @@
                         <p class="vazio" id="vazio-tendencia-gastos">Sem dados ainda.</p>
                     </div>
                 </div>
+            </section>
+
+            <section class="secao cartao" aria-labelledby="titulo-evolucao-cat" id="secao-evolucao-categorias">
+                <div class="secao-titulo">
+                    <h2 id="titulo-evolucao-cat"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg>Evolução por categoria</h2>
+                    <div class="alternador" role="group" aria-label="O que comparar">
+                        <button type="button" class="alternador-opcao ativo" data-tipo="SAIDA" aria-pressed="true">Gastos</button>
+                        <button type="button" class="alternador-opcao" data-tipo="ENTRADA" aria-pressed="false">Recebimentos</button>
+                    </div>
+                </div>
+                <p class="dica-campo" id="dica-evolucao-cat">Todas as categorias mês a mês, comparadas com os mesmos meses do ano anterior. Clique numa categoria da tabela para vê-la no gráfico.</p>
+
+                <div class="grade-resumo resumo-comparativo" id="resumo-evolucao-cat" style="margin-top: var(--e-4);"></div>
+
+                <div class="subtitulo-grafico" style="margin-top: 0;">
+                    <h4><span id="titulo-grafico-evolucao-cat">Total de gastos por mês</span> <span class="selecao-grafico" id="selecao-evolucao-cat"></span></h4>
+                </div>
+                <div class="grafico-container" style="height: 280px;">
+                    <canvas id="grafico-evolucao-cat"></canvas>
+                </div>
+                <p class="vazio" id="vazio-evolucao-cat" style="display:none;">Sem lançamentos neste ano nem no anterior.</p>
+
+                <div class="tabela-scroll" id="area-tabela-evolucao-cat">
+                    <table id="tabela-evolucao-cat" class="tabela-matriz"></table>
+                </div>
+                <p class="dica-campo" id="nota-evolucao-cat" style="margin-top: var(--e-3);"></p>
             </section>
 
             <section class="secao cartao" aria-labelledby="titulo-visoes">
