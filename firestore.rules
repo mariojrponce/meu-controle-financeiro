@@ -17,6 +17,39 @@ service cloud.firestore {
              && dados.classificacao_saida is string && dados.classificacao_saida.size() > 0 && dados.classificacao_saida.size() <= 60;
     }
 
+    // Só os campos que o sistema grava — qualquer outro é recusado.
+    function camposPermitidos(dados) {
+      return dados.keys().hasOnly([
+        'userId', 'valor', 'data', 'tipo', 'tipo_mov', 'descricao', 'saida', 'banco',
+        'classificacao_saida', 'criadoEm',
+        'investimento', 'dono_carteira', 'banco_investimento',   // tela Investimentos
+        'importacao_id', 'id_externo', 'texto_banco'             // importação de extratos
+      ]);
+    }
+
+    // Campo opcional: pode não existir, ser nulo ou ser um texto de até `maximo` caracteres.
+    function textoOpcional(dados, campo, maximo) {
+      return !(campo in dados) || dados[campo] == null
+             || (dados[campo] is string && dados[campo].size() <= maximo);
+    }
+
+    // Valor positivo com teto, data no formato aaaa-mm-dd e campos opcionais com tamanho limitado.
+    function lancamentoValido(dados) {
+      return camposPermitidos(dados)
+             && dados.valor is number && dados.valor > 0 && dados.valor <= 1000000000
+             && dados.data is string && dados.data.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+             && dados.tipo in ['ENTRADA', 'SAIDA']
+             && dados.tipo_mov in ['INTERNO', 'EXTERNO']
+             && camposDeTextoValidos(dados)
+             && (!('criadoEm' in dados) || dados.criadoEm is timestamp)
+             && textoOpcional(dados, 'investimento', 60)
+             && textoOpcional(dados, 'dono_carteira', 60)
+             && textoOpcional(dados, 'banco_investimento', 60)
+             && textoOpcional(dados, 'importacao_id', 200)
+             && textoOpcional(dados, 'id_externo', 300)
+             && textoOpcional(dados, 'texto_banco', 300);
+    }
+
     match /carteira/{itemId} {
 
       // Só permite LER se estiver logado E o documento pertencer ao usuário logado
@@ -27,12 +60,7 @@ service cloud.firestore {
       // e os campos essenciais existirem com o tipo, tamanho e formato certos
       allow create: if request.auth != null
                     && request.auth.uid == request.resource.data.userId
-                    && request.resource.data.valor is number
-                    && request.resource.data.valor > 0
-                    && request.resource.data.data is string
-                    && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
-                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO']
-                    && camposDeTextoValidos(request.resource.data);
+                    && lancamentoValido(request.resource.data);
 
       // Permite EDITAR apenas o próprio dono do lançamento, mantendo os
       // mesmos campos essenciais válidos depois da edição. O userId não pode
@@ -41,12 +69,7 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && request.auth.uid == resource.data.userId
                     && request.resource.data.userId == resource.data.userId
-                    && request.resource.data.valor is number
-                    && request.resource.data.valor > 0
-                    && request.resource.data.data is string
-                    && request.resource.data.tipo in ['ENTRADA', 'SAIDA']
-                    && request.resource.data.tipo_mov in ['INTERNO', 'EXTERNO']
-                    && camposDeTextoValidos(request.resource.data);
+                    && lancamentoValido(request.resource.data);
 
       // Permite EXCLUIR apenas o próprio dono do lançamento
       allow delete: if request.auth != null

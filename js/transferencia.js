@@ -74,7 +74,7 @@ function renderizarUltimas(lista) {
     });
 
     const corpo = document.querySelector("#tabela-ultimas tbody");
-    corpo.innerHTML = "";
+    corpo.replaceChildren();
 
     if (listaOrdenada.length === 0) {
         corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhuma transferência interna ainda.</td></tr>";

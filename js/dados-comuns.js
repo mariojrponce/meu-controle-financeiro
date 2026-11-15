@@ -77,7 +77,7 @@ export function mesclarSugestoes(sugeridas, usadas) {
 export function preencherDatalist(idDatalist, valores) {
   const datalist = document.getElementById(idDatalist);
   if (!datalist) return;
-  datalist.innerHTML = ""; // limpa opções anteriores
+  datalist.replaceChildren(); // limpa opções anteriores
   valores.forEach((valor) => {
     const opcao = document.createElement("option");
     opcao.value = valor; // atribuição via propriedade, não via HTML — sem risco de injeção

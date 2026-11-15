@@ -16,14 +16,21 @@ const inputArquivo = document.getElementById("input-arquivo");
 const areaPreview = document.getElementById("area-preview");
 const resumoImportacao = document.getElementById("resumo-importacao");
 const botaoImportar = document.getElementById("btn-importar");
+const TAMANHO_MAXIMO_PLANILHA = 10 * 1024 * 1024; // 10 MB
 
 inputArquivo.addEventListener("change", async (evento) => {
     const arquivo = evento.target.files[0];
     if (!arquivo) return;
+    // O arquivo é lido inteiro na memória do navegador; um arquivo gigante travaria a aba.
+    if (arquivo.size > TAMANHO_MAXIMO_PLANILHA) {
+        evento.target.value = "";
+        mostrarToast("Arquivo grande demais (máximo de 10 MB). Divida a planilha em partes menores.", "erro");
+        return;
+    }
 
     linhasProcessadas = [];
     botaoImportar.style.display = "none";
-    resumoImportacao.innerHTML = "";
+    resumoImportacao.replaceChildren();
     areaPreview.innerHTML = "<p class='vazio'>Lendo arquivo...</p>";
 
     try {
@@ -38,7 +45,7 @@ inputArquivo.addEventListener("change", async (evento) => {
         const faltando = CAMPOS_OBRIGATORIOS.filter((campo) => mapaColunas[campo] === undefined);
 
         if (faltando.length > 0) {
-            areaPreview.innerHTML = "";
+            areaPreview.replaceChildren();
             mostrarToast(`Não encontrei as colunas: ${faltando.join(", ")}`, "erro");
             return;
         }
@@ -48,7 +55,7 @@ inputArquivo.addEventListener("change", async (evento) => {
 
     } catch (erro) {
         console.error("Erro ao ler arquivo:", erro);
-        areaPreview.innerHTML = "";
+        areaPreview.replaceChildren();
         mostrarToast("Não foi possível ler esse arquivo.", "erro");
     }
 });
@@ -83,7 +90,7 @@ function renderizarResumoEPreview(linhas) {
     const validas = linhas.filter((l) => l.valido);
     const invalidas = linhas.length - validas.length;
 
-    resumoImportacao.innerHTML = "";
+    resumoImportacao.replaceChildren();
     const container = document.createElement("div");
     container.className = "resumo-linhas";
 
@@ -100,7 +107,7 @@ function renderizarResumoEPreview(linhas) {
     }
     resumoImportacao.appendChild(container);
 
-    areaPreview.innerHTML = "";
+    areaPreview.replaceChildren();
     const wrapperTabela = document.createElement("div");
     wrapperTabela.className = "tabela-scroll";
 
@@ -187,8 +194,8 @@ botaoImportar.addEventListener("click", async () => {
 
         mostrarToast(`${validas.length} lançamento(s) importado(s)!`, "sucesso");
         linhasProcessadas = [];
-        areaPreview.innerHTML = "";
-        resumoImportacao.innerHTML = "";
+        areaPreview.replaceChildren();
+        resumoImportacao.replaceChildren();
         botaoImportar.style.display = "none";
         inputArquivo.value = "";
 

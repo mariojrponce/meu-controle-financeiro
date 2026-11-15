@@ -107,7 +107,7 @@ function popularSeletorAno(anoSelecionado) {
     const anos = new Set([anoAtual, ...anosDosDados]);
     const listaOrdenada = Array.from(anos).sort((a, b) => b - a);
 
-    campoAno.innerHTML = "";
+    campoAno.replaceChildren();
     listaOrdenada.forEach((ano) => {
         const opcao = document.createElement("option");
         opcao.value = String(ano);
@@ -155,7 +155,7 @@ function linhaCarteira(rotulo, valor, classeExtra = "") {
 
 function renderizarCarteiras(porBanco) {
     const container = document.getElementById("grade-carteiras");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saldo - porBanco[a].saldo);
     if (bancos.length === 0) {
@@ -197,7 +197,7 @@ function removerCategoriaSeparada(categoria) {
 
 function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
     const container = document.getElementById("grade-categorias-separadas");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const categorias = Object.keys(dadosPorCategoria);
     if (categorias.length === 0) {
@@ -328,7 +328,7 @@ function calcularVisaoPersonalizada(lista, visao) {
 
 function renderizarVisoesPersonalizadas(lista) {
     const container = document.getElementById("visoes-personalizadas");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const visoes = obterVisoesPersonalizadas(usuario.uid);
     if (visoes.length === 0) return;
@@ -439,7 +439,7 @@ function seloVencimento(t) {
 
 function renderizarPrevistos(listaFutura) {
     const corpo = document.querySelector("#tabela-previstos tbody");
-    corpo.innerHTML = "";
+    corpo.replaceChildren();
 
     if (listaFutura.length === 0) {
         corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhum lançamento futuro neste período.</td></tr>";
@@ -535,7 +535,7 @@ function calcularDetalhePrevistoPorBancoDia(listaFutura) {
 
 function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
     const container = document.getElementById("detalhe-previstos-banco");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const bancos = Object.keys(porBancoDia);
     if (bancos.length === 0) {
@@ -618,7 +618,7 @@ function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
 
 function renderizarPrevistoPorBanco(porBanco) {
     const container = document.getElementById("grade-previstos-banco");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saidas - porBanco[a].saidas);
     if (bancos.length === 0) {
@@ -673,7 +673,7 @@ function rotulosMesesDoAno(ano) {
 
 function mostrarSelecaoGrafico(idSelo, categoria, aoLimpar) {
     const selo = document.getElementById(idSelo);
-    selo.innerHTML = "";
+    selo.replaceChildren();
     if (!categoria) return;
     selo.appendChild(document.createTextNode(`só ${categoria}`));
     const botao = document.createElement("button");
@@ -740,7 +740,7 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
 
     // Resumo: este período × mesmo período do ano anterior (do total ou da categoria escolhida)
     const resumo = document.getElementById("resumo-evolucao-cat");
-    resumo.innerHTML = "";
+    resumo.replaceChildren();
     const foco = r.categorias.find((c) => c.nome === estadoEvolucaoCat.categoria) ?? r.total;
     const nomeFoco = foco === r.total ? palavra : foco.nome;
     const sentido = sentidoDaVariacao(tipo, foco.diferenca);
@@ -781,7 +781,7 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
 
     // Tabela: todas as categorias × 12 meses + comparação
     const tabela = document.getElementById("tabela-evolucao-cat");
-    tabela.innerHTML = "";
+    tabela.replaceChildren();
     document.getElementById("area-tabela-evolucao-cat").style.display = temDados ? "" : "none";
     if (!temDados) {
         document.getElementById("nota-evolucao-cat").textContent = "";

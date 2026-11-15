@@ -3,6 +3,7 @@
 // Gerencia link ativo, e-mail do usuário, logout e o Seletor de Tema (Leitura/Ergonomia).
 
 import { sair } from "./auth-guard.js";
+import { icone } from "./ui.js";
 
 // Dia = claro, noite = escuro, sem depender do modo claro/escuro do sistema
 // operacional (esse já é usado por outros apps e nem sempre reflete se é dia
@@ -55,7 +56,10 @@ function atualizarIconeBotaoTema(tema) {
   document.querySelectorAll(".btn-alternar-tema").forEach((btn) => {
     const rotulo = btn.querySelector(".tema-rotulo");
     const classeRotulo = rotulo?.className ?? "tema-rotulo";
-    btn.innerHTML = `<svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-${info.icone}"></use></svg><span class="${classeRotulo}">${info.rotulo}</span>`;
+    const novoRotulo = document.createElement("span");
+    novoRotulo.className = classeRotulo;
+    novoRotulo.textContent = info.rotulo;
+    btn.replaceChildren(icone(info.icone), novoRotulo);
     btn.title = info.proximo;
     btn.setAttribute("aria-label", `Tema ${info.rotulo}. ${info.proximo}`);
   });

@@ -39,7 +39,7 @@ export function filtrarPorVale(lista, modo) {
 }
 
 export function preencherSelectVale(select) {
-    select.innerHTML = "";
+    select.replaceChildren();
     OPCOES_FILTRO_VALE.forEach(({ valor, rotulo }) => {
         const opcao = document.createElement("option");
         opcao.value = valor;

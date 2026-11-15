@@ -117,7 +117,7 @@ function renderizarIndicadores(plano) {
 // ---------- "O que fazer agora" ----------
 function renderizarRecomendacoes(plano) {
     const lista = document.getElementById("recomendacoes");
-    lista.innerHTML = "";
+    lista.replaceChildren();
     const adicionar = (texto, tipo = "info") => lista.appendChild(elemento("li", `recomendacao recomendacao-${tipo}`, texto));
 
     const atual = plano.ciclos[0];
@@ -188,7 +188,7 @@ function renderizarRecomendacoes(plano) {
 // ---------- Bancos no ciclo atual ----------
 function renderizarBancos(plano) {
     const container = document.getElementById("grade-bancos-ciclo");
-    container.innerHTML = "";
+    container.replaceChildren();
     if (plano.bancos.length === 0) {
         container.appendChild(elemento("p", "vazio", "Nenhum banco com saldo ou conta prevista."));
         return;
@@ -346,7 +346,7 @@ function abrirDetalheCiclo(ciclo, aoFechar) {
 
 function renderizarCiclos(plano) {
     const container = document.getElementById("grade-ciclos");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const situacao = campoSituacao.value;
     const ano = campoAno.value;
@@ -369,7 +369,7 @@ function renderizarCiclos(plano) {
 function popularAnos(plano) {
     const anos = [...new Set(plano.todosCiclos.flatMap((c) => [c.inicio.slice(0, 4), c.fim.slice(0, 4)]))].sort().reverse();
     const atual = campoAno.value;
-    campoAno.innerHTML = "";
+    campoAno.replaceChildren();
     [["", "Todos"], ...anos.map((a) => [a, a])].forEach(([valor, rotulo]) => {
         const opcao = document.createElement("option");
         opcao.value = valor;
@@ -440,7 +440,7 @@ async function carregar(forcarAtualizacao = false) {
             campoVale.value = filtros.vale ?? "SEM";
             seletorBanco.definirSelecionados((filtros.bancos ?? []).filter((b) => bancosDisponiveis.includes(b)));
             // O ano só existe depois do primeiro cálculo; guarda para aplicar nele.
-            campoAno.innerHTML = `<option value="${filtros.ano ?? ""}">${filtros.ano || "Todos"}</option>`;
+            campoAno.replaceChildren(new Option(String(filtros.ano || "Todos"), String(filtros.ano ?? "")));
             campoAno.value = filtros.ano ?? "";
         }
         recalcular();

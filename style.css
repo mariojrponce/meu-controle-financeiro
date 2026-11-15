@@ -2223,7 +2223,7 @@ body.tela-login {
 .link-config-mobile .icone { width: 20px; height: 20px; }
 .link-config-mobile.ativo { color: var(--cor-primaria); }
 
-.grade-corrigir { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--e-4); align-items: end; }
+.grade-corrigir { display: grid; grid-template-columns: minmax(130px, 0.6fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--e-4); align-items: end; }
 .grade-corrigir .campo { min-width: 0; }
 .grade-corrigir .botao { margin: 0; }
 .grade-corrigir #corrigir-para { text-transform: uppercase; }

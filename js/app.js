@@ -75,7 +75,7 @@ function renderizarUltimos(lista) {
     });
 
     const corpo = document.querySelector("#tabela-ultimos tbody");
-    corpo.innerHTML = "";
+    corpo.replaceChildren();
 
     if (listaOrdenada.length === 0) {
         corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhum lançamento ainda.</td></tr>";

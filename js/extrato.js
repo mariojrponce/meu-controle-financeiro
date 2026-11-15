@@ -92,7 +92,7 @@ function popularSeletorAno(anoSelecionado) {
     const anos = new Set([anoAtual, ...anosDosDados]);
     const listaOrdenada = Array.from(anos).sort((a, b) => b - a);
 
-    campoAno.innerHTML = "";
+    campoAno.replaceChildren();
     listaOrdenada.forEach((ano) => {
         const opcao = document.createElement("option");
         opcao.value = String(ano);
@@ -260,7 +260,7 @@ function renderizarTabela(lista) {
     listaFiltradaAtual = lista;
 
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
-    corpoTabela.innerHTML = "";
+    corpoTabela.replaceChildren();
 
     renderizarResumo(lista);
 

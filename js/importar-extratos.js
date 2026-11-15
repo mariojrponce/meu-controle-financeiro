@@ -60,9 +60,11 @@ campoTitular.addEventListener("change", () => {
 // ---------------------------------------------------------------- leitura dos arquivos
 
 function avisarLeitura(texto) {
-  areaArquivos.innerHTML = "";
+  areaArquivos.replaceChildren();
   areaArquivos.appendChild(el("p", { classe: "vazio", texto }));
 }
+
+const TAMANHO_MAXIMO_EXTRATO = 25 * 1024 * 1024; // 25 MB por arquivo (PDF ou imagem)
 
 async function adicionarArquivos(lista) {
   if (!lista.length) return;
@@ -70,7 +72,10 @@ async function adicionarArquivos(lista) {
   for (const arquivo of lista) {
     let lido;
     try {
-      lido = await lerArquivoExtrato(arquivo, { aoProgredir: avisarLeitura });
+      // O arquivo é lido inteiro na memória do navegador; um arquivo gigante travaria a aba.
+      lido = arquivo.size > TAMANHO_MAXIMO_EXTRATO
+        ? { erro: "Arquivo grande demais (máximo de 25 MB)." }
+        : await lerArquivoExtrato(arquivo, { aoProgredir: avisarLeitura });
     } catch (erro) {
       console.error("Erro ao ler", arquivo.name, erro);
       lido = { erro: "Não consegui abrir este arquivo (está corrompido ou protegido por senha?)." };
@@ -143,7 +148,7 @@ const ROTULO_CONFIANCA = { alta: "Confiança alta", media: "Confiança média", 
 // ---------------------------------------------------------------- arquivos
 
 function renderizarArquivos() {
-  areaArquivos.innerHTML = "";
+  areaArquivos.replaceChildren();
   if (!estado.arquivos.length) return;
   const lista = el("div", { classe: "lista-arquivos" });
 
@@ -191,7 +196,7 @@ function renderizarArquivos() {
 // ---------------------------------------------------------------- saldos
 
 function renderizarSaldos() {
-  areaSaldos.innerHTML = "";
+  areaSaldos.replaceChildren();
   const saldos = conferirSaldos(estado.resultado, estado.base);
   if (!saldos.length) return;
   const grade = el("div", { classe: "saldos-conferencia" });
@@ -332,7 +337,7 @@ function linhaDaTabela(linha) {
 }
 
 function renderizarRevisao() {
-  areaRevisao.innerHTML = "";
+  areaRevisao.replaceChildren();
   const resultado = estado.resultado;
   if (!resultado || !resultado.linhas.length) return;
   const linhas = resultado.linhas;
@@ -407,7 +412,7 @@ function renderizarRevisao() {
 // ---------------------------------------------------------------- faltantes
 
 function renderizarFaltantes() {
-  areaFaltantes.innerHTML = "";
+  areaFaltantes.replaceChildren();
   const faltantes = estado.resultado?.faltantes ?? [];
   if (!faltantes.length) return;
   const caixa = el("div", { classe: "faltantes" });
@@ -489,7 +494,7 @@ async function gravar(botao) {
 }
 
 function renderizarUltimaImportacao() {
-  areaUltima.innerHTML = "";
+  areaUltima.replaceChildren();
   const ultima = estado.ultimaImportacao;
   if (!ultima) return;
   const caixa = el("div", { classe: "ultima-importacao" });
@@ -550,9 +555,9 @@ function renderizarTudo() {
     renderizarRevisao();
     renderizarFaltantes();
   } else {
-    areaSaldos.innerHTML = "";
-    areaRevisao.innerHTML = "";
-    areaFaltantes.innerHTML = "";
+    areaSaldos.replaceChildren();
+    areaRevisao.replaceChildren();
+    areaFaltantes.replaceChildren();
   }
   renderizarUltimaImportacao();
 }

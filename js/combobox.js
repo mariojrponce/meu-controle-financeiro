@@ -47,7 +47,7 @@ export function criarComboboxTexto(input, opcoesIniciais = []) {
     const termo = normalizarBusca(input.value);
     const filtradas = termo === "" ? opcoes : opcoes.filter((op) => normalizarBusca(op).includes(termo));
 
-    painel.innerHTML = "";
+    painel.replaceChildren();
 
     if (filtradas.length === 0) {
       const vazio = document.createElement("div");
@@ -114,7 +114,7 @@ export function criarSeletorMultiplo({ container, opcoes = [], selecionados = []
   let listaSelecionados = new Set(selecionados);
 
   container.classList.add("seletor-multiplo");
-  container.innerHTML = "";
+  container.replaceChildren();
 
   const botao = document.createElement("button");
   botao.type = "button";
@@ -132,7 +132,7 @@ export function criarSeletorMultiplo({ container, opcoes = [], selecionados = []
   }
 
   function atualizarBotao() {
-    botao.innerHTML = "";
+    botao.replaceChildren();
     const texto = document.createElement("span");
     texto.textContent = textoResumo();
     const seta = document.createElement("span");
@@ -143,7 +143,7 @@ export function criarSeletorMultiplo({ container, opcoes = [], selecionados = []
   }
 
   function renderizarPainel() {
-    painel.innerHTML = "";
+    painel.replaceChildren();
 
     const acoes = document.createElement("div");
     acoes.className = "seletor-multiplo-acoes";

@@ -8,7 +8,7 @@ import { carregarConfiguracoes, salvarConfiguracoes } from "./configuracoes.js";
 import { configuracoesPadrao, limparConfiguracoes, limparNome, LIMITE_ITENS, TAMANHO_MAXIMO_NOME } from "./configuracoes-modelo.js";
 import { limparRegra } from "./finalidade.js";
 import { obterTransacoes, atualizarTransacoesEmLote } from "./dados-carteira.js";
-import { preencherDatalist } from "./dados-comuns.js";
+import { preencherDatalist, normalizarNomeBanco } from "./dados-comuns.js";
 
 const usuario = await exigirLogin();
 renderizarNav("configuracoes", usuario.email);
@@ -269,17 +269,27 @@ document.getElementById("btn-restaurar").addEventListener("click", async () => {
     marcarAlterado();
 });
 
-// ---------- Corrigir classificação nos lançamentos já gravados ----------
+// ---------- Corrigir nomes (classificação ou banco) nos lançamentos já gravados ----------
 const formCorrigir = document.getElementById("form-corrigir");
+const campoCorrigirCampo = document.getElementById("corrigir-campo");
 const campoCorrigirDe = document.getElementById("corrigir-de");
 const campoCorrigirPara = document.getElementById("corrigir-para");
 const botaoCorrigir = document.getElementById("btn-corrigir");
 let transacoes = [];
 
-function preencherClassificacoesUsadas() {
+// Cada campo corrigível: como se chama, como o nome novo é limpo e quais
+// listas desta tela (sugestões / bancos de vale) podem citar o nome antigo.
+const CAMPOS_CORRIGIVEIS = {
+    classificacao_saida: { nome: "classificação", limpar: limparNome, listas: ["classificacoes"] },
+    // Banco usa o mesmo nome padrão dos formulários (ex.: "BANCO DO BRASIL" vira "BB").
+    banco: { nome: "banco", limpar: (texto) => normalizarNomeBanco(limparNome(texto)), listas: ["bancos", "bancosVale"] }
+};
+
+function preencherNomesUsados() {
+    const campo = campoCorrigirCampo.value;
     const contagem = new Map();
     transacoes.forEach((t) => {
-        if (t.classificacao_saida) contagem.set(t.classificacao_saida, (contagem.get(t.classificacao_saida) ?? 0) + 1);
+        if (t[campo]) contagem.set(t[campo], (contagem.get(t[campo]) ?? 0) + 1);
     });
     const nomes = [...contagem.keys()].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
@@ -295,14 +305,19 @@ function preencherClassificacoesUsadas() {
         opcao.textContent = `${nome} (${quantidade} ${quantidade === 1 ? "lançamento" : "lançamentos"})`;
         campoCorrigirDe.appendChild(opcao);
     });
-    preencherDatalist("lista-classificacoes-usadas", nomes);
+    preencherDatalist("lista-nomes-usados", nomes);
     botaoCorrigir.disabled = nomes.length === 0;
 }
 
-async function carregarClassificacoesUsadas() {
+campoCorrigirCampo.addEventListener("change", () => {
+    campoCorrigirPara.value = "";
+    preencherNomesUsados();
+});
+
+async function carregarNomesUsados() {
     try {
         transacoes = await obterTransacoes(usuario);
-        preencherClassificacoesUsadas();
+        preencherNomesUsados();
     } catch (erro) {
         console.error("Erro ao carregar os lançamentos:", erro?.code ?? erro);
         campoCorrigirDe.replaceChildren(new Option("Erro ao carregar os lançamentos", ""));
@@ -311,17 +326,19 @@ async function carregarClassificacoesUsadas() {
 
 formCorrigir.addEventListener("submit", async (evento) => {
     evento.preventDefault();
+    const campo = campoCorrigirCampo.value;
+    const info = CAMPOS_CORRIGIVEIS[campo];
     const de = campoCorrigirDe.value;
-    const para = limparNome(campoCorrigirPara.value);
+    const para = info.limpar(campoCorrigirPara.value);
     if (!de) return campoCorrigirDe.focus();
     if (!para) return campoCorrigirPara.focus();
     if (para === de) return mostrarToast("O nome correto é igual ao atual.", "erro");
 
-    const ids = transacoes.filter((t) => t.classificacao_saida === de).map((t) => t.id);
-    const jaExistem = transacoes.filter((t) => t.classificacao_saida === para).length;
+    const ids = transacoes.filter((t) => t[campo] === de).map((t) => t.id);
+    const jaExistem = transacoes.filter((t) => t[campo] === para).length;
     const confirmou = await confirmarAcao({
         titulo: `Corrigir ${ids.length} ${ids.length === 1 ? "lançamento" : "lançamentos"}?`,
-        mensagem: `Tudo o que está classificado como "${de}" passa a ser "${para}".`
+        mensagem: `Todo lançamento com ${info.nome} "${de}" passa a ser "${para}".`
             + (jaExistem ? ` Já existem ${jaExistem} lançamentos como "${para}": eles vão se juntar, e depois não dá para separar de volta automaticamente.` : ""),
         textoConfirmar: "Corrigir",
         textoCancelar: "Cancelar"
@@ -330,30 +347,37 @@ formCorrigir.addEventListener("submit", async (evento) => {
 
     botaoCorrigir.disabled = true;
     try {
-        await atualizarTransacoesEmLote(usuario, ids, { classificacao_saida: para }, (feitos, total) => {
+        await atualizarTransacoesEmLote(usuario, ids, { [campo]: para }, (feitos, total) => {
             botaoCorrigir.textContent = `Corrigindo ${feitos} de ${total}...`;
         });
-        transacoes = transacoes.map((t) => (t.classificacao_saida === de ? { ...t, classificacao_saida: para } : t));
-        preencherClassificacoesUsadas();
+        transacoes = transacoes.map((t) => (t[campo] === de ? { ...t, [campo]: para } : t));
+        preencherNomesUsados();
         campoCorrigirPara.value = "";
 
-        // A lista de sugestões e as regras desta tela podem citar o nome antigo.
+        // As listas e as regras desta tela podem citar o nome antigo.
         const avisos = [];
-        const posicao = estado.classificacoes.indexOf(de);
-        if (posicao !== -1) {
-            if (estado.classificacoes.includes(para)) estado.classificacoes.splice(posicao, 1);
-            else estado.classificacoes[posicao] = para;
-            renderizarLista(LISTAS[1]);
+        let ajustouLista = false;
+        info.listas.forEach((chave) => {
+            const posicao = estado[chave].indexOf(de);
+            if (posicao === -1) return;
+            if (estado[chave].includes(para)) estado[chave].splice(posicao, 1);
+            else estado[chave][posicao] = para;
+            renderizarLista(LISTAS.find((l) => l.chave === chave));
+            ajustouLista = true;
+        });
+        if (ajustouLista) {
             marcarAlterado();
-            avisos.push("a lista de sugestões foi ajustada (salve as alterações)");
+            avisos.push("as listas desta tela foram ajustadas (salve as alterações)");
         }
-        const citaNasRegras = estado.regras.some((r) => r.para.trim().toUpperCase() === de || r.de.split(",").some((c) => c.trim().toUpperCase() === de));
-        if (citaNasRegras) avisos.push(`há regras de equiparação que ainda citam "${de}"; confira-as`);
+        if (campo === "classificacao_saida") {
+            const citaNasRegras = estado.regras.some((r) => r.para.trim().toUpperCase() === de || r.de.split(",").some((c) => c.trim().toUpperCase() === de));
+            if (citaNasRegras) avisos.push(`há regras de equiparação que ainda citam "${de}"; confira-as`);
+        }
         mostrarToast(`${ids.length} ${ids.length === 1 ? "lançamento corrigido" : "lançamentos corrigidos"}${avisos.length ? `; ${avisos.join("; ")}` : ""}.`, "sucesso");
     } catch (erro) {
-        console.error("Erro ao corrigir a classificação:", erro?.code ?? erro);
+        console.error("Erro ao corrigir o nome:", erro?.code ?? erro);
         mostrarToast("Erro ao corrigir: parte dos lançamentos pode não ter sido alterada. Recarregue a página e confira.", "erro");
-        try { transacoes = await obterTransacoes(usuario, { forcarAtualizacao: true }); preencherClassificacoesUsadas(); } catch { /* fica como está */ }
+        try { transacoes = await obterTransacoes(usuario, { forcarAtualizacao: true }); preencherNomesUsados(); } catch { /* fica como está */ }
     } finally {
         botaoCorrigir.textContent = "Corrigir lançamentos";
         botaoCorrigir.disabled = campoCorrigirDe.options.length <= 1;
@@ -380,4 +404,4 @@ try {
         : "Não foi possível ler suas configurações agora. Mostrando o padrão do sistema.";
 }
 renderizarTudo();
-carregarClassificacoesUsadas();
+carregarNomesUsados();

@@ -26,7 +26,7 @@ let todasTransacoes = [];
 
 function popularSelectsMes() {
     [campoMesOrigem, campoMesDestino].forEach((select) => {
-        select.innerHTML = "";
+        select.replaceChildren();
         NOMES_MESES.forEach((nome, indice) => {
             const opcao = document.createElement("option");
             opcao.value = String(indice + 1).padStart(2, "0");
@@ -43,7 +43,7 @@ function popularSelectsAno() {
     const listaOrdenada = Array.from(anos).sort((a, b) => a - b);
 
     [campoAnoOrigem, campoAnoDestino].forEach((select) => {
-        select.innerHTML = "";
+        select.replaceChildren();
         listaOrdenada.forEach((ano) => {
             const opcao = document.createElement("option");
             opcao.value = String(ano);
@@ -136,10 +136,16 @@ function renderizarTabela() {
     const porBanco = calcularSaldosPorBanco(anoMesOrigem);
     const bancosComSaldo = Object.entries(porBanco).filter(([, saldo]) => Math.abs(saldo) >= 0.005);
 
-    corpoTabela.innerHTML = "";
+    corpoTabela.replaceChildren();
 
     if (bancosComSaldo.length === 0) {
-        corpoTabela.innerHTML = `<tr><td colspan="3" class="vazio">Nenhum banco com saldo em ${nomeMesLabel(campoMesOrigem.value, campoAnoOrigem.value)}.</td></tr>`;
+        const linhaVazia = document.createElement("tr");
+        const celulaVazia = document.createElement("td");
+        celulaVazia.colSpan = 3;
+        celulaVazia.className = "vazio";
+        celulaVazia.textContent = `Nenhum banco com saldo em ${nomeMesLabel(campoMesOrigem.value, campoAnoOrigem.value)}.`;
+        linhaVazia.appendChild(celulaVazia);
+        corpoTabela.replaceChildren(linhaVazia);
         return;
     }
 

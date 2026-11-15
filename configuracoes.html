@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Configurações · Meu Financeiro</title>
     <script src="js/tema-inicial.js"></script>
     <meta name="theme-color" content="#F4F6F9">
@@ -88,17 +89,24 @@
             </section>
 
             <section class="cartao" aria-labelledby="titulo-corrigir">
-                <h2 id="titulo-corrigir"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-editar"></use></svg>Corrigir classificação nos lançamentos</h2>
-                <p class="dica-campo">Escreveu uma classificação errada? Escolha o nome errado e digite o certo: <b>todos os lançamentos</b> que estão com o nome antigo passam para o novo. Se o nome novo já existir, os lançamentos se juntam a ele. A correção é gravada na hora (não depende de "Salvar alterações").</p>
+                <h2 id="titulo-corrigir"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-editar"></use></svg>Corrigir nomes nos lançamentos</h2>
+                <p class="dica-campo">Escreveu um banco ou uma classificação errada? Escolha o nome errado e digite o certo: <b>todos os lançamentos</b> que estão com o nome antigo passam para o novo. Se o nome novo já existir, os lançamentos se juntam a ele. A correção é gravada na hora (não depende de "Salvar alterações").</p>
                 <form id="form-corrigir" class="grade-corrigir">
                     <div class="campo">
-                        <label for="corrigir-de">Classificação atual</label>
+                        <label for="corrigir-campo">O que corrigir</label>
+                        <select id="corrigir-campo">
+                            <option value="classificacao_saida">Classificação</option>
+                            <option value="banco">Banco</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="corrigir-de">Nome atual</label>
                         <select id="corrigir-de" required><option value="">Carregando...</option></select>
                     </div>
                     <div class="campo">
                         <label for="corrigir-para">Nome correto</label>
-                        <input type="text" id="corrigir-para" required maxlength="60" placeholder="Digite ou escolha" list="lista-classificacoes-usadas" autocomplete="off">
-                        <datalist id="lista-classificacoes-usadas"></datalist>
+                        <input type="text" id="corrigir-para" required maxlength="60" placeholder="Digite ou escolha" list="lista-nomes-usados" autocomplete="off">
+                        <datalist id="lista-nomes-usados"></datalist>
                     </div>
                     <button type="submit" id="btn-corrigir" class="botao botao-primario" disabled>Corrigir lançamentos</button>
                 </form>

@@ -234,7 +234,7 @@ function criarChip(rotulo, valor, ativo, cor, aoClicar) {
 
 function renderizarChipsAplicado() {
     const container = document.getElementById("chips-banco-aplicado");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const porBanco = new Map();
     todosInvestimentos.forEach((t) => {
@@ -359,7 +359,7 @@ function renderizarResumo(lista) {
 
 function renderizarPorInvestimento(lista) {
     const container = document.getElementById("grade-por-investimento");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const porInvestimento = {};
     lista.forEach((t) => {
@@ -425,7 +425,7 @@ function renderizarPorInvestimento(lista) {
 
 function renderizarPorDono(lista) {
     const container = document.getElementById("grade-por-dono");
-    container.innerHTML = "";
+    container.replaceChildren();
 
     const porDono = {};
     lista.forEach((t) => {
@@ -626,11 +626,17 @@ function aplicarFiltrosTabela() {
 
 function renderizarTabela(lista, haDadosSemFiltro = true) {
     const corpo = document.querySelector("#tabela-investimentos tbody");
-    corpo.innerHTML = "";
+    corpo.replaceChildren();
 
     if (lista.length === 0) {
         const mensagem = haDadosSemFiltro ? "Nenhuma movimentação com esses filtros." : "Nenhum lançamento de investimento ainda.";
-        corpo.innerHTML = `<tr><td colspan='9' class='vazio'>${mensagem}</td></tr>`;
+        const linhaVazia = document.createElement("tr");
+        const celulaVazia = document.createElement("td");
+        celulaVazia.colSpan = 9;
+        celulaVazia.className = "vazio";
+        celulaVazia.textContent = mensagem;
+        linhaVazia.appendChild(celulaVazia);
+        corpo.replaceChildren(linhaVazia);
         return;
     }
 
