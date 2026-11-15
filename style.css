@@ -540,6 +540,9 @@ td.entrada, td.saida, th[data-tipo="numero"], .valor-linha, .chip-valor, .total-
   padding: var(--e-8) var(--e-8) 56px;
 }
 
+/* Páginas com tabela larga (Extrato): usam toda a largura disponível */
+.pagina.pagina-larga { max-width: none; }
+
 .cabecalho-pagina {
   display: flex;
   align-items: flex-start;
@@ -1060,6 +1063,16 @@ td.col-acoes, th.col-acoes { width: 1%; text-align: right; }
   white-space: normal;
   overflow-wrap: break-word;
   min-width: 200px;
+}
+
+/* Extrato sem rolagem lateral: textos encolhem e quebram linha antes de estourar */
+#tabela-transacoes td:nth-child(2),
+#tabela-transacoes td:nth-child(3) { min-width: 120px; }
+#tabela-transacoes td:nth-child(5),
+#tabela-transacoes td:nth-child(6),
+#tabela-transacoes td:nth-child(7) {
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 /* Previstos (data > hoje): borda azul + fundo levemente diferente */
@@ -2113,6 +2126,8 @@ body.tela-login {
 .tabela-matriz .grupo-categoria:hover td { background: var(--bg-superficie-alt); }
 .tabela-matriz .grupo-categoria.selecionada td { background: var(--cor-primaria-suave); }
 .tabela-matriz .grupo-categoria.selecionada .col-nome { box-shadow: inset 3px 0 0 var(--cor-primaria); }
+.tabela-matriz td.celula-link:hover { text-decoration: underline; color: var(--cor-primaria); }
+.tabela-matriz td.celula-link:focus-visible { outline: 2px solid var(--borda-foco); outline-offset: -2px; }
 .tabela-matriz .grupo-categoria:focus-visible { outline: 2px solid var(--borda-foco); outline-offset: -2px; }
 
 .tabela-matriz tfoot td { background: var(--bg-superficie-alt); }

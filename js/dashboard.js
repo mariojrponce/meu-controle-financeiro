@@ -18,7 +18,7 @@ import {
     renderizarGraficoBarras, renderizarGraficoBarrasAgrupadas, renderizarGraficoLinha, alternarEstadoVazio, aoMudarTema,
     mostrarTotalGrafico, somarValores, corDoTema, renderizarGraficoComparativo } from "./graficos.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
-import { calcularEvolucaoPorCategoria, sentidoDaVariacao, variacaoMensal } from "./evolucao-categorias.js";
+import { calcularEvolucaoPorCategoria, sentidoDaVariacao, variacaoMensal, SEM_CLASSIFICACAO } from "./evolucao-categorias.js";
 import { finalidadeDe } from "./finalidade.js";
 
 const NOME_PAGINA = "dashboard";
@@ -813,18 +813,42 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
             .join("; ");
     };
 
+    // Endereço do Extrato já filtrado nos lançamentos que formam um valor da
+    // tabela: categoria + ano + mês(es), com os mesmos filtros do Dashboard.
+    const enderecoExtrato = (categoria, ano, meses) => {
+        const p = new URLSearchParams({ origem: "dashboard", cat: categoria, ano: String(ano), meses: meses.join(","), tipo, mov: "EXTERNO" });
+        const bancos = seletorBanco.obterSelecionados();
+        if (bancos.length) p.set("bancos", JSON.stringify(bancos));
+        if (campoVale.value) p.set("vale", campoVale.value);
+        if (campoDescricao.value.trim()) p.set("descricao", campoDescricao.value.trim());
+        if (campoDetalhe.value.trim()) p.set("detalhe", campoDetalhe.value.trim());
+        return `extrato.html?${p.toString()}`;
+    };
+    const numeroMes = (i) => String(i + 1).padStart(2, "0");
+    // Transforma a célula de um valor em atalho para o Extrato (sem acionar o clique da categoria).
+    const ligarAoExtrato = (td, categoria, ano, meses) => {
+        td.classList.add("celula-link");
+        td.tabIndex = 0;
+        td.setAttribute("role", "link");
+        td.title = `${td.title ? `${td.title} — ` : ""}clique para ver os lançamentos no Extrato`;
+        const abrir = (e) => { e.stopPropagation(); window.location.href = enderecoExtrato(categoria, ano, meses); };
+        td.addEventListener("click", abrir);
+        td.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(e); } });
+    };
+
     // Monta as 4 linhas de uma categoria (ou do total) dentro de `grupo` (tbody/tfoot).
-    const montarGrupo = (grupo, nome, item) => {
+    // `categoriaLink`: nome da categoria para os valores levarem ao Extrato (null = sem atalho).
+    const montarGrupo = (grupo, nome, item, categoriaLink = null) => {
         const mensal = variacaoMensal(item.meses, item.anterior);
         const sentidoPeriodo = sentidoDaVariacao(tipo, item.diferenca);
         const linhas = [
             {
-                classe: "linha-atual", rotulo: r.ano,
+                classe: "linha-atual", rotulo: r.ano, ano: r.ano, valores: item.meses, valorPeriodo: item.periodoAtual,
                 mes: (i) => ({ texto: valorCompacto(item.meses[i]), classe: [Math.abs(item.meses[i]) < 0.5 ? "zero" : "", ehPrevisto(i) ? "col-previsto" : ""].join(" ").trim(), titulo: `${nome} · ${MESES_CURTOS[i]}/${r.ano}: ${formatarReais(item.meses[i])}${ehPrevisto(i) ? " (previsto)" : ""}` }),
                 periodo: { texto: valorCompacto(item.periodoAtual), titulo: `${periodoAtual}: ${formatarReais(item.periodoAtual)}` }
             },
             {
-                classe: "linha-anterior", rotulo: r.anoAnterior,
+                classe: "linha-anterior", rotulo: r.anoAnterior, ano: r.anoAnterior, valores: item.anterior, valorPeriodo: item.periodoAnterior,
                 mes: (i) => ({ texto: valorCompacto(item.anterior[i]), classe: Math.abs(item.anterior[i]) < 0.5 ? "zero" : "", titulo: `${nome} · ${MESES_CURTOS[i]}/${r.anoAnterior}: ${formatarReais(item.anterior[i])}` }),
                 periodo: { texto: valorCompacto(item.periodoAnterior), titulo: `${periodoAnterior}: ${formatarReais(item.periodoAnterior)}` }
             },
@@ -857,9 +881,15 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
             tr.appendChild(celula("td", linha.rotulo, "col-rotulo"));
             MESES_CURTOS.forEach((_, i) => {
                 const c = linha.mes(i);
-                tr.appendChild(celula("td", c.texto, c.classe, c.titulo));
+                const td = celula("td", c.texto, c.classe, c.titulo);
+                if (categoriaLink && linha.valores && Math.abs(linha.valores[i]) >= 0.005) ligarAoExtrato(td, categoriaLink, linha.ano, [numeroMes(i)]);
+                tr.appendChild(td);
             });
-            tr.appendChild(celula("td", linha.periodo.texto, `col-comparacao col-separador ${linha.periodo.classe ?? ""}`.trim(), linha.periodo.titulo ?? ""));
+            const tdPeriodo = celula("td", linha.periodo.texto, `col-comparacao col-separador ${linha.periodo.classe ?? ""}`.trim(), linha.periodo.titulo ?? "");
+            if (categoriaLink && linha.valores && Math.abs(linha.valorPeriodo) >= 0.005) {
+                ligarAoExtrato(tdPeriodo, categoriaLink, linha.ano, Array.from({ length: r.mesLimite }, (_, i) => numeroMes(i)));
+            }
+            tr.appendChild(tdPeriodo);
             grupo.appendChild(tr);
         });
     };
@@ -867,7 +897,8 @@ function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
     r.categorias.forEach((c) => {
         const tbody = document.createElement("tbody");
         tbody.className = "grupo-categoria";
-        montarGrupo(tbody, c.nome, c);
+        // O Extrato filtra pela categoria equiparada; sem equiparar (ou sem classificação) não há atalho.
+        montarGrupo(tbody, c.nome, c, estadoEvolucaoCat.equiparar && c.nome !== SEM_CLASSIFICACAO ? c.nome : null);
         tbody.tabIndex = 0;
         tbody.setAttribute("aria-label", `${c.nome}: clique para ver no gráfico`);
         if (c.nome === estadoEvolucaoCat.categoria) tbody.classList.add("selecionada");

@@ -14,6 +14,7 @@ import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./
 import { abrirEditorTransacao } from "./editor-transacao.js";
 import { exportarTransacoesXLSX } from "./exportar-excel.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
+import { finalidadeDe } from "./finalidade.js";
 
 const NOME_PAGINA = "extrato";
 
@@ -24,6 +25,7 @@ const campoAno = document.getElementById("filtro-ano");
 const campoInicio = document.getElementById("filtro-data-inicio");
 const campoFim = document.getElementById("filtro-data-fim");
 const campoMov = document.getElementById("filtro-movimentacao");
+const campoTipo = document.getElementById("filtro-tipo");
 const campoSituacao = document.getElementById("filtro-situacao");
 const campoVale = document.getElementById("filtro-vale");
 preencherSelectVale(campoVale);
@@ -52,6 +54,21 @@ const seletorBanco = criarSeletorMultiplo({
     rotuloTodos: "Todos os bancos",
     aoMudar: aplicarFiltros
 });
+
+// Categoria = classificação equiparada pela finalidade (mesma regra do Dashboard).
+const seletorCategoria = criarSeletorMultiplo({
+    container: document.getElementById("filtro-categoria"),
+    opcoes: [],
+    rotuloTodos: "Todas as categorias",
+    aoMudar: aplicarFiltros
+});
+
+function atualizarOpcoesCategoria() {
+    const categorias = [...new Set(todasTransacoes.map(finalidadeDe).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    seletorCategoria.definirOpcoes(categorias);
+    seletorCategoria.definirSelecionados(seletorCategoria.obterSelecionados().filter(c => categorias.includes(c)));
+    return categorias;
+}
 
 let todasTransacoes = [];
 let listaFiltradaAtual = [];
@@ -94,6 +111,7 @@ function aplicarAnoMesNosCampos() {
 
 campoAno.addEventListener("change", () => { aplicarAnoMesNosCampos(); aplicarFiltros(); });
 campoMov.addEventListener("change", aplicarFiltros);
+campoTipo.addEventListener("change", aplicarFiltros);
 campoSituacao.addEventListener("change", aplicarFiltros);
 campoVale.addEventListener("change", aplicarFiltros);
 
@@ -151,6 +169,7 @@ async function excluirTransacao(transacao) {
     try {
         await excluirTransacaoPorId(usuario, transacao.id);
         todasTransacoes = todasTransacoes.filter((t) => t.id !== transacao.id);
+        atualizarOpcoesCategoria();
         aplicarFiltros();
         mostrarToast("Lançamento excluído.", "sucesso");
     } catch (erro) {
@@ -175,6 +194,7 @@ async function editarTransacao(transacao) {
     try {
         await atualizarTransacao(usuario, transacao.id, dadosEditados);
         todasTransacoes = todasTransacoes.map((t) => (t.id === transacao.id ? { ...t, ...dadosEditados } : t));
+        atualizarOpcoesCategoria();
         aplicarFiltros();
         mostrarToast("Lançamento atualizado!", "sucesso");
     } catch (erro) {
@@ -214,6 +234,7 @@ async function novoLancamento() {
     try {
         const id = await criarTransacao(usuario, dadosNovos);
         todasTransacoes = [...todasTransacoes, { id, userId: usuario.uid, ...dadosNovos, criadoEmMs: Date.now() }];
+        atualizarOpcoesCategoria();
         aplicarFiltros();
         mostrarToast("Lançamento criado!", "sucesso");
     } catch (erro) {
@@ -246,7 +267,7 @@ function renderizarTabela(lista) {
     if (lista.length === 0) {
         const linha = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 8;
+        td.colSpan = 9;
         td.className = "vazio";
         td.textContent = "Nenhuma transação encontrada neste período.";
         linha.appendChild(td);
@@ -287,6 +308,7 @@ function renderizarTabela(lista) {
 
         linha.appendChild(celulaTexto(transacao.banco ?? ""));
         linha.appendChild(celulaTexto(transacao.classificacao_saida ?? ""));
+        linha.appendChild(celulaTexto(finalidadeDe(transacao) ?? ""));
 
         const tdValor = document.createElement("td");
         tdValor.className = classeCor;
@@ -329,7 +351,9 @@ function salvarEstadoFiltro() {
         inicioBR: campoInicio.value,
         fimBR: campoFim.value,
         bancos: seletorBanco.obterSelecionados(),
+        categorias: seletorCategoria.obterSelecionados(),
         mov: campoMov.value,
+        tipo: campoTipo.value,
         situacao: campoSituacao.value,
         vale: campoVale.value,
         detalhe: campoDetalhe.value,
@@ -342,8 +366,10 @@ function aplicarFiltros() {
     const dataInicioISO = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "");
     const dataFimISO = brParaISO(normalizarDataDigitada(campoFim.value) ?? "");
     const bancosFiltro = seletorBanco.obterSelecionados();
+    const categoriasFiltro = seletorCategoria.obterSelecionados();
     const mesesFiltro = seletorMes.obterSelecionados().map(nomeMesParaNumero).filter(Boolean);
     const movFiltro = campoMov.value;
+    const tipoFiltro = campoTipo.value;
     const situacaoFiltro = campoSituacao.value;
     const detalheFiltro = campoDetalhe.value.trim().toUpperCase();
     const descricaoFiltro = campoDescricao.value.trim().toUpperCase();
@@ -354,7 +380,9 @@ function aplicarFiltros() {
     if (dataFimISO) listaFiltrada = listaFiltrada.filter(t => t.data <= dataFimISO);
     if (mesesFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => mesesFiltro.includes((t.data ?? "").slice(5, 7)));
     if (bancosFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => bancosFiltro.includes(t.banco));
+    if (categoriasFiltro.length > 0) listaFiltrada = listaFiltrada.filter(t => categoriasFiltro.includes(finalidadeDe(t)));
     if (movFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo_mov === movFiltro);
+    if (tipoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => t.tipo === tipoFiltro);
     listaFiltrada = filtrarPorVale(listaFiltrada, campoVale.value);
     if (situacaoFiltro !== "") {
         const hoje = hojeISO();
@@ -364,7 +392,8 @@ function aplicarFiltros() {
     if (descricaoFiltro !== "") listaFiltrada = listaFiltrada.filter(t => (t.descricao ?? "").includes(descricaoFiltro));
 
     listaFiltrada = [...listaFiltrada].sort((a, b) => {
-        const resultado = compararValores(a[ordenacaoAtual.chave], b[ordenacaoAtual.chave], ordenacaoAtual.tipo);
+        const valorDe = (t) => (ordenacaoAtual.chave === "categoria" ? finalidadeDe(t) : t[ordenacaoAtual.chave]);
+        const resultado = compararValores(valorDe(a), valorDe(b), ordenacaoAtual.tipo);
         return ordenacaoAtual.direcao === "asc" ? resultado : -resultado;
     });
 
@@ -380,7 +409,9 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     seletorMes.definirSelecionados([numeroParaNomeMes(String(mes).padStart(2, "0"))]);
     aplicarAnoMesNosCampos();
     seletorBanco.definirSelecionados([]);
+    seletorCategoria.definirSelecionados([]);
     campoMov.value = "";
+    campoTipo.value = "";
     campoSituacao.value = "";
     campoVale.value = "";
     campoDetalhe.value = "";
@@ -390,19 +421,57 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
     aplicarFiltros();
 });
 
+// Atalho do Dashboard (clique num valor da "Evolução por categoria"): os filtros
+// vêm no endereço e são retirados dele depois de lidos, para um F5 não reaplicar.
+function lerAtalhoDoDashboard() {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("origem") !== "dashboard") return null;
+    let bancos = [];
+    try { bancos = JSON.parse(p.get("bancos") ?? "[]"); } catch { /* ignora */ }
+    const atalho = {
+        ano: p.get("ano") ?? "",
+        meses: (p.get("meses") ?? "").split(",").filter(Boolean),
+        categorias: p.get("cat") ? [p.get("cat")] : [],
+        tipo: ["ENTRADA", "SAIDA"].includes(p.get("tipo")) ? p.get("tipo") : "",
+        mov: ["EXTERNO", "INTERNO"].includes(p.get("mov")) ? p.get("mov") : "",
+        bancos: Array.isArray(bancos) ? bancos : [],
+        vale: p.get("vale") ?? "",
+        descricao: (p.get("descricao") ?? "").toUpperCase(),
+        detalhe: (p.get("detalhe") ?? "").toUpperCase()
+    };
+    window.history.replaceState(null, "", window.location.pathname);
+    return atalho;
+}
+
 document.getElementById("btn-atualizar").addEventListener("click", () => carregarTransacoesDoBanco(true));
 
 async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
-    corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Carregando dados...</td></tr>";
+    corpoTabela.innerHTML = "<tr><td colspan='9' class='vazio'>Carregando dados...</td></tr>";
 
     try {
         todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
 
         const bancosDisponiveis = [...new Set(todasTransacoes.map(t => t.banco).filter(Boolean))].sort();
         seletorBanco.definirOpcoes(bancosDisponiveis);
+        const categoriasDisponiveis = atualizarOpcoesCategoria();
 
-        if (!forcarAtualizacao) {
+        const atalho = forcarAtualizacao ? null : lerAtalhoDoDashboard();
+
+        if (atalho) {
+            // Veio de um valor clicado no Dashboard: vale o filtro do atalho, não o salvo.
+            popularSeletorAno(Number(atalho.ano) || new Date().getFullYear());
+            seletorMes.definirSelecionados(atalho.meses.map(numeroParaNomeMes).filter(Boolean));
+            aplicarAnoMesNosCampos();
+            seletorBanco.definirSelecionados(atalho.bancos.filter(b => bancosDisponiveis.includes(b)));
+            seletorCategoria.definirSelecionados(atalho.categorias.filter(c => categoriasDisponiveis.includes(c)));
+            campoMov.value = atalho.mov;
+            campoTipo.value = atalho.tipo;
+            campoSituacao.value = "";
+            campoVale.value = atalho.vale;
+            campoDetalhe.value = atalho.detalhe;
+            campoDescricao.value = atalho.descricao;
+        } else if (!forcarAtualizacao) {
             const salvo = obterFiltroSalvo(usuario.uid, NOME_PAGINA);
 
             if (salvo) {
@@ -411,7 +480,9 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
                 campoInicio.value = salvo.inicioBR ?? "";
                 campoFim.value = salvo.fimBR ?? "";
                 seletorBanco.definirSelecionados((salvo.bancos ?? []).filter(b => bancosDisponiveis.includes(b)));
+                seletorCategoria.definirSelecionados((salvo.categorias ?? []).filter(c => categoriasDisponiveis.includes(c)));
                 campoMov.value = salvo.mov ?? "";
+                campoTipo.value = salvo.tipo ?? "";
                 campoSituacao.value = salvo.situacao ?? "";
                 campoVale.value = salvo.vale ?? "";
                 campoDetalhe.value = salvo.detalhe ?? "";
@@ -437,7 +508,7 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
 
     } catch (erro) {
         console.error("Erro ao buscar transações: ", erro);
-        corpoTabela.innerHTML = "<tr><td colspan='8' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
+        corpoTabela.innerHTML = "<tr><td colspan='9' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
     }
 }
 
