@@ -66,8 +66,8 @@ Detalhes das regras em [09-importar-e-exportar.md](09-importar-e-exportar.md).
 
 **Objetivo:** ver, filtrar, editar e exportar todos os lançamentos.
 
-**Largura:** é a única tela que usa **toda a largura** ao lado do menu (classe `pagina-larga`;
-as outras param em 1320 px). Com isso a tabela cabe sem barra de rolagem horizontal em telas
+**Largura:** junto com Investimentos, usa **toda a largura** ao lado do menu (classe `pagina-larga`;
+as outras telas param em 1320 px). Com isso a tabela cabe sem barra de rolagem horizontal em telas
 de computador; Descrição, Detalhe, Banco e Classificação quebram linha se faltar
 espaço. A rolagem lateral só volta em telas bem estreitas (celular).
 

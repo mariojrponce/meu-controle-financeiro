@@ -540,7 +540,7 @@ td.entrada, td.saida, th[data-tipo="numero"], .valor-linha, .chip-valor, .total-
   padding: var(--e-8) var(--e-8) 56px;
 }
 
-/* Páginas com tabela larga (Extrato): usam toda a largura disponível */
+/* Páginas com tabela larga (Extrato, Investimentos): usam toda a largura disponível */
 .pagina.pagina-larga { max-width: none; }
 
 .cabecalho-pagina {
@@ -1070,6 +1070,16 @@ td.col-acoes, th.col-acoes { width: 1%; text-align: right; }
 #tabela-transacoes td:nth-child(3) { min-width: 120px; }
 #tabela-transacoes td:nth-child(5),
 #tabela-transacoes td:nth-child(6) {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Investimentos: mesmo aproveitamento de largura do Extrato */
+#tabela-investimentos td:nth-child(3),
+#tabela-investimentos td:nth-child(4) { min-width: 120px; }
+#tabela-investimentos td:nth-child(2),
+#tabela-investimentos td:nth-child(5),
+#tabela-investimentos td:nth-child(6) {
   white-space: normal;
   overflow-wrap: break-word;
 }
