@@ -3,7 +3,7 @@
 // na tela de Lançar (lista de últimos lançamentos).
 import { ligarCampoDataInteligente, normalizarDataDigitada, brParaISO, isoParaBR } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
-import { mostrarToast, ligarFechamentoPorFundo } from "./ui.js";
+import { mostrarToast, ligarFechamentoPorFundo, criarElemento } from "./ui.js";
 import { normalizarNomeBanco } from "./dados-comuns.js";
 
 // Retorna uma Promise: resolve com os dados editados, ou null se cancelado.
@@ -35,83 +35,44 @@ export function abrirEditorTransacao(transacao, {
 
     const caixa = document.createElement("div");
     caixa.className = "modal-caixa modal-caixa-editor";
-    caixa.innerHTML = `
-      <h3>${titulo}</h3>
-      <form id="form-editor-transacao">
-        <div class="grade-campos">
-          <div class="campo">
-            <label for="editor-valor">Valor (R$)</label>
-            <input type="number" id="editor-valor" step="0.01" min="0.01" required inputmode="decimal">
-          </div>
-          <div class="campo">
-            <label for="editor-data">Data</label>
-            <input type="text" id="editor-data" required placeholder="dd/mm/aaaa" inputmode="numeric">
-          </div>
+    // Monta o formulário elemento por elemento (sem innerHTML).
+    const dica = (texto) => criarElemento("span", { classe: "dica-inline", texto });
+    const campo = (idControle, rotulo, controle, { inteiro = false, textoDica = "" } = {}) => criarElemento("div", { classe: inteiro ? "campo campo-inteiro" : "campo" },
+      criarElemento("label", { for: idControle }, rotulo, textoDica ? [" ", dica(textoDica)] : null),
+      controle);
+    const entradaTexto = (id, atributos = {}) => criarElemento("input", { type: "text", id, ...atributos });
+    const selecao = (id, opcoes) => criarElemento("select", { id }, opcoes.map(([valor, texto]) => criarElemento("option", { value: valor, texto })));
 
-          <div class="campo campo-inteiro">
-            <label for="editor-descricao">Descrição</label>
-            <input type="text" id="editor-descricao" required maxlength="120">
-          </div>
-
-          <div class="campo campo-inteiro">
-            <label for="editor-saida">Detalhe <span class="dica-inline">(onde gastou / de onde recebeu)</span></label>
-            <input type="text" id="editor-saida" maxlength="120">
-          </div>
-
-          <div class="campo ${contextoInvestimento ? "campo-inteiro" : ""}">
-            <label for="editor-banco">${contextoInvestimento ? "Banco <span class=\"dica-inline\">(conta de onde saiu / para onde voltou)</span>" : "Banco"}</label>
-            <input type="text" id="editor-banco" required maxlength="60">
-          </div>
-
-          ${contextoInvestimento ? `
-          <div class="campo campo-inteiro">
-            <label for="editor-aplicado">Onde está aplicado <span class="dica-inline">(opcional; vazio = descobre pelo Detalhe)</span></label>
-            <input type="text" id="editor-aplicado" maxlength="60" placeholder="Ex.: Bradesco, Mercado Bitcoin">
-          </div>
-          <div class="campo">
-            <label for="editor-investimento">Investimento</label>
-            <input type="text" id="editor-investimento" required maxlength="60" placeholder="Ex.: CDB Bradesco">
-          </div>
-          <div class="campo">
-            <label for="editor-dono">Dono da carteira</label>
-            <input type="text" id="editor-dono" required maxlength="60" placeholder="Ex.: Eu, Mayara">
-          </div>
-          ` : ""}
-
-          <div class="campo ${contextoInvestimento ? "campo-inteiro" : ""}">
-            <label for="editor-tipo">Tipo</label>
-            <select id="editor-tipo">
-              ${contextoInvestimento ? `
-              <option value="SAIDA">Aporte (dinheiro indo para o investimento)</option>
-              <option value="ENTRADA">Resgate (dinheiro voltando para a conta)</option>
-              ` : `
-              <option value="SAIDA">Saída</option>
-              <option value="ENTRADA">Entrada</option>
-              `}
-            </select>
-          </div>
-
-          ${contextoInvestimento ? "" : `
-          <div class="campo">
-            <label for="editor-tipo-mov">Movimentação</label>
-            <select id="editor-tipo-mov">
-              <option value="EXTERNO">Externo (real)</option>
-              <option value="INTERNO">Interno (entre contas)</option>
-            </select>
-          </div>
-          <div class="campo">
-            <label for="editor-classificacao">Classificação</label>
-            <input type="text" id="editor-classificacao" required maxlength="60">
-          </div>
-          `}
-        </div>
-
-        <div class="modal-acoes" style="margin-top: var(--e-6);">
-          <button type="button" id="editor-cancelar" class="botao botao-secundario">Cancelar</button>
-          <button type="submit" class="botao botao-primario">${textoSalvar}</button>
-        </div>
-      </form>
-    `;
+    caixa.append(
+      criarElemento("h3", { texto: titulo }),
+      criarElemento("form", { id: "form-editor-transacao" },
+        criarElemento("div", { classe: "grade-campos" },
+          campo("editor-valor", "Valor (R$)", criarElemento("input", { type: "number", id: "editor-valor", step: "0.01", min: "0.01", required: true, inputmode: "decimal" })),
+          campo("editor-data", "Data", entradaTexto("editor-data", { required: true, placeholder: "dd/mm/aaaa", inputmode: "numeric" })),
+          campo("editor-descricao", "Descrição", entradaTexto("editor-descricao", { required: true, maxlength: 120 }), { inteiro: true }),
+          campo("editor-saida", "Detalhe", entradaTexto("editor-saida", { maxlength: 120 }), { inteiro: true, textoDica: "(onde gastou / de onde recebeu)" }),
+          campo("editor-banco", "Banco", entradaTexto("editor-banco", { required: true, maxlength: 60 }),
+            { inteiro: contextoInvestimento, textoDica: contextoInvestimento ? "(conta de onde saiu / para onde voltou)" : "" }),
+          contextoInvestimento ? [
+            campo("editor-aplicado", "Onde está aplicado", entradaTexto("editor-aplicado", { maxlength: 60, placeholder: "Ex.: Bradesco, Mercado Bitcoin" }),
+              { inteiro: true, textoDica: "(opcional; vazio = descobre pelo Detalhe)" }),
+            campo("editor-investimento", "Investimento", entradaTexto("editor-investimento", { required: true, maxlength: 60, placeholder: "Ex.: CDB Bradesco" })),
+            campo("editor-dono", "Dono da carteira", entradaTexto("editor-dono", { required: true, maxlength: 60, placeholder: "Ex.: Eu, Mayara" }))
+          ] : null,
+          campo("editor-tipo", "Tipo", selecao("editor-tipo", contextoInvestimento
+            ? [["SAIDA", "Aporte (dinheiro indo para o investimento)"], ["ENTRADA", "Resgate (dinheiro voltando para a conta)"]]
+            : [["SAIDA", "Saída"], ["ENTRADA", "Entrada"]]), { inteiro: contextoInvestimento }),
+          contextoInvestimento ? null : [
+            campo("editor-tipo-mov", "Movimentação", selecao("editor-tipo-mov", [["EXTERNO", "Externo (real)"], ["INTERNO", "Interno (entre contas)"]])),
+            campo("editor-classificacao", "Classificação", entradaTexto("editor-classificacao", { required: true, maxlength: 60 }))
+          ]
+        ),
+        criarElemento("div", { classe: "modal-acoes", style: "margin-top: var(--e-6);" },
+          criarElemento("button", { type: "button", id: "editor-cancelar", classe: "botao botao-secundario", texto: "Cancelar" }),
+          criarElemento("button", { type: "submit", classe: "botao botao-primario", texto: textoSalvar })
+        )
+      )
+    );
     fundo.appendChild(caixa);
     document.body.appendChild(fundo);
     requestAnimationFrame(() => fundo.classList.add("aberto"));

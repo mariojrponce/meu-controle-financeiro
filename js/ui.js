@@ -109,3 +109,58 @@ export function preencherBotao(botao, nomeIcone, texto = "") {
   else if (botao.title) botao.setAttribute("aria-label", botao.title);
   return botao;
 }
+
+// ---------- Montagem de trechos de tela sem innerHTML ----------
+// Todo texto entra por textContent: nada que venha de dados é interpretado como HTML.
+
+// Troca o conteúdo de `container` por uma mensagem (ex.: "Nenhum lançamento ainda.").
+export function mostrarMensagem(container, texto, classe = "vazio", tag = "p") {
+  const elemento = document.createElement(tag);
+  if (classe) elemento.className = classe;
+  elemento.textContent = texto;
+  container.replaceChildren(elemento);
+}
+
+// Troca o conteúdo de um <tbody> por uma linha única com a mensagem, ocupando `colunas` colunas.
+export function mostrarLinhaMensagem(corpoTabela, colunas, texto) {
+  const linha = document.createElement("tr");
+  const celula = document.createElement("td");
+  celula.colSpan = colunas;
+  celula.className = "vazio";
+  celula.textContent = texto;
+  linha.appendChild(celula);
+  corpoTabela.replaceChildren(linha);
+}
+
+// Monta a linha de títulos de um <thead>. Cada coluna: texto simples ou
+// { texto, chave, tipo, direita } (chave/tipo = ordenação; direita = alinhado à direita).
+export function montarCabecalho(thead, colunas) {
+  const linha = document.createElement("tr");
+  colunas.forEach((coluna) => {
+    const info = typeof coluna === "string" ? { texto: coluna } : coluna;
+    const th = document.createElement("th");
+    th.textContent = info.texto;
+    if (info.chave) th.dataset.chave = info.chave;
+    if (info.tipo) th.dataset.tipo = info.tipo;
+    if (info.direita) th.style.textAlign = "right";
+    linha.appendChild(th);
+  });
+  thead.replaceChildren(linha);
+}
+
+// Cria um elemento com atributos e filhos (textos ou outros elementos).
+// Atributos especiais: classe, texto; os demais vão por setAttribute (true = atributo sem valor).
+export function criarElemento(tag, atributos = {}, ...filhos) {
+  const elemento = document.createElement(tag);
+  Object.entries(atributos).forEach(([nome, valor]) => {
+    if (valor === false || valor === null || valor === undefined) return;
+    if (nome === "classe") elemento.className = valor;
+    else if (nome === "texto") elemento.textContent = valor;
+    else elemento.setAttribute(nome, valor === true ? "" : String(valor));
+  });
+  filhos.flat().forEach((filho) => {
+    if (filho === false || filho === null || filho === undefined) return;
+    elemento.append(filho);
+  });
+  return elemento;
+}

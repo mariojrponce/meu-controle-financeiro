@@ -8,7 +8,7 @@ import {
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
 import { obterTransacoes } from "./dados-carteira.js";
-import { mostrarToast, preencherBotao } from "./ui.js";
+import { mostrarToast, preencherBotao, montarCabecalho, mostrarLinhaMensagem, mostrarMensagem } from "./ui.js";
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import {
     obterCategoriasSeparadas, salvarCategoriasSeparadas,
@@ -159,7 +159,7 @@ function renderizarCarteiras(porBanco) {
 
     const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saldo - porBanco[a].saldo);
     if (bancos.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhuma transação neste período.</p>";
+        mostrarMensagem(container, "Nenhuma transação neste período.");
         return;
     }
 
@@ -201,7 +201,7 @@ function renderizarCartoesCategoriaSeparada(dadosPorCategoria) {
 
     const categorias = Object.keys(dadosPorCategoria);
     if (categorias.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhuma categoria configurada como \"à parte\" ainda.</p>";
+        mostrarMensagem(container, "Nenhuma categoria configurada como \"à parte\" ainda.");
         return;
     }
 
@@ -442,7 +442,7 @@ function renderizarPrevistos(listaFutura) {
     corpo.replaceChildren();
 
     if (listaFutura.length === 0) {
-        corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhum lançamento futuro neste período.</td></tr>";
+        mostrarLinhaMensagem(corpo, 5, "Nenhum lançamento futuro neste período.");
         return;
     }
 
@@ -539,7 +539,7 @@ function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
 
     const bancos = Object.keys(porBancoDia);
     if (bancos.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhum lançamento futuro neste período.</p>";
+        mostrarMensagem(container, "Nenhum lançamento futuro neste período.");
         return;
     }
 
@@ -569,7 +569,7 @@ function renderizarDetalhePrevistoPorBancoDia(porBancoDia) {
 
         const tabela = document.createElement("table");
         const thead = document.createElement("thead");
-        thead.innerHTML = "<tr><th>Período</th><th>Detalhe</th><th style='text-align:right;'>Entrando</th><th style='text-align:right;'>Saindo</th></tr>";
+        montarCabecalho(thead, ["Período", "Detalhe", { texto: "Entrando", direita: true }, { texto: "Saindo", direita: true }]);
         tabela.appendChild(thead);
 
         const corpo = document.createElement("tbody");
@@ -622,7 +622,7 @@ function renderizarPrevistoPorBanco(porBanco) {
 
     const bancos = Object.keys(porBanco).sort((a, b) => porBanco[b].saidas - porBanco[a].saidas);
     if (bancos.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhum lançamento futuro neste período.</p>";
+        mostrarMensagem(container, "Nenhum lançamento futuro neste período.");
         return;
     }
 
@@ -1193,8 +1193,8 @@ async function carregarDashboard(forcarAtualizacao = false) {
 
     } catch (erro) {
         console.error("Erro ao carregar dashboard:", erro);
-        document.getElementById("grade-carteiras").innerHTML = "<p class='vazio'>Erro ao carregar dados. Verifique o console (F12).</p>";
-        document.querySelector("#tabela-previstos tbody").innerHTML = "<tr><td colspan='5' class='vazio'>Erro ao carregar dados.</td></tr>";
+        mostrarMensagem(document.getElementById("grade-carteiras"), "Erro ao carregar dados. Verifique o console (F12).");
+        mostrarLinhaMensagem(document.querySelector("#tabela-previstos tbody"), 5, "Erro ao carregar dados.");
         ["grafico-entradas-categoria", "grafico-tendencia-entradas", "grafico-classificacoes", "grafico-tendencia-gastos", "grafico-categorias-separadas-futuro"].forEach((idCanvas) => {
             const idVazio = idCanvas.replace("grafico-", "vazio-");
             alternarEstadoVazio(idCanvas, idVazio, false);

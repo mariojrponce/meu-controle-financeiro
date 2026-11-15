@@ -7,7 +7,7 @@ import {
 } from "./utils.js";
 import { criarSeletorMultiplo } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
-import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao, mostrarLinhaMensagem } from "./ui.js";
 import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { obterFiltroSalvo, salvarFiltro } from "./preferencias-filtros.js";
 import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes } from "./dados-comuns.js";
@@ -447,7 +447,7 @@ document.getElementById("btn-atualizar").addEventListener("click", () => carrega
 
 async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
     const corpoTabela = document.querySelector("#tabela-transacoes tbody");
-    corpoTabela.innerHTML = "<tr><td colspan='9' class='vazio'>Carregando dados...</td></tr>";
+    mostrarLinhaMensagem(corpoTabela, 9, "Carregando dados...");
 
     try {
         todasTransacoes = await obterTransacoes(usuario, { forcarAtualizacao });
@@ -508,7 +508,7 @@ async function carregarTransacoesDoBanco(forcarAtualizacao = false) {
 
     } catch (erro) {
         console.error("Erro ao buscar transações: ", erro);
-        corpoTabela.innerHTML = "<tr><td colspan='9' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
+        mostrarLinhaMensagem(corpoTabela, 9, "Erro ao carregar dados. Verifique o console (F12) para detalhes.");
     }
 }
 

@@ -1,6 +1,6 @@
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, montarCabecalho, mostrarMensagem } from "./ui.js";
 import { mapearCabecalhos, processarLinha, CAMPOS_OBRIGATORIOS } from "./importacao.js";
 import { formatarReais, isoParaBR } from "./utils.js";
 import { importarTransacoes } from "./dados-carteira.js";
@@ -31,13 +31,13 @@ inputArquivo.addEventListener("change", async (evento) => {
     linhasProcessadas = [];
     botaoImportar.style.display = "none";
     resumoImportacao.replaceChildren();
-    areaPreview.innerHTML = "<p class='vazio'>Lendo arquivo...</p>";
+    mostrarMensagem(areaPreview, "Lendo arquivo...");
 
     try {
         const linhasBrutas = await lerArquivo(arquivo);
 
         if (linhasBrutas.length === 0) {
-            areaPreview.innerHTML = "<p class='vazio'>O arquivo não tem nenhuma linha de dados.</p>";
+            mostrarMensagem(areaPreview, "O arquivo não tem nenhuma linha de dados.");
             return;
         }
 
@@ -113,7 +113,15 @@ function renderizarResumoEPreview(linhas) {
 
     const tabela = document.createElement("table");
     const thead = document.createElement("thead");
-    thead.innerHTML = "<tr><th data-chave=\"indice\" data-tipo=\"numero\">#</th><th data-chave=\"data\" data-tipo=\"texto\">Data</th><th data-chave=\"descricao\" data-tipo=\"texto\">Descrição</th><th data-chave=\"banco\" data-tipo=\"texto\">Banco</th><th data-chave=\"tipo\" data-tipo=\"texto\">Tipo</th><th data-chave=\"valor\" data-tipo=\"numero\">Valor</th><th data-chave=\"status\" data-tipo=\"texto\">Status</th></tr>";
+    montarCabecalho(thead, [
+        { texto: "#", chave: "indice", tipo: "numero" },
+        { texto: "Data", chave: "data", tipo: "texto" },
+        { texto: "Descrição", chave: "descricao", tipo: "texto" },
+        { texto: "Banco", chave: "banco", tipo: "texto" },
+        { texto: "Tipo", chave: "tipo", tipo: "texto" },
+        { texto: "Valor", chave: "valor", tipo: "numero" },
+        { texto: "Status", chave: "status", tipo: "texto" }
+    ]);
     tabela.appendChild(thead);
 
     const linhasComIndice = linhas.map((linha, indice) => ({ ...linha, indice: indice + 1 }));

@@ -28,7 +28,7 @@
 // esta tela já busca o histórico inteiro por padrão — sem recorte de data.
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao, mostrarLinhaMensagem, mostrarMensagem } from "./ui.js";
 import { BANCOS_SUGERIDOS, mesclarSugestoes } from "./dados-comuns.js";
 import { isoParaBR, brParaISO, normalizarDataDigitada, formatarReais, ligarCampoDataInteligente } from "./utils.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
@@ -319,7 +319,7 @@ function linhaExpansivel(rotulo, valor, lancamentos) {
     detalhe.style.display = "none";
 
     if (lancamentos.length === 0) {
-        detalhe.innerHTML = "<p class='mini-extrato-linha vazio'>Nenhum lançamento.</p>";
+        mostrarMensagem(detalhe, "Nenhum lançamento.", "mini-extrato-linha vazio");
     } else {
         [...lancamentos]
             .sort((a, b) => (b.data ?? "").localeCompare(a.data ?? ""))
@@ -386,7 +386,7 @@ function renderizarPorInvestimento(lista) {
     const nomes = Object.keys(porInvestimento).sort((a, b) => (porInvestimento[b].aportado - porInvestimento[b].resgatado) - (porInvestimento[a].aportado - porInvestimento[a].resgatado));
 
     if (nomes.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhum investimento ainda.</p>";
+        mostrarMensagem(container, "Nenhum investimento ainda.");
         return;
     }
 
@@ -440,7 +440,7 @@ function renderizarPorDono(lista) {
     const donos = Object.keys(porDono).sort((a, b) => (porDono[b].aportado - porDono[b].resgatado) - (porDono[a].aportado - porDono[a].resgatado));
 
     if (donos.length === 0) {
-        container.innerHTML = "<p class='vazio'>Nenhum investimento ainda.</p>";
+        mostrarMensagem(container, "Nenhum investimento ainda.");
         return;
     }
 
@@ -820,8 +820,7 @@ async function carregarDados(forcarAtualizacao = false) {
         if (forcarAtualizacao) mostrarToast("Dados atualizados.", "sucesso");
     } catch (erro) {
         console.error("Erro ao buscar transações:", erro);
-        document.querySelector("#tabela-investimentos tbody").innerHTML =
-            "<tr><td colspan='9' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
+        mostrarLinhaMensagem(document.querySelector("#tabela-investimentos tbody"), 9, "Erro ao carregar dados. Verifique o console (F12) para detalhes.");
     }
 }
 

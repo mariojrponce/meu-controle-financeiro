@@ -9,7 +9,7 @@ import { formatarReais, isoParaBR, hojeISO, celulaParaNumero } from "./utils.js"
 import { criarSeletorMultiplo } from "./combobox.js";
 import { obterCorBanco } from "./cores-bancos.js";
 import { obterTransacoes } from "./dados-carteira.js";
-import { mostrarToast, ligarFechamentoPorFundo } from "./ui.js";
+import { mostrarToast, ligarFechamentoPorFundo, montarCabecalho, mostrarMensagem } from "./ui.js";
 import { calcularPlanejamento, sugerirCategoriasDiaADia } from "./planejamento-calculo.js";
 import { preencherSelectVale } from "./vale.js";
 
@@ -222,7 +222,7 @@ function renderizarBancos(plano) {
 function tabelaLancamentos(lista, classeValor) {
     const tabela = document.createElement("table");
     const thead = document.createElement("thead");
-    thead.innerHTML = "<tr><th>Data</th><th>Descrição</th><th>Banco</th><th style='text-align:right;'>Valor</th></tr>";
+    montarCabecalho(thead, ["Data", "Descrição", "Banco", { texto: "Valor", direita: true }]);
     tabela.appendChild(thead);
     const corpo = document.createElement("tbody");
     lista.forEach((t) => {
@@ -447,7 +447,7 @@ async function carregar(forcarAtualizacao = false) {
         if (forcarAtualizacao) mostrarToast("Dados atualizados.", "sucesso");
     } catch (erro) {
         console.error("Erro ao carregar planejamento:", erro);
-        document.getElementById("recomendacoes").innerHTML = "<li>Erro ao carregar dados. Verifique o console (F12).</li>";
+        mostrarMensagem(document.getElementById("recomendacoes"), "Erro ao carregar dados. Verifique o console (F12).", "", "li");
     }
 }
 

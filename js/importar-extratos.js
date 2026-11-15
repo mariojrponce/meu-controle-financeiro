@@ -4,7 +4,7 @@
 // A lógica (leitura, classificação, conciliação) fica em js/extratos/ — aqui
 // é só a tela.
 import { exigirLogin } from "./auth-guard.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, mostrarMensagem } from "./ui.js";
 import { formatarReais, isoParaBR, hojeISO } from "./utils.js";
 import { obterTransacoes, gravarImportacaoExtratos, desfazerImportacaoExtratos, excluirTransacaoPorId } from "./dados-carteira.js";
 import { lerArquivoExtrato, EXTENSOES_ACEITAS } from "./extratos/ler-arquivo.js";
@@ -68,7 +68,7 @@ const TAMANHO_MAXIMO_EXTRATO = 25 * 1024 * 1024; // 25 MB por arquivo (PDF ou im
 
 async function adicionarArquivos(lista) {
   if (!lista.length) return;
-  areaArquivos.innerHTML = "<p class='vazio'>Lendo arquivos...</p>";
+  mostrarMensagem(areaArquivos, "Lendo arquivos...");
   for (const arquivo of lista) {
     let lido;
     try {

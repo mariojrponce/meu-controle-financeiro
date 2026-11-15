@@ -6,7 +6,7 @@
 // padrão usado em "Virar mês" para a virada de saldo.
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao, mostrarLinhaMensagem } from "./ui.js";
 import { BANCOS_SUGERIDOS, mesclarSugestoes, normalizarNomeBanco } from "./dados-comuns.js";
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
@@ -56,8 +56,7 @@ async function carregarDadosAuxiliares() {
         console.error("Não foi possível carregar dados auxiliares:", erro);
         comboboxOrigem.atualizarOpcoes(BANCOS_SUGERIDOS);
         comboboxDestino.atualizarOpcoes(BANCOS_SUGERIDOS);
-        document.querySelector("#tabela-ultimas tbody").innerHTML =
-            "<tr><td colspan='5' class='vazio'>Erro ao carregar. Verifique o console (F12).</td></tr>";
+        mostrarLinhaMensagem(document.querySelector("#tabela-ultimas tbody"), 5, "Erro ao carregar. Verifique o console (F12).");
     }
 }
 
@@ -77,7 +76,7 @@ function renderizarUltimas(lista) {
     corpo.replaceChildren();
 
     if (listaOrdenada.length === 0) {
-        corpo.innerHTML = "<tr><td colspan='5' class='vazio'>Nenhuma transferência interna ainda.</td></tr>";
+        mostrarLinhaMensagem(corpo, 5, "Nenhuma transferência interna ainda.");
         return;
     }
 

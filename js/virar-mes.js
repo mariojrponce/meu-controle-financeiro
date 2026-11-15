@@ -8,7 +8,7 @@ import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
 import { formatarReais, ultimoDiaDoMes, NOMES_MESES } from "./utils.js";
 import { obterTransacoes, criarTransacao } from "./dados-carteira.js";
-import { mostrarToast, confirmarAcao } from "./ui.js";
+import { mostrarToast, confirmarAcao, mostrarLinhaMensagem } from "./ui.js";
 
 const DESCRICAO_VIRADA = "VALOR EM CARTEIRA";
 const CLASSIFICACAO_VIRADA = "VIRADA DE MÊS";
@@ -185,7 +185,7 @@ function renderizarTabela() {
 });
 
 async function carregar() {
-    corpoTabela.innerHTML = "<tr><td colspan='3' class='vazio'>Carregando dados...</td></tr>";
+    mostrarLinhaMensagem(corpoTabela, 3, "Carregando dados...");
     try {
         todasTransacoes = await obterTransacoes(usuario);
         popularSelectsMes();
@@ -194,7 +194,7 @@ async function carregar() {
         renderizarTabela();
     } catch (erro) {
         console.error("Erro ao buscar transações:", erro);
-        corpoTabela.innerHTML = "<tr><td colspan='3' class='vazio'>Erro ao carregar dados. Verifique o console (F12) para detalhes.</td></tr>";
+        mostrarLinhaMensagem(corpoTabela, 3, "Erro ao carregar dados. Verifique o console (F12) para detalhes.");
     }
 }
 
