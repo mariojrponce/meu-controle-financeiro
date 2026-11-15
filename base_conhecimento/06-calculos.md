@@ -119,6 +119,7 @@ Sobre os lançamentos do período (realizado + previsto, **inclusive internos**)
 é vale  ⇔  banco (sem espaços nas pontas, maiúsculo) começa com
            ALELO | PLUXE | PLUXEE | SODEXO | TICKET | VR | FLASH | CAJU | SWILE  (palavra inteira)
 ```
+Essa é a lista padrão; o usuário pode trocá-la em Configurações (`bancosVale`). Lista vazia = nenhum banco é vale.
 | Opção | Mantém |
 |-------|--------|
 | Tudo (padrão em Extrato, Dashboard e Lançar) | todos |

@@ -18,7 +18,7 @@
 | Categoria | Tecnologia / Lib | Origem / Versão | Função |
 | :--- | :--- | :--- | :--- |
 | **Backend & Auth** | Firebase SDK v10.12.2 | CDN (`gstatic.com`) | Autenticação (Auth) e Banco de Dados (Firestore) |
-| **Gráficos** | Chart.js | CDN (`jsdelivr.net`) | Gráficos de rosca/barras no Dashboard |
+| **Gráficos** | Chart.js 4.5.0 + datalabels 2.2.0 | CDN (`cdnjs.cloudflare.com`, com SRI) | Gráficos do Dashboard (única página cujo CSP libera o cdnjs) |
 | **Importação** | SheetJS (XLSX) 0.20.3 | Local (`js/vendor/xlsx/`) | Parser de arquivos Excel (`.xlsx`/`.csv`) |
 | **Extratos PDF** | pdf.js 4.10.38 (legacy) | Local (`js/vendor/pdfjs/`) | Texto + posição dos PDFs dos bancos, no navegador (sem servidor/CDN) |
 | **OCR** | tesseract.js 5.1.1 + modelo `por` | Local (`js/vendor/tesseract/`) | Lê a fatura aberta do Bradesco (imagem), só carregado quando precisa |
@@ -33,6 +33,7 @@
 ├── index.html / js/app.js               # Lançamento rápido de transações + lista dos últimos 10
 ├── dashboard.html / js/dashboard.js     # Visão geral, saldos por banco, totais do mês e relatórios
 ├── extrato.html / js/extrato.js         # Extrato completo com filtros por período/banco/tipo e exportação
+├── configuracoes.html / js/configuracoes-tela.js # Configurações por usuário: sugestões, bancos de vale, regras de categoria, correção de nomes em massa
 ├── importar.html / js/importar-extratos.js # Importação automática de EXTRATOS dos bancos (revisão linha a linha)
 ├── importar.html / js/importar.js       # (seção recolhida) importação em lote via planilha Excel no formato do sistema
 ├── planejamento.html / js/planejamento.js # Planejamento por ciclo de salário (quanto precisa, quanto sobra, quanto dá p/ investir)
@@ -57,7 +58,8 @@
     ├── importacao.js                    # Processamento de linhas da planilha importada
     ├── planejamento-calculo.js          # Conta dos ciclos de salário (sem DOM, testável no Node)
     ├── evolucao-categorias.js           # Dashboard: categorias mês a mês × mesmo período do ano anterior (sem DOM, testável)
-    ├── finalidade.js                    # Equipara categorias de anos diferentes pela finalidade (TRANSPORTE → UBER/ONIBUS...) — só na visão, sem DOM
+    ├── finalidade.js                    # Equipara categorias pela finalidade — só na visão, sem DOM. Regras padrão + as do usuário (Configurações)
+    ├── tema-inicial.js                  # Script do <head>: bloqueia abertura em iframe e aplica o tema cedo (arquivo próprio por causa do CSP)
     ├── nav.js                           # Componente de cabeçalho e navegação comum
     ├── preferencias-dashboard.js        # Persistência de filtros do dashboard no localStorage
     ├── preferencias-filtros.js          # Persistência de filtros do extrato no localStorage
@@ -83,17 +85,23 @@ testes/                                  # `npm test` (node --test). Testes com 
 
 ## 4. Esquema de Dados (Firestore Schema)
 
-Coleção Principal: `carteira` (Documentos vinculados ao `userId` do usuário autenticado)
+Coleções: `carteira` (lançamentos, vinculados ao `userId`) e `configuracoes/{uid}` (um documento por
+usuário com `bancos`, `classificacoes`, `bancosVale`, `regras`, `atualizadoEm`). A lista completa de
+campos e limites está em `base_conhecimento/02-modelo-de-dados.md`; as regras do Firestore recusam
+qualquer campo fora dela.
+
+Coleção Principal: `carteira` (campos obrigatórios; há ainda os opcionais `investimento`,
+`dono_carteira`, `banco_investimento`, `importacao_id`, `id_externo`, `texto_banco`)
 
 | Campo | Tipo | Validação / Limite | Descrição |
 | :--- | :--- | :--- | :--- |
 | `userId` | `string` | Obrigatório (`auth.uid`) | ID do usuário proprietário |
-| `data` | `string` | ISO `YYYY-MM-DD` | Data da movimentação |
+| `data` | `string` | ISO `YYYY-MM-DD` (formato conferido pelas regras) | Data da movimentação |
 | `descricao` | `string` | 1 a 120 caracteres | Descrição da transação |
 | `banco` | `string` | 1 a 60 caracteres | Nome da instituição financeira |
 | `tipo` | `string` | `'ENTRADA'` \| `'SAIDA'` | Direção do fluxo financeiro |
 | `tipo_mov` | `string` | `'INTERNO'` \| `'EXTERNO'` | Tipo da movimentação |
-| `valor` | `number` | Número > 0 | Valor em Reais (BRL) |
+| `valor` | `number` | Número > 0 e ≤ 1 bilhão | Valor em Reais (BRL) |
 | `classificacao_saida` | `string` | 1 a 60 caracteres | Categoria/Classificação |
 | `saida` | `string` | 0 a 120 caracteres | Detalhes adicionais (opcional) |
 | `criadoEm` | `Timestamp` | Automático | Data/hora de criação do registro |
@@ -105,6 +113,11 @@ Coleção Principal: `carteira` (Documentos vinculados ao `userId` do usuário a
 1. **Segurança de Dados**:
    - As permissões no Firestore são restritas ao `request.auth.uid == resource.data.userId`.
    - Nenhuma transação pode ser alterada ou lida por outro usuário (`firestore.rules`).
+   - As regras aceitam só os campos previstos: **campo novo exige atualizar `camposPermitidos()` e publicar as regras**.
+   - **Não usar `innerHTML`** (nem `outerHTML`/`document.write`): montar a tela com `textContent` e os auxiliares de `js/ui.js` (`mostrarMensagem`, `mostrarLinhaMensagem`, `montarCabecalho`, `criarElemento`).
+   - **Sem `<script>` embutido nem `onclick=` no HTML**: o CSP só aceita scripts de arquivo (`'self'` e `gstatic.com`; `cdnjs` só no Dashboard). Biblioteca nova deve ir para `js/vendor/`.
+   - Preferência nova no `localStorage` deve ter chave terminando em `_<uid>`, para ser apagada no logout.
+   - Resumo completo em `base_conhecimento/13-seguranca.md`.
 2. **Estilo & Componentização**:
    - Código JS modular utilizando ES Modules (`import`/`export`).
    - Evitar frameworks pesados; priorizar rotinas leves e utilitários em Vanilla JS.
@@ -113,7 +126,8 @@ Coleção Principal: `carteira` (Documentos vinculados ao `userId` do usuário a
    - No Firestore: Datas são salvas em string ISO `YYYY-MM-DD` para facilidade de ordenação.
    - Moedas são exibidas usando `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })`.
 4. **Navegação & Guards**:
-   - Todas as páginas privadas devem invocar `exigirLogin()` de `./js/auth-guard.js` antes de renderizar a interface.
+   - Todas as páginas privadas devem invocar `exigirLogin()` de `./js/auth-guard.js` antes de renderizar a interface. Ela também carrega e aplica as configurações do usuário (sugestões, bancos de vale, regras de categoria).
+   - Página nova: copiar o `<head>` de uma existente (CSP, `Referrer-Policy`, `js/tema-inicial.js`) e incluir o link no menu de **todas** as páginas (o menu é HTML repetido em cada uma).
 
 ---
 

@@ -50,7 +50,9 @@ Lançar, editor, Transferência e filtros de Investimentos):
 
 - **Sugestões iniciais**: NUBANK, NUBANK CAIXINHA, CLEAR, PAGBANK, INTER, ITAÚ, BRADESCO, SANTANDER, CAIXA, BB, C6 BANK, PICPAY, mais **todos os bancos já usados** nos seus lançamentos (sem repetir, em ordem alfabética).
 - **Apelidos**: ao salvar, `BANCO DO BRASIL` vira `BB` (em Lançar, editor, Transferência e Importar). Para unificar outro apelido, adicionar em `APELIDOS_BANCO` (`js/dados-comuns.js`).
-- Bancos de **vale** são reconhecidos pelo começo do nome: ALELO, PLUXE, PLUXEE, SODEXO, TICKET, VR, FLASH, CAJU, SWILE.
+- Bancos de **vale** são reconhecidos pelo começo do nome. Padrão do sistema: ALELO, PLUXE, PLUXEE, SODEXO, TICKET, VR, FLASH, CAJU, SWILE; cada usuário pode trocar a lista em Configurações ([12](12-configuracoes.md)).
+- As **sugestões** de banco e de classificação vêm da lista do usuário em Configurações (ou do padrão do sistema) **mais** tudo o que já foi usado nos lançamentos.
+- **Nome errado em muitos lançamentos** (banco ou classificação): corrigir de uma vez em Configurações → "Corrigir nomes nos lançamentos".
 
 ## 4.5 Classificação: sugestões
 

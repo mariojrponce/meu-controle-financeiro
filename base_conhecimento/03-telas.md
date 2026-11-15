@@ -2,7 +2,7 @@
 
 Elementos comuns a todas as telas privadas (visual segue a **identidade visual v1.0**, ver 3.0 abaixo):
 
-- **Menu lateral** (desktop ≥ 1024 px) com a logo (clique → Lançar) e as 8 telas em dois grupos: **Registrar** (Lançar, Importar, Transferência, Virar mês) e **Acompanhar** (Dashboard, Extrato, Investimentos, Planejamento); no rodapé, e-mail, botão de tema e Sair. **Tablet (768–1023 px):** menu recolhido, só ícones e o símbolo da carteira. **Celular (< 768 px):** topo com o símbolo + barra inferior com os 8 itens (rótulos curtos: Lançar, Importar, Transf., Virar, Dash, Extrato, Invest., Plano).
+- **Menu lateral** (desktop ≥ 1024 px) com a logo (clique → Lançar) e as telas em três grupos: **Registrar** (Lançar, Importar, Transferência, Virar mês), **Acompanhar** (Dashboard, Extrato, Investimentos, Planejamento) e **Ajustar** (Configurações); no rodapé, e-mail, botão de tema e Sair. **Tablet (768–1023 px):** menu recolhido, só ícones e o símbolo da carteira. **Celular (< 768 px):** topo com o símbolo, a engrenagem de **Configurações**, o tema e Sair + barra inferior com os 8 itens (rótulos curtos: Lançar, Importar, Transf., Virar, Dash, Extrato, Invest., Plano).
 - **Tema**: Claro → Escuro → Sépia → Claro (cada clique avança; ícones sol / lua / livro). Sem escolha manual, o tema segue o horário: **06h–18h claro, fora disso escuro**. A escolha manual fica gravada e passa a valer sempre, até trocar de novo. No Sépia a logo fica monocromática marrom.
 - **Avisos (toast)**: mensagem discreta no canto, some em ~2,2 s (faixa verde = sucesso, vermelha = erro).
 - **Janelas flutuantes (modais)**: fecham com Cancelar, ou clicando fora **somente se o clique começar e terminar no fundo escuro**. Assim, selecionar um texto dentro da janela e soltar o mouse fora não fecha a janela nem perde o que foi digitado. A janela de detalhes do ciclo (Planejamento) fecha também com **Esc**.
@@ -66,6 +66,11 @@ Detalhes das regras em [09-importar-e-exportar.md](09-importar-e-exportar.md).
 
 **Objetivo:** ver, filtrar, editar e exportar todos os lançamentos.
 
+**Largura:** é a única tela que usa **toda a largura** ao lado do menu (classe `pagina-larga`;
+as outras param em 1320 px). Com isso a tabela cabe sem barra de rolagem horizontal em telas
+de computador; Descrição, Detalhe, Banco, Classificação e Categoria quebram linha se faltar
+espaço. A rolagem lateral só volta em telas bem estreitas (celular).
+
 **Cabeçalho:** ⬇️ **Exportar .xlsx** e **+ Novo lançamento**.
 
 **Cartões de resumo:** Entradas · Saídas · Saldo do período (verde/vermelho) · 📅 Saldo previsto.
@@ -79,6 +84,8 @@ Detalhes das regras em [09-importar-e-exportar.md](09-importar-e-exportar.md).
 | Mês | múltipla escolha | Escolher meses preenche Dia início/Dia fim; lançamentos fora dos meses marcados ficam de fora (mesmo que estejam entre eles) |
 | Dia início / Dia fim | data | Aceita data completa ou **só o dia** (completa com mês/ano do filtro) |
 | Banco | múltipla escolha | Bancos existentes nos dados |
+| Categoria | múltipla escolha | **Categoria equiparada** de cada lançamento (classificação depois das regras de equiparação, a mesma do Dashboard). Lista = categorias que existem nos dados |
+| Tipo | Entradas e saídas / Só entradas / Só saídas | |
 | Descrição | texto | "Contém" (em maiúsculas), filtra enquanto digita |
 | Detalhe | texto | "Contém", filtra enquanto digita |
 | Movimentação | Todas / Externo / Interno | |
@@ -88,7 +95,13 @@ Detalhes das regras em [09-importar-e-exportar.md](09-importar-e-exportar.md).
 Botões: **Pesquisar**, **Mês atual** (volta ao padrão e ordenação por data ↓), **🔄 Atualizar dados**.
 Padrão ao abrir pela 1ª vez: mês atual, do dia 01 até hoje. Depois, abre com o último filtro usado.
 
-**Tabela:** Data (com selo "Previsto" se futuro) · Descrição · Detalhe · Movimentação (🔁 Interno / 🌐 Externo) · Banco · Classificação · Valor · Ações. Ordem padrão: data decrescente (lembrada).
+**Tabela:** Data (com selo "Previsto" se futuro) · Descrição · Detalhe · Movimentação (🔁 Interno / 🌐 Externo) · Banco · Classificação · **Categoria** · Valor · Ações. Ordem padrão: data decrescente (lembrada). A coluna **Categoria** mostra a classificação depois das regras de equiparação (`finalidadeDe`); sem regra aplicável, é igual à Classificação. Pode ser ordenada.
+
+**Chegando pelo Dashboard:** clicar num valor da "Evolução por categoria" abre o Extrato com
+os filtros no endereço (`extrato.html?origem=dashboard&cat=...&ano=...&meses=...&tipo=...&mov=EXTERNO`,
+mais banco, vale, descrição e detalhe do Dashboard). O Extrato aplica esses filtros **no lugar**
+do último filtro salvo e limpa o endereço (um F5 não reaplica). O **Exportar .xlsx** respeita
+todos os filtros, mas o arquivo não tem coluna de Categoria (segue o modelo da planilha).
 
 **+ Novo lançamento** abre o mesmo formulário do editor, **pré-preenchido pelos filtros**:
 
@@ -120,8 +133,9 @@ Padrão ao abrir pela 1ª vez: mês atual, do dia 01 até hoje. Depois, abre com
    - **Resumo:** total do período no ano do filtro × **mesmos meses** do ano anterior, com a variação em R$ e % ("você está gastando mais/menos"). No ano corrente o período vai de jan até o mês atual (inclui os previstos do mês); em anos passados, o ano inteiro.
    - **Gráfico:** mês a mês, linha do ano (cheia, em destaque; meses que ainda não chegaram tracejados, só previstos) × ano anterior (a mesma cor mais clara, tracejada). Cada ponto mostra o valor (ano atual em negrito, ano anterior apagado). O tooltip mostra os dois valores e a diferença.
    - **Tabela:** cada categoria em 4 linhas × Jan–Dez — ano atual (em destaque), ano anterior (mais claro), **Dif. R$** e **Dif. %** de cada mês — mais a coluna do período comparável (Jan–mês atual). R$ sem centavos; passar o mouse mostra o exato. Gasto subindo = vermelho ▲, caindo = verde ▼ (recebimentos ao contrário); "novo" quando não havia no ano anterior; meses que ainda não chegaram ficam sem diferença. Grupo **Total** no fim.
-   - **Equiparar categorias pela finalidade** (ligado por padrão): a classificação mudou ao longo dos anos (TRANSPORTE virou UBER e ONIBUS; DAS/MEI e Spotify viraram DESP MENSAL; COMPRAS CASA virou COMPRAS CASA 108N...). Ligado, cada lançamento entra na categoria usada hoje, olhando classificação + descrição + detalhe — só na visão, o lançamento gravado não muda. Categorias com **≈** receberam lançamentos de outra classificação (passar o mouse no nome mostra de onde). As regras ficam em `js/finalidade.js`.
-   - **Clicar numa categoria** mostra ela no gráfico e no resumo (selo "só CATEGORIA ✕" para voltar ao total).
+   - **Equiparar categorias pela finalidade** (ligado por padrão): a classificação mudou ao longo dos anos (TRANSPORTE virou UBER e ONIBUS; DAS/MEI e Spotify viraram DESP MENSAL; COMPRAS CASA virou COMPRAS CASA 108N...). Ligado, cada lançamento entra na categoria usada hoje, olhando classificação + descrição + detalhe — só na visão, o lançamento gravado não muda. Categorias com **≈** receberam lançamentos de outra classificação (passar o mouse no nome mostra de onde). As regras são de cada usuário e são editadas na tela **Configurações** ([12](12-configuracoes.md)); o padrão do sistema fica em `js/finalidade.js`.
+   - **Clicar num valor** (de um mês ou da coluna do período, nas linhas do ano atual e do ano anterior) abre o **Extrato** já filtrado pela categoria, ano e mês(es) daquele valor (ver 3.3). Só com a equiparação ligada; a linha Total e a categoria "SEM CLASSIFICAÇÃO" não têm atalho. O total do Extrato pode diferir do valor clicado quando houver lançamentos de categorias à parte (o Dashboard os exclui, o Extrato não).
+   - **Clicar no nome da categoria** (ou nas linhas Dif. R$ / Dif. %) mostra ela no gráfico e no resumo (selo "só CATEGORIA ✕" para voltar ao total).
    - Mesmas regras dos outros gráficos: usa os filtros de banco, vale, movimentação e texto (o período do filtro só define o ano); não conta transferências internas nem as categorias à parte.
 6. **Categorias à parte:** Configurar → marcar classificações que não devem se misturar com o saldo. Um cartão por categoria (Entradas, Saídas, Saldo, remover) + gráfico do previsto por categoria à parte.
 7. **Entradas** e **Gastos**, cada um com dois gráficos lado a lado: barras por categoria/classificação (azul) e **Evolução Jan–Dez** (linha verde/vermelha).
@@ -171,4 +185,12 @@ Regras em [07-planejamento.md](07-planejamento.md).
 
 ## 3.9 Login (`login.html`)
 
-E-mail e senha (Firebase). Erro: "E-mail ou senha inválidos.". Se já estiver logado, vai direto para Lançar. Não há tela de cadastro: o usuário é criado no console do Firebase.
+E-mail e senha (Firebase). Erro: "E-mail ou senha não conferem." (genérico de propósito). Se já estiver logado, vai direto para Lançar. Não há tela de cadastro e a criação de contas está **desativada** no Firebase (Authentication → Configurações → Ações do usuário): um usuário novo só é criado pelo console ("Adicionar usuário"). Cada usuário vê só os próprios lançamentos e configurações.
+
+---
+
+## 3.10 ⚙️ Configurações (`configuracoes.html`)
+
+**Objetivo:** ajustar, por usuário, as sugestões e as regras que antes eram fixas no código, e corrigir nomes errados em massa. Detalhes em [12-configuracoes.md](12-configuracoes.md).
+
+Blocos: **Bancos sugeridos** · **Classificações sugeridas** · **Bancos de vale** · **Corrigir nomes nos lançamentos** (classificação ou banco) · **Equiparação de categorias** (tabela de regras). No topo: **Restaurar padrão** e **Salvar alterações** (as listas e regras só valem depois de salvar; a correção de nomes grava na hora).

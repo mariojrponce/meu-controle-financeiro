@@ -2,14 +2,15 @@
 
 ## 2.1 Coleção `carteira` (Firestore)
 
-Uma coleção só. Cada documento é um lançamento. Não existem coleções de bancos,
-categorias ou investimentos: as listas são deduzidas dos próprios lançamentos.
+Cada documento é um lançamento. Não existem coleções de bancos, categorias ou
+investimentos: as listas são deduzidas dos próprios lançamentos (as **sugestões** e as
+regras de cada usuário ficam em `configuracoes/{uid}`, ver §2.5).
 
 | Campo | Tipo | Obrigatório | Regra | Observação |
 |-------|------|-------------|-------|------------|
 | `userId` | string | sim | igual ao `uid` de quem está logado | Preenchido automaticamente. Não pode mudar na edição. |
-| `data` | string | sim | ISO `aaaa-mm-dd` | Na tela sempre aparece `dd/mm/aaaa`. |
-| `valor` | number | sim | `> 0` | **Sempre positivo.** O sinal vem do `tipo`. |
+| `data` | string | sim | ISO `aaaa-mm-dd` (formato conferido pelas regras) | Na tela sempre aparece `dd/mm/aaaa`. |
+| `valor` | number | sim | `> 0` e `≤ 1.000.000.000` | **Sempre positivo.** O sinal vem do `tipo`. |
 | `tipo` | string | sim | `ENTRADA` ou `SAIDA` | Sem acento. |
 | `tipo_mov` | string | sim | `EXTERNO` ou `INTERNO` | |
 | `descricao` | string | sim | 1 a 120 caracteres | Maiúsculas. |
@@ -21,20 +22,33 @@ categorias ou investimentos: as listas são deduzidas dos próprios lançamentos
 | `dono_carteira` | string | não | até 60 | Só Investimentos. |
 | `banco_investimento` | string | não | até 60 | Só Investimentos: "onde está aplicado". |
 
-| `importacao_id` | string | não | — | Só em lançamentos vindos de **extrato importado**: `IMP-aaaammdd-hhmmss` (agrupa a importação, permite desfazer). |
-| `id_externo` | string | não | — | Identificador do movimento no banco (ex.: `NUBANK|<uuid>`, `BRADESCO|data|docto|valor`). Reimportar o mesmo extrato não duplica. |
-| `texto_banco` | string | não | até 120 | Texto do banco "limpo" (ex.: `UBER TRIP HELP U`). É com ele que a importação **aprende**: o mesmo texto no próximo extrato já vem com a sua classificação. |
+| `importacao_id` | string | não | até 200 | Só em lançamentos vindos de **extrato importado**: `IMP-aaaammdd-hhmmss` (agrupa a importação, permite desfazer). |
+| `id_externo` | string ou nulo | não | até 300 | Identificador do movimento no banco (ex.: `NUBANK|<uuid>`, `BRADESCO|data|docto|valor`). Reimportar o mesmo extrato não duplica. |
+| `texto_banco` | string | não | até 300 nas regras (a importação grava até 120) | Texto do banco "limpo" (ex.: `UBER TRIP HELP U`). É com ele que a importação **aprende**: o mesmo texto no próximo extrato já vem com a sua classificação. |
 
-> Os campos opcionais não são validados pelas regras do Firestore (campos extras são
-> permitidos), só pelo formulário / pela importação.
+> Desde 15/11/2026 as regras do Firestore aceitam **somente os 16 campos acima**: um
+> lançamento com qualquer outro campo é recusado. Os opcionais podem faltar, ser nulos ou
+> ser texto dentro do limite. Para gravar um campo novo é preciso incluí-lo em
+> `camposPermitidos()` no `firestore.rules` e publicar as regras.
 
 ## 2.2 Regras de segurança (`firestore.rules`)
 
+Coleção `carteira`:
+
 - **Ler / excluir**: só se logado e `userId` do documento = usuário logado.
-- **Criar**: logado, `userId` = usuário, `valor` número > 0, `data` string, `tipo` ∈ {ENTRADA, SAIDA},
-  `tipo_mov` ∈ {INTERNO, EXTERNO}, textos dentro dos limites acima.
-- **Editar**: as mesmas validações, e o `userId` não pode ser trocado.
-- Qualquer outra coleção: tudo bloqueado.
+- **Criar**: logado, `userId` = usuário e o lançamento passa em `lancamentoValido()`: só os
+  campos previstos, `valor` número > 0 e ≤ 1 bilhão, `data` no formato `aaaa-mm-dd`,
+  `tipo` ∈ {ENTRADA, SAIDA}, `tipo_mov` ∈ {INTERNO, EXTERNO}, textos dentro dos limites acima,
+  `criadoEm` (se existir) do tipo data/hora.
+- **Editar**: as mesmas validações sobre o documento **depois** da edição, e o `userId` não pode ser trocado.
+
+Coleção `configuracoes` (documento com ID = `uid`):
+
+- **Ler / excluir**: só o próprio usuário.
+- **Criar / editar**: só o próprio usuário, só os campos `bancos`, `classificacoes`,
+  `bancosVale`, `regras` e `atualizadoEm`, cada lista com até 300 itens.
+
+Qualquer outra coleção: tudo bloqueado.
 
 Publicar: `firebase deploy --only firestore:rules`.
 
@@ -56,7 +70,7 @@ são aplicados no navegador.
 
 ## 2.4 O que fica salvo no navegador (`localStorage`)
 
-Nada disso é dado financeiro; serve só para lembrar preferências.
+Fora o cache das transações, nada disso é dado financeiro; serve só para lembrar preferências.
 
 | Chave | Conteúdo | Apagada no logout? |
 |-------|----------|--------------------|
@@ -66,9 +80,29 @@ Nada disso é dado financeiro; serve só para lembrar preferências.
 | `pref_dashboard_categorias_separadas_<uid>` | Lista de categorias "à parte" | Sim |
 | `pref_dashboard_visoes_<uid>` | Visões personalizadas do Dashboard | Sim |
 | `pref_planejamento_<uid>` | Colchão, categorias do dia a dia e filtros do Planejamento | Sim |
-| `investimentos_banco_aplicado` | Chip "Onde está aplicado" escolhido | **Não** (não tem uid) |
+| `config_cache_<uid>` | Cópia das configurações do usuário (§2.5), válida por 6 horas | Sim |
+| `investimentos_banco_aplicado_<uid>` | Chip "Onde está aplicado" escolhido (a chave antiga, sem uid, é migrada e apagada ao abrir Investimentos) | Sim |
 | `tema_meu_financeiro` | Tema escolhido manualmente (light/dark/sepia) | Não |
 | `pref_importacao_titular_<uid>` | Seu nome/CPF parcial como aparecem nos bancos (reconhece transferências entre suas contas) | Sim |
 
-Consequência: trocar de navegador ou de computador perde categorias à parte, visões
-personalizadas e ajustes do Planejamento (os lançamentos continuam no Firestore).
+Consequência: trocar de navegador ou de computador (ou sair da conta) perde categorias à
+parte, visões personalizadas e ajustes do Planejamento. Os lançamentos e as configurações
+da tela Configurações continuam no Firestore.
+
+## 2.5 Coleção `configuracoes` (Firestore)
+
+Um documento por usuário, com ID igual ao `uid`. Guarda o que é ajustado na tela
+Configurações ([12](12-configuracoes.md)). Quem nunca salvou não tem documento e usa o
+**padrão do sistema**.
+
+| Campo | Tipo | Conteúdo |
+|-------|------|----------|
+| `bancos` | lista de textos | Bancos sugeridos ao lançar |
+| `classificacoes` | lista de textos | Classificações sugeridas ao lançar |
+| `bancosVale` | lista de textos | Começos de nome que identificam banco de vale |
+| `regras` | lista de objetos `{ tipo, de: [..], se, para }` | Regras de equiparação de categorias, na ordem em que são testadas |
+| `atualizadoEm` | Timestamp | Preenchido ao salvar |
+
+Leitura: uma vez a cada 6 horas por navegador (cache em `config_cache_<uid>`); a tela
+Configurações sempre busca a versão mais recente. Limpeza e padrão ficam em
+`js/configuracoes-modelo.js` (sem DOM, com testes em `testes/evolucao.test.mjs`).

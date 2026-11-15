@@ -9,7 +9,8 @@ Referência rápida de **todas as regras de decisão** do sistema. Detalhes nos 
 | Entrada × Saída | campo `tipo` | todos |
 | Real × entre contas | `tipo_mov`: EXTERNO = gasto/receita real; INTERNO = entre contas próprias | todos |
 | Previsto × Realizado | `data > hoje` = previsto; `data ≤ hoje` = realizado (data local do computador) | Extrato, Dashboard, Exportar, Planejamento |
-| Vale | banco começa com ALELO, PLUXE(E), SODEXO, TICKET, VR, FLASH, CAJU ou SWILE | `js/vale.js` |
+| Vale | banco começa com um nome da lista de bancos de vale do usuário (padrão: ALELO, PLUXE(E), SODEXO, TICKET, VR, FLASH, CAJU, SWILE) | `js/vale.js`, Configurações |
+| Categoria (equiparada) | classificação depois das regras de equiparação do usuário: a **primeira** regra que servir (tipo + classificação de origem + texto opcional na descrição/detalhe) define a categoria; sem regra, é a própria classificação | `js/finalidade.js`, Configurações; usada no Extrato e na Evolução por categoria |
 | Salário | ENTRADA com classificação contendo SALARIO/SALÁRIO | Planejamento |
 | Aporte (Planejamento) | SAÍDA com classificação contendo INVESTIMENTO | Planejamento |
 | Investimento (tela) | classificação exatamente `INVESTIMENTO` | Investimentos |
@@ -78,6 +79,11 @@ Referência rápida de **todas as regras de decisão** do sistema. Detalhes nos 
 | Últimos lançamentos (Lançar) / últimas transferências | 10 |
 | Validade do cache | 6 horas |
 | Lote de importação | 400 linhas |
+| Tamanho máximo de arquivo na importação | 10 MB (planilha) e 25 MB por arquivo (extrato PDF/CSV/imagem) |
+| Valor máximo de um lançamento (regras do Firestore) | R$ 1.000.000.000 |
+| Listas de Configurações | até 300 itens cada (bancos, classificações, bancos de vale, regras) |
+| Lote de correção de nomes em massa | 450 lançamentos por lote (cada lote é tudo ou nada) |
+| Cache das configurações | 6 horas |
 | Aviso de vencimento | ≤ 7 dias (🟡), ≤ 3 dias (🔴), só saídas |
 | Saldo considerado "zero" | |saldo| < R$ 0,005 |
 | Juntar salários | até 3 dias de diferença |

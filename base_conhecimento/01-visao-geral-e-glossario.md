@@ -12,14 +12,17 @@ conta, login com e-mail e senha.
 |------|--------|
 | Frontend | HTML + CSS + JavaScript puro (ES Modules), **sem framework e sem build** |
 | Login | Firebase Authentication (e-mail/senha) |
-| Banco de dados | Cloud Firestore, **uma única coleção**: `carteira` |
-| Bibliotecas (CDN) | Firebase SDK 10.12.2, Chart.js 4.5.0 + datalabels 2.2.0 (Dashboard), SheetJS/XLSX 0.18.5 (Importar e Extrato) |
+| Banco de dados | Cloud Firestore, **duas coleções**: `carteira` (lançamentos) e `configuracoes` (um documento por usuário, ver [12](12-configuracoes.md)) |
+| Bibliotecas | Por CDN: Firebase SDK 10.12.2 (`gstatic.com`), Chart.js 4.5.0 + datalabels 2.2.0 (`cdnjs`, com SRI, só no Dashboard). Servidas pelo próprio site (`js/vendor/`): SheetJS/XLSX **0.20.3** (Importar e Extrato), pdf.js e Tesseract |
+| Segurança | Regras do Firestore por dono, CSP sem script embutido, bloqueio de iframe, sem `innerHTML`: ver [13](13-seguranca.md) |
 | Hospedagem | GitHub Pages (`mariojrponce.github.io/meu-controle-financeiro`); regras do Firestore publicadas com `firebase deploy --only firestore:rules` |
 | Versões | Tags git `vX.Y.Z` desde a rodada 03-10-26 (atual: **v1.7.0**) |
 
 Toda página privada chama `exigirLogin()` (`js/auth-guard.js`): sem sessão, redireciona
-para `login.html`. Ao sair, o sistema apaga do navegador tudo que termina com `_<uid>`
-(cache e filtros).
+para `login.html`. Logo depois do login, `exigirLogin()` também carrega as **configurações do
+usuário** (sugestões, bancos de vale, regras de categoria) e as põe em uso na página; se a
+leitura falhar, vale o padrão do sistema. Ao sair, o sistema apaga do navegador tudo que
+termina com `_<uid>` (cache, filtros e preferências).
 
 ## Mapa de telas (menu)
 
@@ -33,9 +36,11 @@ para `login.html`. Ao sair, o sistema apaga do navegador tudo que termina com `_
 | 🔁 Virar mês | `virar-mes.html` | `js/virar-mes.js` | Passar o saldo de um mês para o seguinte |
 | 📈 Investimentos | `investimentos.html` | `js/investimentos.js` | Aportes, resgates, por investimento e por dono |
 | 🧭 Planejamento | `planejamento.html` | `js/planejamento.js` + `js/planejamento-calculo.js` | Ciclos de salário, sobra, quanto investir |
+| ⚙️ Configurações | `configuracoes.html` | `js/configuracoes-tela.js` (+ `js/configuracoes.js`, `js/configuracoes-modelo.js`) | Sugestões, bancos de vale, regras de categoria, correção de nomes em massa |
 | — | `login.html` | `js/login.js` | Entrar |
 
-No celular, o menu vira barra inferior com rótulos curtos (Transf., Virar, Invest., Plano).
+No celular, o menu vira barra inferior com rótulos curtos (Transf., Virar, Invest., Plano);
+Configurações fica num ícone de engrenagem no topo, ao lado do tema.
 
 ## Glossário
 

@@ -27,17 +27,25 @@ aqui para orientar o uso e futuras melhorias.
 | 13 | Data aceita dia 1–31 sem conferir o mês | `31/02/2026` é aceito e gravado como `2026-02-31` (fica fora de filtros por mês de fevereiro que terminam em 28) |
 | 14 | Histórico "BANCO DO BRASIL" | Lançamentos antigos com esse nome não foram migrados para `BB` (decisão do usuário). Aparecem como banco separado até serem editados |
 | 15 | Sem desfazer/lixeira | Exclusão é definitiva |
+| 15a | Correção de nomes em massa (Configurações) não tem desfazer | Se o nome novo já existia, os lançamentos se juntam e não dá para separar depois. Com mais de 450 lançamentos a gravação é em lotes: se cair no meio, parte fica com o nome novo (basta repetir a correção) |
+| 15b | Correção de banco em massa não altera `banco_investimento` ("onde está aplicado") | Esse campo continua com o nome antigo até ser editado em Investimentos |
+| 15c | A correção em massa usa o cache local | Lançamento feito em outro aparelho nas últimas 6 h pode ficar de fora; usar "🔄 Atualizar dados" antes |
+| 15d | Regras do Firestore recusam campo desconhecido | Código novo que grave um campo fora da lista de `firestore.rules` falha com "permission-denied" até a regra ser atualizada e publicada |
 
 ## 11.3 Que afetam a interface
 
 | # | Ponto |
 |---|-------|
 | 16 | Cor do banco: o mapa tem a chave `BANCO DO BRASIL`, mas o nome padrão gravado é `BB`, então o BB aparece com a cor padrão (verde) |
-| 17 | Preferências (categorias à parte, visões, ajustes do Planejamento, chip de Investimentos) ficam no navegador: outro navegador/computador começa do zero |
-| 18 | O chip "Onde está aplicado" (`investimentos_banco_aplicado`) e o tema não são apagados no logout |
+| 17 | Preferências (categorias à parte, visões, ajustes do Planejamento, chip de Investimentos) ficam no navegador: outro navegador/computador começa do zero, e **sair da conta também as apaga**. As da tela Configurações ficam no Firestore e não se perdem |
+| 18 | O tema não é apagado no logout (o chip "Onde está aplicado" passou a ser apagado em 15/11/2026) |
 | 19 | Cache de 6 h: dados lançados em outro aparelho só aparecem depois de 6 h ou com "🔄 Atualizar dados" |
 | 20 | Após atualizar o sistema, o navegador pode usar `.js` antigos: usar **Ctrl+Shift+R** em cada página |
 | 21 | Gráficos desenhados "por software" e sem animação, para corrigir canvas quebrado no Chrome com aceleração de GPU |
+| 22 | Configurações ficam em cache por 6 h: uma mudança feita em outro aparelho pode demorar esse tempo para aparecer (abrir a tela Configurações busca a versão nova) |
+| 23 | Um usuário novo começa com o **padrão do sistema**, que são as listas e regras do primeiro usuário (ex.: TRANSPORTE → UBER/ONIBUS, "COMPRAS CASA 108N"). Ele ajusta ou apaga em Configurações |
+| 24 | "Só quando o texto tiver" aceita expressão regular: uma expressão mal escrita pode travar a aba de quem a escreveu (não afeta outros usuários) |
+| 25 | O valor clicado na Evolução por categoria pode não bater com o total do Extrato aberto quando há lançamentos de categorias à parte (o Dashboard exclui, o Extrato não) |
 
 ## 11.4 Diferenças entre documentação antiga e código
 
@@ -45,9 +53,11 @@ aqui para orientar o uso e futuras melhorias.
 |-----------|-----|-----------|
 | `melhorias/02-08-26.status.md` (item 7) | "Previsto por banco, dia a dia" com uma linha por lançamento | Agrupa por **Detalhe** (ou Descrição), com período primeira–última data e "(Nx)" |
 | `PROJECT_CONTEXT.md` | Lista de campos sem `investimento`, `dono_carteira`, `banco_investimento`; não cita transferência, virar mês, investimentos, planejamento no mapa | Esses campos e telas existem (ver [02](02-modelo-de-dados.md) e [03](03-telas.md)) |
-| `PROJECT_CONTEXT.md` | Chart.js e SheetJS via jsDelivr | Carregados de `cdnjs.cloudflare.com` com SRI |
+| `PROJECT_CONTEXT.md` (corrigido em 15/11/2026) | Chart.js e SheetJS via jsDelivr | Chart.js vem de `cdnjs.cloudflare.com` com SRI; SheetJS 0.20.3 é servido de `js/vendor/xlsx/` |
 
 ## 11.5 Ideias já estudadas e não implementadas
 - Tela "Fechamento do mês" (parcialmente atendida pelo Planejamento): `melhorias/03-10-26.status.md` §7.
 - Planejamento de resgate e rentabilidade de investimentos: `melhorias/09-08-26.investimentos-base-conhecimento.md`.
-- Migração `BANCO DO BRASIL` → `BB`: laço com `obterTransacoes` + `atualizarTransacao` filtrando `banco === "BANCO DO BRASIL"`.
+- Migração `BANCO DO BRASIL` → `BB`: agora dá para fazer pela tela Configurações → "Corrigir nomes nos lançamentos" (Banco), sem código.
+- Trazer as "categorias à parte" do Dashboard para a tela Configurações (hoje ficam só no navegador).
+- Segurança: restringir a `apiKey` ao domínio, migrar para o Firebase Hosting (cabeçalhos HTTP) e sessão curta/saída por inatividade (ver [13](13-seguranca.md)).

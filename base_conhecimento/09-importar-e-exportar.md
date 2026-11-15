@@ -5,6 +5,7 @@
 Fluxo principal da tela Importar: você sobe os extratos, o sistema lê linha por linha, sugere
 tudo, compara com o que já está lançado e confere o saldo. **Nada é gravado antes da revisão.**
 Tudo roda no navegador (pdf.js em `js/vendor/pdfjs/`, OCR Tesseract em `js/vendor/tesseract/`): sem servidor, sem CDN, sem IA.
+Cada arquivo pode ter até **25 MB**; um arquivo maior aparece na lista com o erro "Arquivo grande demais" e não é lido.
 
 ### Formatos lidos
 
@@ -88,6 +89,7 @@ Agora fica numa seção recolhida no fim da tela Importar.
 
 ### Arquivos aceitos
 `.xlsx` (e outros que o SheetJS lê), `.csv`, `.txt` (UTF-8). Só a **primeira aba** é lida. A primeira linha é o cabeçalho.
+Tamanho máximo: **10 MB** (acima disso o arquivo é recusado com aviso). O SheetJS usado é a versão **0.20.3**, servida de `js/vendor/xlsx/` (a 0.18.5 do cdnjs tinha as falhas CVE-2023-30533 e CVE-2024-22363).
 
 ### Reconhecimento das colunas
 O cabeçalho é comparado sem acento, sem diferenciar maiúscula e com espaços virando `_`:
