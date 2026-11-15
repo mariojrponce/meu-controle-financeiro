@@ -3,7 +3,7 @@
 > Referência completa de **como o sistema funciona**: telas, formas de inserir valores,
 > transferências, cálculos e critérios. Tudo aqui foi levantado **direto do código**
 > (`js/*.js`, `*.html`, `firestore.rules`) em 21/10/2026, versão **v1.7.0**, e revisado em
-> **15/11/2026** (tela Configurações, coluna/filtro de Categoria no Extrato, atalho do
+> **15/11/2026** (tela Configurações, filtros de Classificação e Tipo no Extrato, atalho do
 > Dashboard para o Extrato e reforços de segurança).
 > Quando um documento antigo (`melhorias/*.status.md`) diz uma coisa e o código faz
 > outra, vale o código, e a diferença está anotada.

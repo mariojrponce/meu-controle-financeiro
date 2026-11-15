@@ -3,10 +3,10 @@
 // equiparação de categorias. Nada vale antes de clicar em "Salvar alterações".
 import { exigirLogin } from "./auth-guard.js";
 import { renderizarNav } from "./nav.js";
-import { mostrarToast, confirmarAcao, preencherBotao } from "./ui.js";
+import { mostrarToast, confirmarAcao, preencherBotao, mostrarLinhaMensagem } from "./ui.js";
 import { carregarConfiguracoes, salvarConfiguracoes } from "./configuracoes.js";
 import { configuracoesPadrao, limparConfiguracoes, limparNome, LIMITE_ITENS, TAMANHO_MAXIMO_NOME } from "./configuracoes-modelo.js";
-import { limparRegra } from "./finalidade.js";
+import { limparRegra, finalidadeDe } from "./finalidade.js";
 import { obterTransacoes, atualizarTransacoesEmLote } from "./dados-carteira.js";
 import { preencherDatalist, normalizarNomeBanco } from "./dados-comuns.js";
 
@@ -382,6 +382,130 @@ formCorrigir.addEventListener("submit", async (evento) => {
         botaoCorrigir.textContent = "Corrigir lançamentos";
         botaoCorrigir.disabled = campoCorrigirDe.options.length <= 1;
     }
+});
+
+// ---------- Aplicar as regras de equiparação aos lançamentos gravados ----------
+// Regrava a classificação dos lançamentos com a categoria que as regras SALVAS
+// dão a eles. Agrupa por troca (tipo + classificação atual → categoria) e só
+// grava os grupos que o usuário marcar.
+const areaAplicar = document.getElementById("area-aplicar");
+const corpoAplicar = document.querySelector("#tabela-aplicar tbody");
+const resumoAplicar = document.getElementById("resumo-aplicar");
+const botaoAplicar = document.getElementById("btn-aplicar-regras");
+const marcarTodasAplicar = document.getElementById("marcar-todas-aplicar");
+let gruposAplicar = [];
+
+// A tela Investimentos reconhece o investimento pela classificação exatamente
+// "INVESTIMENTO" (e o Planejamento, por conter INVESTIMENTO): trocar isso muda
+// o que aparece nessas telas, então esses grupos começam desmarcados.
+const mexeEmInvestimento = (nome) => nome.includes("INVEST");
+
+function montarGruposAplicar() {
+    const mapa = new Map();
+    transacoes.forEach((t) => {
+        const atual = t.classificacao_saida ?? "";
+        const nova = finalidadeDe(t);
+        if (!atual || !nova || nova === atual) return;
+        const chave = `${t.tipo}|${atual}|${nova}`;
+        if (!mapa.has(chave)) {
+            const sensivel = mexeEmInvestimento(atual) || mexeEmInvestimento(nova);
+            mapa.set(chave, { tipo: t.tipo, de: atual, para: nova, ids: [], sensivel, marcado: !sensivel });
+        }
+        mapa.get(chave).ids.push(t.id);
+    });
+    return [...mapa.values()].sort((a, b) => b.ids.length - a.ids.length || a.de.localeCompare(b.de, "pt-BR"));
+}
+
+function atualizarResumoAplicar() {
+    const marcados = gruposAplicar.filter((g) => g.marcado);
+    const total = marcados.reduce((soma, g) => soma + g.ids.length, 0);
+    botaoAplicar.disabled = total === 0;
+    botaoAplicar.textContent = total ? `Gravar em ${total} ${total === 1 ? "lançamento" : "lançamentos"}` : "Gravar nos lançamentos";
+    marcarTodasAplicar.checked = gruposAplicar.length > 0 && marcados.length === gruposAplicar.length;
+    marcarTodasAplicar.indeterminate = marcados.length > 0 && marcados.length < gruposAplicar.length;
+}
+
+function renderizarPreviaAplicar() {
+    gruposAplicar = montarGruposAplicar();
+    areaAplicar.hidden = false;
+    const totalGeral = gruposAplicar.reduce((soma, g) => soma + g.ids.length, 0);
+    if (gruposAplicar.length === 0) {
+        resumoAplicar.textContent = "Nada a gravar: todos os lançamentos já estão com a classificação que as regras dão.";
+        mostrarLinhaMensagem(corpoAplicar, 6, "Nenhuma troca.");
+        atualizarResumoAplicar();
+        return;
+    }
+    resumoAplicar.textContent = `${totalGeral} de ${transacoes.length} lançamentos estão com uma classificação diferente da categoria que as regras dão. Marque as trocas que quer gravar.`;
+    corpoAplicar.replaceChildren();
+    gruposAplicar.forEach((grupo) => {
+        const linha = document.createElement("tr");
+        const caixa = document.createElement("input");
+        caixa.type = "checkbox";
+        caixa.checked = grupo.marcado;
+        caixa.setAttribute("aria-label", `Gravar ${grupo.de} como ${grupo.para}`);
+        caixa.addEventListener("change", () => { grupo.marcado = caixa.checked; atualizarResumoAplicar(); });
+        const tdCaixa = celulaCom(caixa);
+        tdCaixa.className = "col-marcar";
+        const tdQuantidade = celulaCom(String(grupo.ids.length));
+        tdQuantidade.className = "num";
+        linha.append(
+            tdCaixa,
+            celulaCom(grupo.tipo === "ENTRADA" ? "Recebimento" : "Gasto"),
+            celulaCom(grupo.de),
+            celulaCom(grupo.para),
+            tdQuantidade,
+            celulaCom(grupo.sensivel ? "Ligado a investimento: muda o que aparece em Investimentos e no Planejamento" : "")
+        );
+        corpoAplicar.appendChild(linha);
+    });
+    atualizarResumoAplicar();
+}
+
+document.getElementById("btn-previa-aplicar").addEventListener("click", () => {
+    if (haAlteracoes) return mostrarToast("Salve as alterações antes: a prévia usa as regras já salvas.", "erro");
+    renderizarPreviaAplicar();
+});
+
+marcarTodasAplicar.addEventListener("change", () => {
+    gruposAplicar.forEach((g) => { g.marcado = marcarTodasAplicar.checked; });
+    corpoAplicar.querySelectorAll("input[type=checkbox]").forEach((c) => { c.checked = marcarTodasAplicar.checked; });
+    atualizarResumoAplicar();
+});
+
+botaoAplicar.addEventListener("click", async () => {
+    if (haAlteracoes) return mostrarToast("Salve as alterações antes de gravar nos lançamentos.", "erro");
+    const marcados = gruposAplicar.filter((g) => g.marcado);
+    const total = marcados.reduce((soma, g) => soma + g.ids.length, 0);
+    if (!total) return;
+    const sensiveis = marcados.filter((g) => g.sensivel).length;
+    const confirmou = await confirmarAcao({
+        titulo: `Regravar a classificação de ${total} ${total === 1 ? "lançamento" : "lançamentos"}?`,
+        mensagem: `${marcados.length} ${marcados.length === 1 ? "troca marcada" : "trocas marcadas"}. A classificação antiga é substituída e não há como desfazer automaticamente.`
+            + (sensiveis ? ` ${sensiveis} ${sensiveis === 1 ? "troca mexe" : "trocas mexem"} em investimento e ${sensiveis === 1 ? "muda" : "mudam"} o que aparece na tela Investimentos.` : ""),
+        textoConfirmar: "Gravar",
+        textoCancelar: "Cancelar"
+    });
+    if (!confirmou) return;
+
+    botaoAplicar.disabled = true;
+    let feitos = 0;
+    try {
+        for (const grupo of marcados) {
+            await atualizarTransacoesEmLote(usuario, grupo.ids, { classificacao_saida: grupo.para }, (parcial) => {
+                botaoAplicar.textContent = `Gravando ${feitos + parcial} de ${total}...`;
+            });
+            feitos += grupo.ids.length;
+            const alterados = new Set(grupo.ids);
+            transacoes = transacoes.map((t) => (alterados.has(t.id) ? { ...t, classificacao_saida: grupo.para } : t));
+        }
+        mostrarToast(`${feitos} ${feitos === 1 ? "lançamento regravado" : "lançamentos regravados"}.`, "sucesso");
+    } catch (erro) {
+        console.error("Erro ao aplicar as regras:", erro?.code ?? erro);
+        mostrarToast(`Erro no meio da gravação: ${feitos} de ${total} foram regravados. Veja a prévia de novo e repita para o restante.`, "erro");
+        try { transacoes = await obterTransacoes(usuario, { forcarAtualizacao: true }); } catch { /* fica como está */ }
+    }
+    preencherNomesUsados();
+    renderizarPreviaAplicar();
 });
 
 // Avisa antes de sair da página com alterações não salvas.

@@ -28,6 +28,7 @@ aqui para orientar o uso e futuras melhorias.
 | 14 | Histórico "BANCO DO BRASIL" | Lançamentos antigos com esse nome não foram migrados para `BB` (decisão do usuário). Aparecem como banco separado até serem editados |
 | 15 | Sem desfazer/lixeira | Exclusão é definitiva |
 | 15a | Correção de nomes em massa (Configurações) não tem desfazer | Se o nome novo já existia, os lançamentos se juntam e não dá para separar depois. Com mais de 450 lançamentos a gravação é em lotes: se cair no meio, parte fica com o nome novo (basta repetir a correção) |
+| 15e | "Aplicar regras aos lançamentos" (Configurações) substitui a classificação antiga sem desfazer | Exportar um backup antes. Trocas ligadas a investimento vêm desmarcadas porque mudam o que a tela Investimentos mostra |
 | 15b | Correção de banco em massa não altera `banco_investimento` ("onde está aplicado") | Esse campo continua com o nome antigo até ser editado em Investimentos |
 | 15c | A correção em massa usa o cache local | Lançamento feito em outro aparelho nas últimas 6 h pode ficar de fora; usar "🔄 Atualizar dados" antes |
 | 15d | Regras do Firestore recusam campo desconhecido | Código novo que grave um campo fora da lista de `firestore.rules` falha com "permission-denied" até a regra ser atualizada e publicada |

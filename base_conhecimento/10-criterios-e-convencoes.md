@@ -10,7 +10,7 @@ Referência rápida de **todas as regras de decisão** do sistema. Detalhes nos 
 | Real × entre contas | `tipo_mov`: EXTERNO = gasto/receita real; INTERNO = entre contas próprias | todos |
 | Previsto × Realizado | `data > hoje` = previsto; `data ≤ hoje` = realizado (data local do computador) | Extrato, Dashboard, Exportar, Planejamento |
 | Vale | banco começa com um nome da lista de bancos de vale do usuário (padrão: ALELO, PLUXE(E), SODEXO, TICKET, VR, FLASH, CAJU, SWILE) | `js/vale.js`, Configurações |
-| Categoria (equiparada) | classificação depois das regras de equiparação do usuário: a **primeira** regra que servir (tipo + classificação de origem + texto opcional na descrição/detalhe) define a categoria; sem regra, é a própria classificação | `js/finalidade.js`, Configurações; usada no Extrato e na Evolução por categoria |
+| Categoria (equiparada) | classificação depois das regras de equiparação do usuário: a **primeira** regra que servir (tipo + classificação de origem + texto opcional na descrição/detalhe) define a categoria; sem regra, é a própria classificação | `js/finalidade.js`, Configurações; usada na Evolução por categoria do Dashboard e no filtro temporário do Extrato quando se chega por ela |
 | Salário | ENTRADA com classificação contendo SALARIO/SALÁRIO | Planejamento |
 | Aporte (Planejamento) | SAÍDA com classificação contendo INVESTIMENTO | Planejamento |
 | Investimento (tela) | classificação exatamente `INVESTIMENTO` | Investimentos |

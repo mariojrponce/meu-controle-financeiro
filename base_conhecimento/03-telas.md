@@ -68,7 +68,7 @@ Detalhes das regras em [09-importar-e-exportar.md](09-importar-e-exportar.md).
 
 **Largura:** é a única tela que usa **toda a largura** ao lado do menu (classe `pagina-larga`;
 as outras param em 1320 px). Com isso a tabela cabe sem barra de rolagem horizontal em telas
-de computador; Descrição, Detalhe, Banco, Classificação e Categoria quebram linha se faltar
+de computador; Descrição, Detalhe, Banco e Classificação quebram linha se faltar
 espaço. A rolagem lateral só volta em telas bem estreitas (celular).
 
 **Cabeçalho:** ⬇️ **Exportar .xlsx** e **+ Novo lançamento**.
@@ -84,7 +84,7 @@ espaço. A rolagem lateral só volta em telas bem estreitas (celular).
 | Mês | múltipla escolha | Escolher meses preenche Dia início/Dia fim; lançamentos fora dos meses marcados ficam de fora (mesmo que estejam entre eles) |
 | Dia início / Dia fim | data | Aceita data completa ou **só o dia** (completa com mês/ano do filtro) |
 | Banco | múltipla escolha | Bancos existentes nos dados |
-| Categoria | múltipla escolha | **Categoria equiparada** de cada lançamento (classificação depois das regras de equiparação, a mesma do Dashboard). Lista = categorias que existem nos dados |
+| Classificação | múltipla escolha | Classificação **gravada** no lançamento. Lista = classificações que existem nos dados |
 | Tipo | Entradas e saídas / Só entradas / Só saídas | |
 | Descrição | texto | "Contém" (em maiúsculas), filtra enquanto digita |
 | Detalhe | texto | "Contém", filtra enquanto digita |
@@ -95,13 +95,17 @@ espaço. A rolagem lateral só volta em telas bem estreitas (celular).
 Botões: **Pesquisar**, **Mês atual** (volta ao padrão e ordenação por data ↓), **🔄 Atualizar dados**.
 Padrão ao abrir pela 1ª vez: mês atual, do dia 01 até hoje. Depois, abre com o último filtro usado.
 
-**Tabela:** Data (com selo "Previsto" se futuro) · Descrição · Detalhe · Movimentação (🔁 Interno / 🌐 Externo) · Banco · Classificação · **Categoria** · Valor · Ações. Ordem padrão: data decrescente (lembrada). A coluna **Categoria** mostra a classificação depois das regras de equiparação (`finalidadeDe`); sem regra aplicável, é igual à Classificação. Pode ser ordenada.
+**Tabela:** Data (com selo "Previsto" se futuro) · Descrição · Detalhe · Movimentação (🔁 Interno / 🌐 Externo) · Banco · Classificação · Valor · Ações. Ordem padrão: data decrescente (lembrada). O Extrato mostra só a **classificação gravada**; a categoria equiparada (depois das regras) não tem coluna nem filtro próprio aqui.
 
 **Chegando pelo Dashboard:** clicar num valor da "Evolução por categoria" abre o Extrato com
 os filtros no endereço (`extrato.html?origem=dashboard&cat=...&ano=...&meses=...&tipo=...&mov=EXTERNO`,
 mais banco, vale, descrição e detalhe do Dashboard). O Extrato aplica esses filtros **no lugar**
-do último filtro salvo e limpa o endereço (um F5 não reaplica). O **Exportar .xlsx** respeita
-todos os filtros, mas o arquivo não tem coluna de Categoria (segue o modelo da planilha).
+do último filtro salvo e limpa o endereço (um F5 não reaplica). A categoria do Dashboard vira um
+**filtro temporário**, mostrado numa faixa acima da tabela ("Vindo do Dashboard: só os
+lançamentos que entram na categoria X") com o botão **Tirar este filtro**. Ele filtra pela
+categoria equiparada (para a lista bater com o valor clicado), não é salvo e some também em
+"Mês atual". Por isso podem aparecer lançamentos com classificações diferentes na mesma lista
+(ex.: TRANSPORTE antigo dentro da categoria UBER).
 
 **+ Novo lançamento** abre o mesmo formulário do editor, **pré-preenchido pelos filtros**:
 
@@ -193,4 +197,4 @@ E-mail e senha (Firebase). Erro: "E-mail ou senha não conferem." (genérico de 
 
 **Objetivo:** ajustar, por usuário, as sugestões e as regras que antes eram fixas no código, e corrigir nomes errados em massa. Detalhes em [12-configuracoes.md](12-configuracoes.md).
 
-Blocos: **Bancos sugeridos** · **Classificações sugeridas** · **Bancos de vale** · **Corrigir nomes nos lançamentos** (classificação ou banco) · **Equiparação de categorias** (tabela de regras). No topo: **Restaurar padrão** e **Salvar alterações** (as listas e regras só valem depois de salvar; a correção de nomes grava na hora).
+Blocos: **Bancos sugeridos** · **Classificações sugeridas** · **Bancos de vale** · **Corrigir nomes nos lançamentos** (classificação ou banco) · **Aplicar regras aos lançamentos** (grava a categoria das regras como classificação, com prévia e seleção) · **Equiparação de categorias** (tabela de regras). No topo: **Restaurar padrão** e **Salvar alterações** (as listas e regras só valem depois de salvar; a correção de nomes e a aplicação das regras gravam na hora).

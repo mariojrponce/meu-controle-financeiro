@@ -115,8 +115,8 @@
                                 <div id="filtro-banco"></div>
                             </div>
                             <div class="campo-filtro">
-                                <label title="Categoria pela finalidade do gasto, a mesma do Dashboard (ex.: o que era TRANSPORTE entra em UBER e ONIBUS)">Categoria</label>
-                                <div id="filtro-categoria"></div>
+                                <label>Classificação</label>
+                                <div id="filtro-classificacao"></div>
                             </div>
                             <div class="campo-filtro">
                                 <label for="filtro-tipo">Tipo</label>
@@ -166,6 +166,12 @@
                     </div>
                 </details>
 
+                <p class="faixa-info faixa-categoria-dashboard" id="faixa-categoria-dashboard" hidden>
+                    <svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-filtro"></use></svg>
+                    <span id="texto-categoria-dashboard"></span>
+                    <button type="button" id="btn-limpar-categoria-dashboard" class="botao botao-secundario">Tirar este filtro</button>
+                </p>
+
                 <div class="tabela-scroll">
                     <table id="tabela-transacoes">
                         <thead>
@@ -176,7 +182,6 @@
                                 <th data-chave="tipo_mov" data-tipo="texto" class="th-ordenavel">Movimentação</th>
                                 <th data-chave="banco" data-tipo="texto" class="th-ordenavel">Banco</th>
                                 <th data-chave="classificacao_saida" data-tipo="texto" class="th-ordenavel">Classificação</th>
-                                <th data-chave="categoria" data-tipo="texto" class="th-ordenavel" title="Categoria pela finalidade do gasto, a mesma usada no Dashboard">Categoria</th>
                                 <th data-chave="valor" data-tipo="numero" class="th-ordenavel">Valor</th>
                                 <th class="col-acoes"><span class="visualmente-oculto">Ações</span></th>
                             </tr>

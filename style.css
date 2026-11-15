@@ -1069,8 +1069,7 @@ td.col-acoes, th.col-acoes { width: 1%; text-align: right; }
 #tabela-transacoes td:nth-child(2),
 #tabela-transacoes td:nth-child(3) { min-width: 120px; }
 #tabela-transacoes td:nth-child(5),
-#tabela-transacoes td:nth-child(6),
-#tabela-transacoes td:nth-child(7) {
+#tabela-transacoes td:nth-child(6) {
   white-space: normal;
   overflow-wrap: break-word;
 }
@@ -2228,3 +2227,15 @@ body.tela-login {
 .grade-corrigir .botao { margin: 0; }
 .grade-corrigir #corrigir-para { text-transform: uppercase; }
 @media (max-width: 767px) { .grade-corrigir { grid-template-columns: 1fr; } }
+
+/* Extrato: aviso do filtro de categoria que vem do Dashboard */
+.faixa-categoria-dashboard { margin: var(--e-4) 0 0; }
+.faixa-categoria-dashboard[hidden] { display: none; }
+.faixa-categoria-dashboard .botao { margin: 0; flex-shrink: 0; }
+
+/* Configurações: prévia de "Aplicar regras aos lançamentos" */
+#area-aplicar[hidden] { display: none; }
+.acoes-aplicar { border-top: none; padding-top: 0; }
+.tabela-aplicar td { white-space: normal; }
+.tabela-aplicar .col-marcar { width: 1%; }
+.tabela-aplicar input[type="checkbox"] { width: 18px; height: 18px; min-height: 0; margin: 0; cursor: pointer; }

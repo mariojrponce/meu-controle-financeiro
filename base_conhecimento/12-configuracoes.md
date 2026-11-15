@@ -46,9 +46,9 @@ Regras das listas:
 ## 12.3 Equiparação de categorias
 
 Regras que levam um lançamento para a **categoria** usada hoje, quando a forma de classificar
-mudou com o tempo. Afetam só a visão: a coluna **Categoria** e o filtro Categoria do Extrato, e
-a "Evolução por categoria" do Dashboard (com "Equiparar categorias pela finalidade" ligado).
-O lançamento gravado não muda.
+mudou com o tempo. Afetam só a visão: a "Evolução por categoria" do Dashboard (com "Equiparar
+categorias pela finalidade" ligado) e a lista que o Extrato abre quando se clica num valor de
+lá. O Extrato em si mostra e filtra pela **classificação gravada**. O lançamento gravado não muda.
 
 Cada regra:
 
@@ -109,7 +109,35 @@ Regras:
 - A lista de nomes vem do cache de até 6 horas (ver limitação 15c em
   [11](11-limitacoes-e-pontos-de-atencao.md)).
 
-## 12.6 O que não está nesta tela
+## 12.6 Aplicar regras aos lançamentos
+
+As regras de equiparação só mudam a categoria na hora de mostrar. Este bloco **grava** essa
+categoria como a classificação dos lançamentos, para classificação e categoria passarem a
+ser a mesma coisa (e o Extrato aberto pelo Dashboard trazer uma classificação só).
+
+1. **Ver o que mudaria**: para cada lançamento, compara a classificação gravada com
+   `finalidadeDe(t)` usando as regras **já salvas** (com alterações pendentes na tela, pede
+   para salvar antes). Agrupa por troca: tipo + classificação atual → categoria, com a
+   quantidade de lançamentos.
+2. Cada troca tem uma caixa de seleção. Trocas em que a classificação atual ou a nova contém
+   `INVEST` vêm **desmarcadas**, com aviso: a tela Investimentos reconhece o investimento pela
+   classificação exatamente `INVESTIMENTO` e o Planejamento pelos aportes que contêm
+   `INVESTIMENTO`; gravar essas trocas muda o que aparece nessas telas.
+3. **Gravar em N lançamentos**: depois da confirmação, regrava `classificacao_saida` dos
+   grupos marcados (`atualizarTransacoesEmLote`, lotes de 450) e refaz a prévia.
+
+Cuidados:
+
+- **Não há desfazer.** A classificação antiga é substituída; antes, exportar o ano pelo Extrato
+  (ou ter um backup do Firestore).
+- Se a gravação cair no meio, parte dos grupos já foi regravada; a prévia refeita mostra só o
+  que falta.
+- Depois de gravar, as regras que só serviam para aqueles lançamentos antigos podem ser
+  apagadas. Regras com "só quando o texto tiver" continuam úteis para lançamentos novos que
+  forem gravados com a classificação antiga.
+- Usa o cache local dos lançamentos (mesma limitação 15c).
+
+## 12.7 O que não está nesta tela
 
 - **Categorias à parte** e **visões personalizadas**: continuam no Dashboard, salvas só no navegador.
 - **Colchão e gastos do dia a dia**: continuam no Planejamento.

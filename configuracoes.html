@@ -112,9 +112,39 @@
                 </form>
             </section>
 
+            <section class="cartao" aria-labelledby="titulo-aplicar">
+                <h2 id="titulo-aplicar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-check"></use></svg>Aplicar regras aos lançamentos</h2>
+                <p class="dica-campo">As regras de equiparação (abaixo) só mudam a categoria na hora de mostrar. Aqui você pode <b>gravar</b> essa categoria como a classificação dos lançamentos antigos, para classificação e categoria passarem a ser a mesma coisa. Usa as regras <b>já salvas</b>.</p>
+                <p class="dica-campo">Não há como desfazer automaticamente: antes, exporte um backup pelo Extrato (ano inteiro → Exportar .xlsx). Trocas ligadas a investimento vêm desmarcadas, porque a tela Investimentos reconhece um investimento pela classificação <code>INVESTIMENTO</code>.</p>
+                <div class="filtros-acoes acoes-aplicar">
+                    <button type="button" id="btn-previa-aplicar" class="botao botao-secundario">Ver o que mudaria</button>
+                </div>
+                <div id="area-aplicar" hidden>
+                    <p class="dica-campo" id="resumo-aplicar" role="status"></p>
+                    <div class="tabela-scroll">
+                        <table id="tabela-aplicar" class="tabela-aplicar">
+                            <thead>
+                                <tr>
+                                    <th class="col-marcar"><input type="checkbox" id="marcar-todas-aplicar" aria-label="Marcar ou desmarcar todas"></th>
+                                    <th>Tipo</th>
+                                    <th>Classificação atual</th>
+                                    <th>Passa a ser</th>
+                                    <th class="num">Lançamentos</th>
+                                    <th>Observação</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="filtros-acoes">
+                        <button type="button" id="btn-aplicar-regras" class="botao botao-primario" disabled>Gravar nos lançamentos</button>
+                    </div>
+                </div>
+            </section>
+
             <section class="cartao" aria-labelledby="titulo-regras">
                 <h2 id="titulo-regras"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-filtro"></use></svg>Equiparação de categorias</h2>
-                <p class="dica-campo">Quando a forma de classificar muda com o tempo, estas regras levam o lançamento antigo para a categoria que você usa hoje. Só mudam a <b>Categoria</b> mostrada no Extrato e na "Evolução por categoria" do Dashboard; o lançamento gravado não é alterado.</p>
+                <p class="dica-campo">Quando a forma de classificar muda com o tempo, estas regras levam o lançamento antigo para a categoria que você usa hoje. Só mudam a categoria em que o lançamento entra na "Evolução por categoria" do Dashboard (e a lista que abre no Extrato ao clicar num valor de lá); o lançamento gravado não é alterado.</p>
                 <p class="dica-campo">As regras são testadas de cima para baixo e vale a <b>primeira</b> que servir. Em "Só quando o texto tiver", escreva palavras da descrição ou do detalhe separadas por <b>|</b> (ex.: <code>PASSE|ONIBUS</code>); em branco, vale para qualquer texto. Aceita expressão regular.</p>
                 <div class="tabela-scroll">
                     <table id="tabela-regras" class="tabela-regras">
