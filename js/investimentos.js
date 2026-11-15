@@ -44,9 +44,18 @@ const SEM_BANCO = "Banco não definido";
 // Lugares onde se investe que não são "banco de conta corrente" e por isso
 // não estão em BANCOS_SUGERIDOS — entram na detecção pelo Detalhe/Descrição.
 const LOCAIS_INVESTIMENTO_EXTRAS = ["MERCADO BITCOIN"];
-const CHAVE_PREFERENCIA_APLICADO = "investimentos_banco_aplicado";
 
 const usuario = await exigirLogin();
+// Termina com o uid para ser apagada no logout (auth-guard.js), como as outras preferências.
+const CHAVE_PREFERENCIA_APLICADO = `investimentos_banco_aplicado_${usuario.uid}`;
+try {
+    // Chave antiga (sem uid): leva o valor para a nova e apaga.
+    const antigo = localStorage.getItem("investimentos_banco_aplicado");
+    if (antigo !== null) {
+        if (localStorage.getItem(CHAVE_PREFERENCIA_APLICADO) === null) localStorage.setItem(CHAVE_PREFERENCIA_APLICADO, antigo);
+        localStorage.removeItem("investimentos_banco_aplicado");
+    }
+} catch { /* não é grave */ }
 renderizarNav("investimentos", usuario.email);
 
 let todasTransacoes = [];

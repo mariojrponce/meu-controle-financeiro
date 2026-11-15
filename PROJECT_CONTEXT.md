@@ -19,7 +19,7 @@
 | :--- | :--- | :--- | :--- |
 | **Backend & Auth** | Firebase SDK v10.12.2 | CDN (`gstatic.com`) | Autenticação (Auth) e Banco de Dados (Firestore) |
 | **Gráficos** | Chart.js | CDN (`jsdelivr.net`) | Gráficos de rosca/barras no Dashboard |
-| **Importação** | SheetJS (XLSX) | CDN (`cdn.jsDelivr.net`) | Parser de arquivos Excel (`.xlsx`/`.csv`) |
+| **Importação** | SheetJS (XLSX) 0.20.3 | Local (`js/vendor/xlsx/`) | Parser de arquivos Excel (`.xlsx`/`.csv`) |
 | **Extratos PDF** | pdf.js 4.10.38 (legacy) | Local (`js/vendor/pdfjs/`) | Texto + posição dos PDFs dos bancos, no navegador (sem servidor/CDN) |
 | **OCR** | tesseract.js 5.1.1 + modelo `por` | Local (`js/vendor/tesseract/`) | Lê a fatura aberta do Bradesco (imagem), só carregado quando precisa |
 | **Estilização** | CSS3 Vanilla | `style.css` | Design System v4 da identidade visual: tokens CSS (`--brand-*`, `--bg-*`, `--texto-*`, semântica financeira) em 3 temas (claro/escuro/sépia), Inter + Nunito (marca) via Google Fonts |
@@ -47,6 +47,9 @@
     ├── combobox.js                      # Componente de autocompletar inteligente
     ├── cores-bancos.js                  # Mapeamento de cores de marcas de bancos (Nubank, Itaú, etc.)
     ├── dados-carteira.js                # Camada CRUD para a coleção 'carteira' do Firestore
+    ├── configuracoes-modelo.js          # Configurações do usuário: padrão, limpeza e aplicação (sem DOM/Firebase, testável)
+    ├── configuracoes.js                 # Lê/grava 'configuracoes/{uid}' no Firestore (com cache local) e aplica nas telas
+    ├── configuracoes-tela.js            # Tela Configurações: sugestões, bancos de vale e regras de equiparação
     ├── dados-comuns.js                  # Sugestões de bancos e categorias baseados no histórico
     ├── editor-transacao.js              # Modal/Interface de edição de lançamentos
     ├── firebase-config.js               # Configuração e inicialização dos serviços Firebase

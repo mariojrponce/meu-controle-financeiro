@@ -2158,3 +2158,73 @@ body.tela-login {
 .tabela-matriz td.variacao-piorou { color: var(--cor-saida); }
 .tabela-matriz td.variacao-melhorou { color: var(--cor-entrada); }
 .tabela-matriz td.variacao-igual { color: var(--texto-secundario); }
+
+/* ----------------------------------------------------------------------------
+   Configurações — listas de sugestões e regras de equiparação
+   ---------------------------------------------------------------------------- */
+.par-config { margin-bottom: var(--e-6); }
+.par-config > .cartao { min-width: 0; }
+
+.itens-config { display: flex; flex-wrap: wrap; gap: var(--e-2); margin: var(--e-3) 0 var(--e-4); }
+.itens-config .vazio { margin: 0; }
+.item-config {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 2px 2px 10px;
+  border: 1px solid var(--borda-sutil);
+  border-radius: 999px;
+  background: var(--bg-superficie-alt);
+  color: var(--texto-principal);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.item-config button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--texto-secundario);
+  cursor: pointer;
+}
+.item-config button .icone { width: 14px; height: 14px; }
+.item-config button:hover { background: var(--cor-saida-bg); color: var(--cor-saida); }
+
+.adicionar-config { display: flex; gap: var(--e-2); max-width: 420px; }
+.adicionar-config input { flex: 1; min-width: 0; text-transform: uppercase; }
+.adicionar-config .botao { margin: 0; flex-shrink: 0; }
+
+.tabela-regras td { white-space: normal; padding: 6px var(--e-2); height: auto; vertical-align: middle; }
+.tabela-regras th small { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.tabela-regras input, .tabela-regras select { width: 100%; min-height: 36px; padding: 0 8px; font-size: 0.8125rem; }
+.tabela-regras input { min-width: 150px; }
+.tabela-regras select { min-width: 125px; }
+.tabela-regras td:nth-child(2) input, .tabela-regras td:nth-child(4) input { text-transform: uppercase; }
+.tabela-regras td:nth-child(3) input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.tabela-regras .botao-subir .icone { transform: rotate(-90deg); }
+.tabela-regras .botao-descer .icone { transform: rotate(90deg); }
+.tabela-regras button:disabled { opacity: 0.3; cursor: default; }
+
+/* Atalho para Configurações no cabeçalho do celular (o menu de baixo já está cheio) */
+.link-config-mobile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--texto-secundario);
+  border-radius: var(--raio-controle);
+}
+.link-config-mobile .icone { width: 20px; height: 20px; }
+.link-config-mobile.ativo { color: var(--cor-primaria); }
+
+.grade-corrigir { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: var(--e-4); align-items: end; }
+.grade-corrigir .campo { min-width: 0; }
+.grade-corrigir .botao { margin: 0; }
+.grade-corrigir #corrigir-para { text-transform: uppercase; }
+@media (max-width: 767px) { .grade-corrigir { grid-template-columns: 1fr; } }

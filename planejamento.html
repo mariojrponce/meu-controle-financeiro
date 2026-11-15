@@ -3,15 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>Planejamento · Meu Financeiro</title>
-    <script>
-        (function() {
-            var t = localStorage.getItem("tema_meu_financeiro");
-            if (!t) { var h = new Date().getHours(); t = (h >= 6 && h < 18) ? "light" : "dark"; }
-            document.documentElement.setAttribute("data-theme", t);
-        })();
-    </script>
+    <script src="js/tema-inicial.js"></script>
     <meta name="theme-color" content="#F4F6F9">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
     <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
@@ -26,6 +20,7 @@
 <header class="mobile-header">
     <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
     <div class="mobile-header-acoes">
+        <a href="configuracoes.html" class="link-config-mobile" data-pagina="configuracoes" title="Configurações" aria-label="Configurações"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-ajustes"></use></svg></a>
         <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
         <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
     </div>
@@ -45,6 +40,8 @@
             <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
             <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
             <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
+            <div class="grupo-nav">Ajustar</div>
+            <a href="configuracoes.html" data-pagina="configuracoes" title="Configurações"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-ajustes"></use></svg><span>Configurações</span></a>
         </nav>
         <div class="sidebar-rodape">
             <div class="sidebar-email"></div>

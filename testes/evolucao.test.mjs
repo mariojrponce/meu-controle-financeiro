@@ -107,3 +107,44 @@ test("evolução com finalidade: UBER de 2026 compara com as corridas que estava
   assert.equal(mensal[2].percentual, 0.5);
   assert.equal(mensal[0].percentual, null);
 });
+
+// ---------- Configurações do usuário (configuracoes-modelo.js) ----------
+import { configuracoesPadrao, limparConfiguracoes, aplicarConfiguracoes } from "../js/configuracoes-modelo.js";
+import { ehBancoVale } from "../js/vale.js";
+import { BANCOS_SUGERIDOS } from "../js/dados-comuns.js";
+
+test("configurações: o padrão passa pela limpeza sem mudar", () => {
+  const padrao = configuracoesPadrao();
+  assert.deepEqual(limparConfiguracoes(padrao), padrao);
+  assert.deepEqual(limparConfiguracoes(undefined), padrao);
+});
+
+test("configurações: limpa nomes, tira repetidos e descarta regra incompleta ou inválida", () => {
+  const limpa = limparConfiguracoes({
+    bancos: [" nubank ", "NUBANK", ""],
+    classificacoes: [],
+    bancosVale: ["meu vale"],
+    regras: [
+      { tipo: "SAIDA", de: ["padaria", " "], se: "pão|café", para: "alimentação" },
+      { tipo: "SAIDA", de: [], para: "X" },
+      { tipo: "SAIDA", de: ["A"], se: "(", para: "X" }
+    ]
+  });
+  assert.deepEqual(limpa.bancos, ["NUBANK"]);
+  assert.deepEqual(limpa.classificacoes, []);
+  assert.deepEqual(limpa.regras, [{ tipo: "SAIDA", de: ["PADARIA"], se: "PAO|CAFE", para: "ALIMENTAÇÃO" }]);
+});
+
+test("configurações: aplicar troca sugestões, bancos de vale e regras; o padrão volta depois", () => {
+  aplicarConfiguracoes({ bancos: ["MEU BANCO"], classificacoes: ["X"], bancosVale: ["MEU VALE"], regras: [{ tipo: "SAIDA", de: ["PADARIA"], se: "\\bPÃO\\b", para: "COMIDA" }] });
+  assert.deepEqual(BANCOS_SUGERIDOS, ["MEU BANCO"]);
+  assert.equal(ehBancoVale("MEU VALE REFEIÇÃO"), true);
+  assert.equal(ehBancoVale("ALELO"), false);
+  assert.equal(finalidadeDe(g("PADARIA", "COMPREI PÃO", "")), "COMIDA");
+  assert.equal(finalidadeDe(g("PADARIA", "COMPREI LEITE", "")), "PADARIA");
+  assert.equal(finalidadeDe(g("TRANSPORTE", "IR PARA SERVIÇO", "UBER")), "TRANSPORTE");
+
+  aplicarConfiguracoes(configuracoesPadrao());
+  assert.equal(ehBancoVale("ALELO"), true);
+  assert.equal(finalidadeDe(g("TRANSPORTE", "IR PARA SERVIÇO", "UBER")), "UBER");
+});

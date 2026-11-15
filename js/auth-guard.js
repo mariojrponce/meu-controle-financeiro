@@ -2,12 +2,16 @@
 // Garante que só usuários logados vejam qualquer página do sistema.
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth } from "./firebase-config.js";
+import { carregarConfiguracoes } from "./configuracoes.js";
 
 // Retorna uma Promise que resolve com o usuário logado, ou redireciona imediatamente para o login.
 export function exigirLogin() {
   return new Promise((resolve) => {
-    onAuthStateChanged(auth, (usuario) => {
+    onAuthStateChanged(auth, async (usuario) => {
       if (usuario) {
+        // Sugestões, bancos de vale e regras de categoria do usuário valem em
+        // todas as telas. Se a leitura falhar, a página segue com o padrão do sistema.
+        try { await carregarConfiguracoes(usuario); } catch (erro) { console.warn("Configurações não carregadas; usando o padrão do sistema.", erro?.code ?? erro); }
         document.body.classList.add("autenticado");
         resolve(usuario);
       } else {

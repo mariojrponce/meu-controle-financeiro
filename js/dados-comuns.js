@@ -53,6 +53,17 @@ export const CLASSIFICACOES_SUGERIDAS = [
   "OUTROS"
 ];
 
+// Cópias do padrão do sistema (as listas acima são trocadas pelas do usuário).
+export const BANCOS_SUGERIDOS_PADRAO = [...BANCOS_SUGERIDOS];
+export const CLASSIFICACOES_SUGERIDAS_PADRAO = [...CLASSIFICACOES_SUGERIDAS];
+
+// Troca as sugestões em uso pelas do usuário (tela Configurações). Altera as
+// listas no lugar, para valer em todos os arquivos que já as importaram.
+export function definirSugestoes({ bancos, classificacoes } = {}) {
+  if (Array.isArray(bancos)) BANCOS_SUGERIDOS.splice(0, BANCOS_SUGERIDOS.length, ...bancos);
+  if (Array.isArray(classificacoes)) CLASSIFICACOES_SUGERIDAS.splice(0, CLASSIFICACOES_SUGERIDAS.length, ...classificacoes);
+}
+
 // Junta a lista sugerida com valores já usados nas transações do usuário,
 // sem repetir e em ordem alfabética.
 export function mesclarSugestoes(sugeridas, usadas) {

@@ -198,6 +198,22 @@ export async function desfazerImportacaoExtratos(usuario, { idsCriados = [], cor
   }
 }
 
+// Aplica a mesma alteração a vários lançamentos de uma vez (ex.: corrigir o
+// nome de uma classificação) e reflete no cache local. Cada lote de até 450
+// é atômico; se um lote falhar, os anteriores já foram gravados — por isso o
+// cache é descartado no erro, para a próxima tela buscar o estado real.
+export async function atualizarTransacoesEmLote(usuario, ids, dados, aoProgredir) {
+  try {
+    await executarEmLotes(ids.map((id) => (lote) => lote.update(doc(db, NOME_COLECAO, id), dados)), aoProgredir);
+  } catch (erro) {
+    invalidarCache(usuario);
+    throw erro;
+  }
+  const alterados = new Set(ids);
+  const cacheAtual = lerCache(usuario.uid);
+  if (cacheAtual) salvarCache(usuario.uid, cacheAtual.map((t) => (alterados.has(t.id) ? { ...t, ...dados } : t)));
+}
+
 export function invalidarCache(usuario) {
   try { localStorage.removeItem(chaveCache(usuario.uid)); } catch { /* ignora */ }
 }

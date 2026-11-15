@@ -3,7 +3,23 @@
 // lugares, então não dá pra somar com o dinheiro "livre" dos outros bancos.
 // O vale é identificado pelo banco do lançamento (ALELO, PLUXE, ...).
 
-const PADRAO_BANCO_VALE = /^(ALELO|PLUXEE?|SODEXO|TICKET|VR|FLASH|CAJU|SWILE)\b/;
+// Padrão do sistema; cada usuário pode trocar a lista na tela Configurações.
+export const BANCOS_VALE_PADRAO = ["ALELO", "PLUXE", "PLUXEE", "SODEXO", "TICKET", "VR", "FLASH", "CAJU", "SWILE"];
+
+function montarPadrao(nomes) {
+    const limpos = nomes.map((n) => String(n ?? "").trim().toUpperCase()).filter(Boolean);
+    if (!limpos.length) return null;
+    const escapados = limpos.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    // O nome do banco precisa COMEÇAR com um dos nomes da lista (ex.: "ALELO REFEIÇÃO").
+    return new RegExp(`^(${escapados.join("|")})(?![A-Z0-9])`);
+}
+
+let padraoBancoVale = montarPadrao(BANCOS_VALE_PADRAO);
+
+// Troca a lista de bancos de vale em uso (chamado ao carregar as configurações do usuário).
+export function definirBancosVale(nomes) {
+    padraoBancoVale = montarPadrao(Array.isArray(nomes) ? nomes : BANCOS_VALE_PADRAO);
+}
 
 export const OPCOES_FILTRO_VALE = [
     { valor: "", rotulo: "Tudo" },
@@ -12,7 +28,7 @@ export const OPCOES_FILTRO_VALE = [
 ];
 
 export function ehBancoVale(banco) {
-    return PADRAO_BANCO_VALE.test((banco ?? "").trim().toUpperCase());
+    return padraoBancoVale ? padraoBancoVale.test((banco ?? "").trim().toUpperCase()) : false;
 }
 
 // modo: "" = tudo, "COM" = só lançamentos de vale, "SEM" = tudo menos vale

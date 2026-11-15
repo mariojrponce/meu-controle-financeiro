@@ -71,7 +71,7 @@ export function renderizarNav(paginaAtiva, emailUsuario) {
   inicializarTema();
   recolherFiltrosNoCelular();
 
-  document.querySelectorAll(".sidebar-links a, .mobile-nav a").forEach((link) => {
+  document.querySelectorAll(".sidebar-links a, .mobile-nav a, .link-config-mobile").forEach((link) => {
     const ativo = link.dataset.pagina === paginaAtiva;
     link.classList.toggle("ativo", ativo);
     if (ativo) link.setAttribute("aria-current", "page");

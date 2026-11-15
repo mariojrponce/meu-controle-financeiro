@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>Configurações · Meu Financeiro</title>
+    <script src="js/tema-inicial.js"></script>
+    <meta name="theme-color" content="#F4F6F9">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png">
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800&display=swap">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="mobile-header">
+    <a class="marca-mobile" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span>Meu Financeiro</span></a>
+    <div class="mobile-header-acoes">
+        <a href="configuracoes.html" class="link-config-mobile" data-pagina="configuracoes" title="Configurações" aria-label="Configurações"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-ajustes"></use></svg></a>
+        <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo visualmente-oculto">Claro</span></button>
+        <button type="button" class="btn-sair botao-sair" title="Sair da conta" aria-label="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg></button>
+    </div>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-marca"><a class="marca" href="index.html" aria-label="Meu Financeiro — página inicial"><span class="marca-simbolo" aria-hidden="true"></span><span class="marca-divisor" aria-hidden="true"></span><span class="marca-nome" aria-hidden="true"><span class="marca-meu">Meu</span><span class="marca-financeiro">Financeiro</span><span class="marca-linha"></span></span></a></div>
+        <nav class="sidebar-links" aria-label="Menu principal">
+            <div class="grupo-nav">Registrar</div>
+            <a href="index.html" data-pagina="lancar" title="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+            <a href="importar.html" data-pagina="importar" title="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+            <a href="transferencia.html" data-pagina="transferencia" title="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transferência</span></a>
+            <a href="virar-mes.html" data-pagina="virar-mes" title="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar mês</span></a>
+            <div class="grupo-nav">Acompanhar</div>
+            <a href="dashboard.html" data-pagina="dashboard" title="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dashboard</span></a>
+            <a href="extrato.html" data-pagina="extrato" title="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+            <a href="investimentos.html" data-pagina="investimentos" title="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Investimentos</span></a>
+            <a href="planejamento.html" data-pagina="planejamento" title="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Planejamento</span></a>
+            <div class="grupo-nav">Ajustar</div>
+            <a href="configuracoes.html" data-pagina="configuracoes" title="Configurações"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-ajustes"></use></svg><span>Configurações</span></a>
+        </nav>
+        <div class="sidebar-rodape">
+            <div class="sidebar-email"></div>
+            <div class="sidebar-acoes">
+                <button type="button" class="btn-alternar-tema" title="Trocar o tema de leitura"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sol"></use></svg><span class="tema-rotulo">Claro</span></button>
+                <button type="button" class="btn-sair botao-sair" title="Sair da conta"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-sair"></use></svg><span class="rotulo-sair">Sair</span></button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="conteudo-principal" id="conteudo">
+        <div class="pagina">
+            <div class="cabecalho-pagina">
+                <div>
+                    <h1>Configurações</h1>
+                    <p class="subtitulo">Ajuste as sugestões e as regras do sistema para o seu jeito de classificar. Valem só para a sua conta, em qualquer aparelho.</p>
+                </div>
+                <div class="acoes-pagina">
+                    <button type="button" id="btn-restaurar" class="botao botao-secundario" title="Volta todas as listas e regras para o padrão do sistema (só vale depois de salvar)">Restaurar padrão</button>
+                    <button type="button" id="btn-salvar" class="botao botao-primario" disabled>Salvar alterações</button>
+                </div>
+            </div>
+
+            <p class="faixa-info" id="faixa-estado" role="status"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-info"></use></svg><span id="texto-estado">Carregando suas configurações...</span></p>
+
+            <div class="par-colunas par-config">
+                <section class="cartao" aria-labelledby="titulo-bancos">
+                    <h2 id="titulo-bancos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-banco"></use></svg>Bancos sugeridos</h2>
+                    <p class="dica-campo">Aparecem como sugestão no campo Banco ao lançar. Os bancos que você já usou continuam sendo sugeridos mesmo fora desta lista.</p>
+                    <div class="lista-config" id="lista-bancos"></div>
+                </section>
+
+                <section class="cartao" aria-labelledby="titulo-classificacoes">
+                    <h2 id="titulo-classificacoes"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-categorias"></use></svg>Classificações sugeridas</h2>
+                    <p class="dica-campo">Aparecem como sugestão no campo Classificação ao lançar. As que você já usou continuam sendo sugeridas mesmo fora desta lista.</p>
+                    <div class="lista-config" id="lista-classificacoes"></div>
+                </section>
+            </div>
+
+            <section class="cartao" aria-labelledby="titulo-vale">
+                <h2 id="titulo-vale"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-carteira"></use></svg>Bancos de vale</h2>
+                <p class="dica-campo">Bancos de vale-alimentação/refeição. O filtro "Vale" e o Planejamento separam esse dinheiro do restante. Vale para todo banco cujo nome <b>começa</b> com um destes (ex.: ALELO pega "ALELO REFEIÇÃO").</p>
+                <div class="lista-config" id="lista-bancos-vale"></div>
+            </section>
+
+            <section class="cartao" aria-labelledby="titulo-corrigir">
+                <h2 id="titulo-corrigir"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-editar"></use></svg>Corrigir classificação nos lançamentos</h2>
+                <p class="dica-campo">Escreveu uma classificação errada? Escolha o nome errado e digite o certo: <b>todos os lançamentos</b> que estão com o nome antigo passam para o novo. Se o nome novo já existir, os lançamentos se juntam a ele. A correção é gravada na hora (não depende de "Salvar alterações").</p>
+                <form id="form-corrigir" class="grade-corrigir">
+                    <div class="campo">
+                        <label for="corrigir-de">Classificação atual</label>
+                        <select id="corrigir-de" required><option value="">Carregando...</option></select>
+                    </div>
+                    <div class="campo">
+                        <label for="corrigir-para">Nome correto</label>
+                        <input type="text" id="corrigir-para" required maxlength="60" placeholder="Digite ou escolha" list="lista-classificacoes-usadas" autocomplete="off">
+                        <datalist id="lista-classificacoes-usadas"></datalist>
+                    </div>
+                    <button type="submit" id="btn-corrigir" class="botao botao-primario" disabled>Corrigir lançamentos</button>
+                </form>
+            </section>
+
+            <section class="cartao" aria-labelledby="titulo-regras">
+                <h2 id="titulo-regras"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-filtro"></use></svg>Equiparação de categorias</h2>
+                <p class="dica-campo">Quando a forma de classificar muda com o tempo, estas regras levam o lançamento antigo para a categoria que você usa hoje. Só mudam a <b>Categoria</b> mostrada no Extrato e na "Evolução por categoria" do Dashboard; o lançamento gravado não é alterado.</p>
+                <p class="dica-campo">As regras são testadas de cima para baixo e vale a <b>primeira</b> que servir. Em "Só quando o texto tiver", escreva palavras da descrição ou do detalhe separadas por <b>|</b> (ex.: <code>PASSE|ONIBUS</code>); em branco, vale para qualquer texto. Aceita expressão regular.</p>
+                <div class="tabela-scroll">
+                    <table id="tabela-regras" class="tabela-regras">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Classificações de origem <small>(separadas por vírgula)</small></th>
+                                <th>Só quando o texto tiver</th>
+                                <th>Vira a categoria</th>
+                                <th class="col-acoes"><span class="visualmente-oculto">Ações</span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="filtros-acoes">
+                    <button type="button" id="btn-nova-regra" class="botao botao-secundario"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-mais"></use></svg>Adicionar regra</button>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<nav class="mobile-nav" aria-label="Menu principal">
+    <a href="index.html" data-pagina="lancar" aria-label="Lançar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-lancar"></use></svg><span>Lançar</span></a>
+    <a href="importar.html" data-pagina="importar" aria-label="Importar"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-importar"></use></svg><span>Importar</span></a>
+    <a href="transferencia.html" data-pagina="transferencia" aria-label="Transferência"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-transferencia"></use></svg><span>Transf.</span></a>
+    <a href="virar-mes.html" data-pagina="virar-mes" aria-label="Virar mês"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-virar"></use></svg><span>Virar</span></a>
+    <a href="dashboard.html" data-pagina="dashboard" aria-label="Dashboard"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-dashboard"></use></svg><span>Dash</span></a>
+    <a href="extrato.html" data-pagina="extrato" aria-label="Extrato"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-extrato"></use></svg><span>Extrato</span></a>
+    <a href="investimentos.html" data-pagina="investimentos" aria-label="Investimentos"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-investimentos"></use></svg><span>Invest.</span></a>
+    <a href="planejamento.html" data-pagina="planejamento" aria-label="Planejamento"><svg class="icone" aria-hidden="true"><use href="assets/icones.svg#i-planejamento"></use></svg><span>Plano</span></a>
+</nav>
+
+<script type="module" src="js/configuracoes-tela.js"></script>
+
+</body>
+</html>

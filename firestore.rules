@@ -53,6 +53,24 @@ service cloud.firestore {
                     && request.auth.uid == resource.data.userId;
     }
 
+    // Configurações de cada usuário (tela Configurações): um documento cujo ID é
+    // o próprio uid. Só o dono lê e grava; só as listas previstas, com tamanho limitado.
+    function listaValida(dados, campo) {
+      return dados[campo] is list && dados[campo].size() <= 300;
+    }
+
+    match /configuracoes/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+
+      allow create, update: if request.auth != null
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['bancos', 'classificacoes', 'bancosVale', 'regras', 'atualizadoEm'])
+                            && listaValida(request.resource.data, 'bancos')
+                            && listaValida(request.resource.data, 'classificacoes')
+                            && listaValida(request.resource.data, 'bancosVale')
+                            && listaValida(request.resource.data, 'regras');
+    }
+
     // Bloqueia qualquer outra coleção não prevista explicitamente
     match /{document=**} {
       allow read, write: if false;

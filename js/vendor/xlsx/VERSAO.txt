@@ -1,0 +1,6 @@
+SheetJS (xlsx) 0.20.3 — https://sheetjs.com — Apache-2.0.
+Copiado de https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js
+sha256: cc015130aa8521e7f088f88898eba949ccdcbfb38df0bd129b44b7273c3a6f41
+
+Fica aqui (e não no cdnjs) porque o cdnjs parou na 0.18.5, que tem as falhas
+CVE-2023-30533 e CVE-2024-22363. Usado em Importar (ler planilha) e Extrato (exportar).
