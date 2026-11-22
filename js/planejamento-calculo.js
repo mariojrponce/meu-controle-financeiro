@@ -234,15 +234,20 @@ export function calcularPlanejamento(transacoes, { hoje, categoriasDiaADia, colc
 
     // Banco a banco, só no ciclo atual (é o que dá para agir agora).
     const porBanco = {};
-    Object.entries(saldoPorBanco).forEach(([banco, saldo]) => { porBanco[banco] = { banco, saldoHoje: saldo, entradas: 0, saidas: 0, primeiraConta: null }; });
+    Object.entries(saldoPorBanco).forEach(([banco, saldo]) => { porBanco[banco] = { banco, saldoHoje: saldo, entradas: 0, saidas: 0, primeiraConta: null, aPagar: [], aEntrar: [] }; });
     const atual = ciclos[0];
     if (atual) {
-        base.filter((t) => t.data > hoje && t.data <= atual.fim).forEach((t) => {
-            porBanco[t.banco] ??= { banco: t.banco, saldoHoje: 0, entradas: 0, saidas: 0, primeiraConta: null };
+        // Em ordem de data, para as listas "A pagar" / "A entrar" de cada banco.
+        const previstos = base.filter((t) => t.data > hoje && t.data <= atual.fim).sort((a, b) => a.data.localeCompare(b.data));
+        previstos.forEach((t) => {
+            porBanco[t.banco] ??= { banco: t.banco, saldoHoje: 0, entradas: 0, saidas: 0, primeiraConta: null, aPagar: [], aEntrar: [] };
             const b = porBanco[t.banco];
-            if (t.tipo === "ENTRADA") b.entradas += t.valor;
-            else {
+            if (t.tipo === "ENTRADA") {
+                b.entradas += t.valor;
+                b.aEntrar.push(t);
+            } else {
                 b.saidas += t.valor;
+                b.aPagar.push(t);
                 if (!b.primeiraConta || t.data < b.primeiraConta.data) b.primeiraConta = t;
             }
         });

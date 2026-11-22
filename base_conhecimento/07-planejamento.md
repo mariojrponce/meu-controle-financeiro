@@ -113,6 +113,7 @@ Saldo hoje  = §7.4 do banco
 Fica com    = Saldo hoje + A entrar − A pagar
 ```
 Aqui **entram também transferências internas futuras** (mexem no saldo daquele banco).
+As linhas **A pagar (n)** e **A entrar (n)** têm uma setinha: clicando, abrem para baixo com cada lançamento que compõe o total (data, descrição, valor, em ordem de data; transferências internas marcadas como "(transferência)"). Continuam abertas ao mudar filtros ou ajustes.
 Aparecem bancos com saldo ≠ 0 ou algo previsto. Ordem: quem mais paga primeiro. Se "Fica com" < 0, mostra "⚠️ Primeira conta em dd/mm: descrição".
 
 ## 7.10 Sugestão de transferências
@@ -133,12 +134,12 @@ Sem nenhum salário lançado: pede para lançar o salário com classificação S
 
 ## 7.12 Bloquinhos de ciclos
 - Todos os ciclos da base, do primeiro salário até o último lançamento.
-- Ordem: 🟢 Ciclo atual → 🔮 Futuros (do mais próximo) → ✔️ Encerrados (do mais recente). Encerrados em cinza (voltam à cor no mouse).
+- Ordem: 🟢 Ciclo atual → 🔮 Futuros (do mais próximo) → ✔️ Encerrados (do mais recente). Encerrados em cinza (voltam à cor no mouse) e **recolhidos** atrás da setinha "✔️ Ciclos encerrados (n)": clicar abre os bloquinhos para baixo. Já vêm abertos quando o filtro Ciclos está em "Ciclos encerrados" ou quando o usuário os deixou abertos da última vez.
 - Filtros **Ciclos** e **Ano** só escolhem quais bloquinhos aparecem (Ano: ciclo que começa ou termina no ano). **Banco** e **Vale** mudam todas as contas da página.
 - Clicar (ou Enter/Espaço) abre a janela com as tabelas de Contas/Gastos e Entradas do ciclo.
 
 ## 7.13 Preferências
-Salvas em `pref_planejamento_<uid>`: `colchao`, `categoriasDiaADia`, `filtros {situacao, ano, bancos, vale}`. "Limpar filtros" volta a Todos / Todos / Todos os bancos / **Sem vale**.
+Salvas em `pref_planejamento_<uid>`: `colchao`, `categoriasDiaADia`, `filtros {situacao, ano, bancos, vale}`, `encerradosAbertos`. "Limpar filtros" volta a Todos / Todos / Todos os bancos / **Sem vale**.
 
 ## 7.14 Limitações
 - Só enxerga contas **lançadas** como previstas. Conta recorrente não lançada deixa a previsão otimista.

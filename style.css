@@ -1322,6 +1322,36 @@ button.pilula.ativa { border-color: var(--cor-primaria); background: var(--cor-p
   margin-top: 2px;
 }
 
+/* Linha de total que abre mostrando cada lançamento (Planejamento) */
+.detalhe-linha > summary { cursor: pointer; list-style: none; }
+.detalhe-linha > summary::-webkit-details-marker { display: none; }
+.detalhe-linha > summary .rotulo-linha::after {
+  content: "▸";
+  display: inline-block;
+  margin-left: 6px;
+  transition: transform 0.15s ease;
+}
+.detalhe-linha[open] > summary .rotulo-linha::after { transform: rotate(90deg); }
+.detalhe-linha > summary:hover .rotulo-linha { color: var(--texto-principal); }
+.itens-linha {
+  list-style: none;
+  margin: 2px 0 var(--e-2);
+  padding: var(--e-2) 0 var(--e-2) var(--e-3);
+  border-left: 2px solid var(--borda-sutil);
+  font-size: var(--fs-rotulo);
+}
+.itens-linha li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--e-2);
+  align-items: baseline;
+  padding: 3px 0;
+}
+.itens-linha-data { color: var(--texto-secundario); font-variant-numeric: tabular-nums; }
+.itens-linha-descricao { overflow-wrap: anywhere; color: var(--texto-corpo); }
+.itens-linha-descricao small { color: var(--texto-secundario); }
+.itens-linha-valor { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
 .aviso-banco {
   margin: var(--e-2) 0 0;
   font-size: var(--fs-rotulo);
@@ -1616,6 +1646,25 @@ button.pilula.ativa { border-color: var(--cor-primaria); background: var(--cor-p
   margin: 0 0 var(--e-2);
   color: var(--texto-secundario);
 }
+
+.grupo-ciclos-recolhivel > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-2) 0;
+  margin: 0;
+  width: fit-content;
+}
+.grupo-ciclos-recolhivel > summary::-webkit-details-marker { display: none; }
+.grupo-ciclos-recolhivel > summary::before {
+  content: "▸";
+  transition: transform 0.15s ease;
+}
+.grupo-ciclos-recolhivel[open] > summary::before { transform: rotate(90deg); }
+.grupo-ciclos-recolhivel[open] > summary { margin-bottom: var(--e-2); }
+.grupo-ciclos-recolhivel > summary:hover { color: var(--texto-principal); }
 
 .cartao-ciclo { cursor: pointer; min-width: 0; transition: box-shadow 0.15s ease, filter 0.2s ease, opacity 0.2s ease; }
 .cartao-ciclo:hover { box-shadow: var(--sombra-dropdown); }

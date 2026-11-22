@@ -186,6 +186,44 @@ function renderizarRecomendacoes(plano) {
 }
 
 // ---------- Bancos no ciclo atual ----------
+// Linhas "A pagar" / "A entrar" que o usuário deixou abertas — a tela é
+// remontada a cada filtro/ajuste e elas não devem fechar sozinhas.
+const linhasAbertas = new Set();
+
+// Linha de total que abre para baixo mostrando cada lançamento que a compõe.
+function linhaComItens(chave, rotulo, valor, classeValor, itens) {
+    if (itens.length === 0) return linhaValor(rotulo, valor, classeValor);
+
+    const detalhes = elemento("details", "detalhe-linha");
+    detalhes.open = linhasAbertas.has(chave);
+    detalhes.addEventListener("toggle", () => {
+        if (detalhes.open) linhasAbertas.add(chave);
+        else linhasAbertas.delete(chave);
+    });
+
+    const resumo = elemento("summary", "linha-carteira");
+    resumo.title = "Ver cada lançamento";
+    resumo.appendChild(elemento("span", "rotulo-linha", `${rotulo} (${itens.length})`));
+    resumo.appendChild(elemento("span", `valor-linha ${classeValor}`, formatarReais(valor)));
+    detalhes.appendChild(resumo);
+
+    const lista = elemento("ul", "itens-linha");
+    itens.forEach((t) => {
+        const item = document.createElement("li");
+        item.appendChild(elemento("span", "itens-linha-data", dataCurta(t.data)));
+        const descricao = [t.descricao, t.saida].filter(Boolean).join(" · ") || t.classificacao_saida || "Sem descrição";
+        const spanDescricao = elemento("span", "itens-linha-descricao", descricao);
+        const complemento = [t.classificacao_saida, t.tipo_mov === "INTERNO" ? "transferência entre suas contas" : ""].filter(Boolean).join(" · ");
+        if (complemento) spanDescricao.title = complemento;
+        if (t.tipo_mov === "INTERNO") spanDescricao.appendChild(elemento("small", "", " (transferência)"));
+        item.appendChild(spanDescricao);
+        item.appendChild(elemento("span", "itens-linha-valor", formatarReais(t.valor)));
+        lista.appendChild(item);
+    });
+    detalhes.appendChild(lista);
+    return detalhes;
+}
+
 function renderizarBancos(plano) {
     const container = document.getElementById("grade-bancos-ciclo");
     container.replaceChildren();
@@ -206,8 +244,8 @@ function renderizarBancos(plano) {
         cartao.appendChild(nome);
 
         cartao.appendChild(linhaValor("Saldo hoje", b.saldoHoje));
-        if (b.entradas > 0) cartao.appendChild(linhaValor("+ A entrar", b.entradas, "valor-positivo"));
-        cartao.appendChild(linhaValor("− A pagar", b.saidas, b.saidas > 0 ? "valor-negativo" : ""));
+        if (b.entradas > 0) cartao.appendChild(linhaComItens(`${b.banco}|entrar`, "+ A entrar", b.entradas, "valor-positivo", b.aEntrar));
+        cartao.appendChild(linhaComItens(`${b.banco}|pagar`, "− A pagar", b.saidas, b.saidas > 0 ? "valor-negativo" : "", b.aPagar));
         const linhaFinal = linhaValor("Fica com", b.saldoFinal, b.saldoFinal >= 0 ? "valor-positivo" : "valor-negativo");
         linhaFinal.classList.add("saldo");
         cartao.appendChild(linhaFinal);
@@ -289,9 +327,19 @@ function cartaoCiclo(c) {
     return cartao;
 }
 
-function grupoDeCiclos(titulo, ciclos) {
-    const grupo = elemento("div", "grupo-ciclos");
-    grupo.appendChild(elemento("h4", "grupo-ciclos-titulo", `${titulo} (${ciclos.length})`));
+// Com `recolhivel`, o grupo vira um <details> (setinha no título) que abre para
+// baixo; `aoAlternar` avisa quando o usuário abre ou fecha.
+function grupoDeCiclos(titulo, ciclos, { recolhivel = false, aberto = true, aoAlternar = null } = {}) {
+    const grupo = elemento(recolhivel ? "details" : "div", "grupo-ciclos");
+    const textoTitulo = `${titulo} (${ciclos.length})`;
+    if (recolhivel) {
+        grupo.classList.add("grupo-ciclos-recolhivel");
+        grupo.open = aberto;
+        grupo.appendChild(elemento("summary", "grupo-ciclos-titulo", textoTitulo));
+        if (aoAlternar) grupo.addEventListener("toggle", () => aoAlternar(grupo.open));
+    } else {
+        grupo.appendChild(elemento("h4", "grupo-ciclos-titulo", textoTitulo));
+    }
     const grade = elemento("div", "grade-ciclos");
     ciclos.forEach((c) => grade.appendChild(cartaoCiclo(c)));
     grupo.appendChild(grade);
@@ -363,7 +411,14 @@ function renderizarCiclos(plano) {
     const encerrados = visiveis.filter((c) => c.situacao === "encerrado").reverse(); // mais recente primeiro
     if (atuais.length > 0) container.appendChild(grupoDeCiclos("🟢 Ciclo atual", atuais));
     if (futuros.length > 0) container.appendChild(grupoDeCiclos("🔮 Ciclos futuros", futuros));
-    if (encerrados.length > 0) container.appendChild(grupoDeCiclos("✔️ Ciclos encerrados", encerrados));
+    if (encerrados.length > 0) {
+        // Escondidos atrás da setinha, a não ser que o filtro peça só os encerrados.
+        container.appendChild(grupoDeCiclos("✔️ Ciclos encerrados", encerrados, {
+            recolhivel: true,
+            aberto: situacao === "encerrado" || lerPreferencias().encerradosAbertos === true,
+            aoAlternar: (aberto) => salvarPreferencias({ encerradosAbertos: aberto })
+        }));
+    }
 }
 
 function popularAnos(plano) {
