@@ -731,8 +731,8 @@ function renderizarGastosDiarios(lista, ano, categoriasSeparadas) {
     const totais = { atual: 0, anterior: 0 };
     lista.forEach((t) => {
         if (t.tipo !== "SAIDA" || t.tipo_mov === "INTERNO" || categoriasSeparadas.has(t.classificacao_saida) || typeof t.valor !== "number") return;
-        const data = t.data ?? "";
-        if (data.slice(5, 7) !== mes) return;
+        const data = dataDoGastoDiario(t);
+        if (!data || data.slice(5, 7) !== mes) return;
         const anoData = Number(data.slice(0, 4));
         const dia = Number(data.slice(8, 10)) - 1;
         if (dia < 0 || dia >= diasNoMes) return;
@@ -821,6 +821,24 @@ function renderizarGastosDiarios(lista, ano, categoriasSeparadas) {
         grupo.addEventListener("keydown", (evento) => { if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); selecionar(); } });
     });
     const rodape = document.createElement("tfoot"); montarGrupoDiario(rodape, "Total", { atual, anterior }, true); tabela.appendChild(rodape);
+}
+
+// Nas faturas do cartão, `data` é o vencimento; a compra real está no fim da
+// descrição (ex.: "MERCADO - 20/09"). Só a visualização diária usa essa data.
+function dataDoGastoDiario(transacao) {
+    const dataLancamento = transacao.data ?? "";
+    const marcaCartao = /CART[AÃ]O|CREDITO|CRÉDITO/i.test(`${transacao.saida ?? ""} ${transacao.descricao ?? ""}`);
+    if (!marcaCartao) return dataLancamento;
+    const dataNoTexto = String(transacao.descricao ?? "").match(/(?:^|\s[-–]\s*)(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?\s*$/);
+    if (!dataNoTexto) return dataLancamento;
+    const dia = Number(dataNoTexto[1]);
+    const mes = Number(dataNoTexto[2]);
+    const [anoLancamento, mesLancamento] = dataLancamento.split("-").map(Number);
+    let ano = dataNoTexto[3] ? Number(dataNoTexto[3]) : (mes > mesLancamento ? anoLancamento - 1 : anoLancamento);
+    if (dataNoTexto[3]?.length === 2) ano += 2000;
+    const data = new Date(Date.UTC(ano, mes - 1, dia));
+    if (data.getUTCFullYear() !== ano || data.getUTCMonth() !== mes - 1 || data.getUTCDate() !== dia) return dataLancamento;
+    return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
 function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
