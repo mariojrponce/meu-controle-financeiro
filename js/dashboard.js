@@ -67,6 +67,7 @@ let carregando = true;
 // passa a mostrar só ela (null = total de todas).
 let selecaoEntradas = null;
 let selecaoGastos = null;
+let selecaoGastosDiarios = null;
 
 aoMudarTema(() => {
     if (!carregando) aplicarFiltros();
@@ -716,6 +717,112 @@ function rotuloPeriodo(mesLimite, ano) {
     return mesLimite === 12 ? String(ano) : `jan–${MESES_CURTOS[mesLimite - 1].toLowerCase()}/${String(ano).slice(2)}`;
 }
 
+function renderizarGastosDiarios(lista, ano, categoriasSeparadas) {
+    const mesesSelecionados = seletorMes.obterSelecionados().map(nomeMesParaNumero).filter(Boolean);
+    const inicioNormalizado = brParaISO(normalizarDataDigitada(campoInicio.value) ?? "") || "";
+    const mes = mesesSelecionados[0] ?? (inicioNormalizado ? inicioNormalizado.slice(5, 7) : String(new Date().getMonth() + 1).padStart(2, "0"));
+    const numeroMes = Number(mes);
+    const nomeMes = NOMES_MES[numeroMes - 1] ?? "";
+    const anoAnterior = Number(ano) - 1;
+    const diasNoMes = new Date(Number(ano), numeroMes, 0).getDate();
+    const atual = Array(diasNoMes).fill(0);
+    const anterior = Array(diasNoMes).fill(0);
+    const porCategoriaDia = new Map();
+    const totais = { atual: 0, anterior: 0 };
+    lista.forEach((t) => {
+        if (t.tipo !== "SAIDA" || t.tipo_mov === "INTERNO" || categoriasSeparadas.has(t.classificacao_saida) || typeof t.valor !== "number") return;
+        const data = t.data ?? "";
+        if (data.slice(5, 7) !== mes) return;
+        const anoData = Number(data.slice(0, 4));
+        const dia = Number(data.slice(8, 10)) - 1;
+        if (dia < 0 || dia >= diasNoMes) return;
+        if (anoData === Number(ano)) {
+            atual[dia] += t.valor; totais.atual += t.valor;
+            const categoria = estadoEvolucaoCat.equiparar ? finalidadeDe(t) : (t.classificacao_saida || SEM_CLASSIFICACAO);
+            if (!porCategoriaDia.has(categoria)) porCategoriaDia.set(categoria, { atual: Array(diasNoMes).fill(0), anterior: Array(diasNoMes).fill(0) });
+            porCategoriaDia.get(categoria).atual[dia] += t.valor;
+        } else if (anoData === anoAnterior) {
+            anterior[dia] += t.valor; totais.anterior += t.valor;
+            const categoria = estadoEvolucaoCat.equiparar ? finalidadeDe(t) : (t.classificacao_saida || SEM_CLASSIFICACAO);
+            if (!porCategoriaDia.has(categoria)) porCategoriaDia.set(categoria, { atual: Array(diasNoMes).fill(0), anterior: Array(diasNoMes).fill(0) });
+            porCategoriaDia.get(categoria).anterior[dia] += t.valor;
+        }
+    });
+    if (selecaoGastosDiarios && !porCategoriaDia.has(selecaoGastosDiarios)) selecaoGastosDiarios = null;
+    const escolhida = selecaoGastosDiarios ? porCategoriaDia.get(selecaoGastosDiarios) : null;
+    const valoresAtual = escolhida?.atual ?? atual;
+    const valoresAnterior = escolhida?.anterior ?? anterior;
+    const totalAtual = escolhida ? escolhida.atual.reduce((s, v) => s + v, 0) : totais.atual;
+    const totalAnterior = escolhida ? escolhida.anterior.reduce((s, v) => s + v, 0) : totais.anterior;
+    const diferenca = totalAtual - totalAnterior;
+    const percentual = totalAnterior ? diferenca / totalAnterior : null;
+    const resumo = document.getElementById("resumo-gastos-diarios");
+    resumo.replaceChildren();
+    [
+        { rotulo: `${escolhida ? `${selecaoGastosDiarios} · ` : ""}${nomeMes} ${ano}`, valor: formatarReais(totalAtual), meta: "Gastos no mês" },
+        { rotulo: `Mesmo mês de ${anoAnterior}`, valor: formatarReais(totalAnterior), meta: `${nomeMes} ${anoAnterior}` },
+        { rotulo: "Variação", valor: `${diferenca > 0 ? "+ " : diferenca < 0 ? "− " : ""}${formatarReais(Math.abs(diferenca))}`, meta: `${textoVariacao(diferenca, percentual).seta} ${textoVariacao(diferenca, percentual).pct}`, classe: `variacao-${sentidoDaVariacao("SAIDA", diferenca)}` }
+    ].forEach((k) => {
+        const cartao = document.createElement("div"); cartao.className = "cartao-metrica";
+        cartao.append(celula("div", k.rotulo, "rotulo"), celula("div", k.valor, `valor ${k.classe ?? ""}`.trim()), celula("div", k.meta, `kpi-meta ${k.classe ?? ""}`.trim()));
+        resumo.appendChild(cartao);
+    });
+    document.getElementById("titulo-grafico-gastos-diarios").textContent = `${escolhida ? `${selecaoGastosDiarios} por dia` : "Total de gastos por dia"} · ${nomeMes}/${String(ano).slice(-2)}`;
+    const temDados = totalAtual > 0 || totalAnterior > 0;
+    alternarEstadoVazio("grafico-gastos-diarios", "vazio-gastos-diarios", temDados, `Sem gastos em ${nomeMes} de ${ano} nem de ${anoAnterior}.`);
+    if (temDados) renderizarGraficoComparativo("grafico-gastos-diarios", Array.from({ length: diasNoMes }, (_, i) => String(i + 1).padStart(2, "0")), {
+        atual: valoresAtual, anterior: valoresAnterior, nomeAtual: ano, nomeAnterior: anoAnterior, cor: corDoTema("--cor-saida"), limite: diasNoMes
+    });
+
+    const tabela = document.getElementById("tabela-gastos-diarios");
+    tabela.replaceChildren();
+    document.getElementById("area-tabela-gastos-diarios").style.display = porCategoriaDia.size ? "" : "none";
+    const thead = document.createElement("thead"); const cab = document.createElement("tr");
+    cab.append(celula("th", "Classificação", "col-nome"), celula("th", "", "col-rotulo"));
+    Array.from({ length: diasNoMes }, (_, i) => cab.appendChild(celula("th", String(i + 1).padStart(2, "0"))));
+    cab.appendChild(celula("th", nomeMes, "col-comparacao col-separador")); thead.appendChild(cab); tabela.appendChild(thead);
+    const somar = (valores) => valores.reduce((s, v) => s + v, 0);
+    const fmtDif = (v) => Math.abs(v) < 0.5 ? "–" : `${v > 0 ? "+" : "−"} ${valorCompacto(Math.abs(v))}`;
+    const fmtPct = (v, ant) => Math.abs(v) < 0.5 ? "–" : ant ? `${v > 0 ? "▲" : "▼"} ${Math.abs(Math.round(v / ant * 100))}%` : "novo";
+    const montarGrupoDiario = (grupo, categoria, dados, total = false) => {
+        const cur = dados.atual; const ant = dados.anterior;
+        const dif = cur.map((v, i) => v - ant[i]);
+        const linhas = [
+            { nome: String(ano), valores: cur, total: somar(cur), classe: "linha-atual" },
+            { nome: String(anoAnterior), valores: ant, total: somar(ant), classe: "linha-anterior" },
+            { nome: "Dif. R$", valores: dif, total: somar(cur) - somar(ant), classe: "linha-diferenca", formato: (v) => fmtDif(v) },
+            { nome: "Dif. %", valores: dif, total: somar(cur) - somar(ant), classe: "linha-percentual", formato: (v, i) => fmtPct(v, ant[i]) }
+        ];
+        linhas.forEach((linha, indice) => {
+            const tr = document.createElement("tr"); tr.className = linha.classe;
+            if (indice === 0) { const nome = celula(total ? "th" : "th", categoria, `col-nome${total ? "" : ""}`); nome.rowSpan = 4; tr.appendChild(nome); }
+            tr.appendChild(celula("td", linha.nome, "col-rotulo"));
+            linha.valores.forEach((v, i) => {
+                const texto = linha.formato ? linha.formato(v, i) : valorCompacto(v);
+                const classe = indice < 2 && Math.abs(v) < 0.5 ? "zero" : indice >= 2 ? `variacao-${sentidoDaVariacao("SAIDA", v)}` : "";
+                tr.appendChild(celula("td", texto, classe, `${categoria} · ${String(i + 1).padStart(2, "0")}/${mes}: ${formatarReais(indice === 0 ? cur[i] : indice === 1 ? ant[i] : v)}`));
+            });
+            tr.appendChild(celula("td", linha.formato ? (indice === 3 ? fmtPct(linha.total, somar(ant)) : fmtDif(linha.total)) : valorCompacto(linha.total), `col-comparacao col-separador ${indice >= 2 ? `variacao-${sentidoDaVariacao("SAIDA", linha.total)}` : ""}`));
+            grupo.appendChild(tr);
+        });
+    };
+    [...porCategoriaDia.entries()].sort((a, b) => somar(b[1].atual) - somar(a[1].atual)).forEach(([categoria, dados]) => {
+        const grupo = document.createElement("tbody"); grupo.className = "grupo-categoria";
+        grupo.setAttribute("aria-label", `${categoria} — comparação dia a dia`);
+        grupo.tabIndex = 0;
+        if (categoria === selecaoGastosDiarios) grupo.classList.add("selecionada");
+        montarGrupoDiario(grupo, categoria, dados); tabela.appendChild(grupo);
+        const selecionar = () => {
+            selecaoGastosDiarios = selecaoGastosDiarios === categoria ? null : categoria;
+            renderizarGastosDiarios(lista, ano, categoriasSeparadas);
+            document.getElementById("grafico-gastos-diarios").scrollIntoView({ behavior: "smooth", block: "center" });
+        };
+        grupo.addEventListener("click", selecionar);
+        grupo.addEventListener("keydown", (evento) => { if (evento.key === "Enter" || evento.key === " ") { evento.preventDefault(); selecionar(); } });
+    });
+    const rodape = document.createElement("tfoot"); montarGrupoDiario(rodape, "Total", { atual, anterior }, true); tabela.appendChild(rodape);
+}
+
 function renderizarEvolucaoCategorias(contexto = estadoEvolucaoCat.contexto) {
     if (!contexto) return;
     estadoEvolucaoCat.contexto = contexto;
@@ -1149,6 +1256,7 @@ function aplicarFiltros() {
         : "");
 
     renderizarEvolucaoCategorias({ lista: listaSemPeriodo, ano: anoEvolucao, categoriasSeparadas });
+    renderizarGastosDiarios(listaSemPeriodo, anoEvolucao, categoriasSeparadas);
 
     renderizarPrevistos(listaFutura);
     renderizarVisoesPersonalizadas(lista);

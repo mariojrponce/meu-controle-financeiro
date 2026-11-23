@@ -5,14 +5,67 @@ import { BANCOS_SUGERIDOS, CLASSIFICACOES_SUGERIDAS, mesclarSugestoes, normaliza
 import { brParaISO, isoParaBR, normalizarDataDigitada, ligarCampoDataInteligente, formatarReais } from "./utils.js";
 import { criarComboboxTexto } from "./combobox.js";
 import { ativarOrdenacao, compararValores } from "./tabela-ordenavel.js";
-import { obterTransacoes, criarTransacao, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
+import { obterTransacoes, criarTransacao, criarOcorrenciaRecorrente, excluirTransacaoPorId, atualizarTransacao } from "./dados-carteira.js";
 import { abrirEditorTransacao } from "./editor-transacao.js";
 import { filtrarPorVale, preencherSelectVale } from "./vale.js";
+import { carregarConfiguracoes, salvarConfiguracoes } from "./configuracoes.js";
 
 const QTD_ULTIMOS = 10;
 
 const usuario = await exigirLogin();
 renderizarNav("lancar", usuario.email);
+
+let configuracaoAtual;
+async function salvarModelosRecorrentes(recorrencias) {
+    const { config } = await carregarConfiguracoes(usuario, { forcarAtualizacao: true });
+    configuracaoAtual = await salvarConfiguracoes(usuario, { ...config, recorrencias });
+    renderizarRecorrencias();
+}
+
+function renderizarRecorrencias() {
+    const container = document.getElementById("lista-recorrencias");
+    if (!container || !configuracaoAtual) return;
+    container.replaceChildren();
+    const lista = configuracaoAtual.recorrencias ?? [];
+    if (!lista.length) { container.textContent = "Nenhuma recorrência cadastrada."; return; }
+    lista.forEach((r) => {
+        const linha = document.createElement("div");
+        linha.className = "faixa-info";
+        linha.style.justifyContent = "space-between";
+        const texto = document.createElement("span");
+        texto.textContent = `${r.descricao} · dia ${r.dia} · ${formatarReais(r.valor)} · ${r.ativo ? "Ativa" : "Pausada"}`;
+        const acoes = document.createElement("span");
+        const alternar = document.createElement("button");
+        alternar.type = "button"; alternar.className = "botao botao-secundario"; alternar.textContent = r.ativo ? "Pausar" : "Ativar";
+        alternar.addEventListener("click", () => salvarModelosRecorrentes(lista.map(x => x.id === r.id ? { ...x, ativo: !x.ativo } : x)));
+        const excluir = document.createElement("button");
+        excluir.type = "button"; excluir.className = "botao botao-secundario"; excluir.textContent = "Remover";
+        excluir.addEventListener("click", () => salvarModelosRecorrentes(lista.filter(x => x.id !== r.id)));
+        acoes.append(alternar, excluir); linha.append(texto, acoes); container.appendChild(linha);
+    });
+}
+
+async function inicializarRecorrencias() {
+    try {
+        const resultado = await carregarConfiguracoes(usuario);
+        configuracaoAtual = resultado.config;
+        renderizarRecorrencias();
+        const hoje = new Date();
+        for (const r of configuracaoAtual.recorrencias.filter(x => x.ativo)) {
+            let ano = hoje.getFullYear();
+            let mesNumero = hoje.getMonth();
+            let dia = Math.min(r.dia, new Date(ano, mesNumero + 1, 0).getDate());
+            if (dia < hoje.getDate()) { mesNumero += 1; if (mesNumero > 11) { mesNumero = 0; ano += 1; } dia = Math.min(r.dia, new Date(ano, mesNumero + 1, 0).getDate()); }
+            const mes = String(mesNumero + 1).padStart(2, "0");
+            const data = `${ano}-${mes}-${String(dia).padStart(2, "0")}`;
+            await criarOcorrenciaRecorrente(usuario, r, `${ano}${mes}`, {
+                valor: r.valor, data, descricao: r.descricao, saida: r.saida, banco: r.banco,
+                tipo: r.tipo, tipo_mov: r.tipo_mov, classificacao_saida: r.classificacao_saida
+            });
+        }
+        await carregarDadosAuxiliares(true);
+    } catch (erro) { console.error("Erro ao carregar recorrências:", erro); carregarDadosAuxiliares(); }
+}
 
 const campoData = document.getElementById("data");
 ligarCampoDataInteligente(campoData);
@@ -41,9 +94,9 @@ ativarOrdenacao(document.querySelector("#tabela-ultimos thead"), (chave, direcao
 
 // Uma única busca (com cache) serve tanto para as sugestões de Banco/Classificação
 // quanto para os últimos lançamentos.
-async function carregarDadosAuxiliares() {
+async function carregarDadosAuxiliares(forcarAtualizacao = false) {
     try {
-        const transacoes = await obterTransacoes(usuario);
+        const transacoes = await obterTransacoes(usuario, { forcarAtualizacao });
 
         const bancosUsados = transacoes.map(t => t.banco).filter(Boolean);
         const classificacoesUsadas = transacoes.map(t => t.classificacao_saida).filter(Boolean);
@@ -165,7 +218,28 @@ async function editarTransacao(transacao) {
     }
 }
 
-carregarDadosAuxiliares();
+inicializarRecorrencias();
+
+document.getElementById("form-recorrencia")?.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    try {
+        const { config } = await carregarConfiguracoes(usuario, { forcarAtualizacao: true });
+        const normalizar = (id) => document.getElementById(id).value.trim().toUpperCase();
+        const modelo = {
+            id: crypto.randomUUID(), ativo: true,
+            valor: Number(document.getElementById("rec-valor").value),
+            dia: Number(document.getElementById("rec-dia").value),
+            descricao: normalizar("rec-descricao"), saida: normalizar("rec-detalhe"),
+            banco: normalizar("rec-banco"), tipo: document.getElementById("rec-tipo").value,
+            tipo_mov: "EXTERNO", classificacao_saida: normalizar("rec-classificacao")
+        };
+        configuracaoAtual = await salvarConfiguracoes(usuario, { ...config, recorrencias: [...(config.recorrencias ?? []), modelo] });
+        renderizarRecorrencias();
+        evento.currentTarget.reset();
+        mostrarToast("Recorrência adicionada.", "sucesso");
+        inicializarRecorrencias();
+    } catch (erro) { console.error("Erro ao salvar recorrência:", erro); mostrarToast("Não foi possível salvar a recorrência.", "erro"); }
+});
 
 const formulario = document.getElementById("form-transacao");
 

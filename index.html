@@ -138,6 +138,23 @@
                     </div>
                 </section>
             </div>
+            <section class="cartao secao" aria-labelledby="titulo-recorrencias">
+                <div class="secao-titulo"><h2 id="titulo-recorrencias">Despesas recorrentes</h2></div>
+                <p class="dica-campo">Cadastre uma vez. O sistema cria a ocorrência do mês ao abrir esta tela, com vencimento no dia escolhido.</p>
+                <form id="form-recorrencia">
+                    <div class="grade-campos">
+                        <div class="campo"><label for="rec-valor">Valor (R$)</label><input id="rec-valor" type="number" min="0.01" step="0.01" required></div>
+                        <div class="campo"><label for="rec-dia">Dia do mês</label><input id="rec-dia" type="number" min="1" max="31" value="10" required></div>
+                        <div class="campo campo-inteiro"><label for="rec-descricao">Descrição</label><input id="rec-descricao" maxlength="120" placeholder="Ex.: Boleto da Torre" required></div>
+                        <div class="campo"><label for="rec-detalhe">Detalhe</label><input id="rec-detalhe" maxlength="120"></div>
+                        <div class="campo"><label for="rec-banco">Banco</label><input id="rec-banco" maxlength="60" required></div>
+                        <div class="campo"><label for="rec-tipo">Tipo</label><select id="rec-tipo"><option value="SAIDA">Saída</option><option value="ENTRADA">Entrada</option></select></div>
+                        <div class="campo"><label for="rec-classificacao">Classificação</label><input id="rec-classificacao" maxlength="60" required></div>
+                    </div>
+                    <button class="botao botao-primario" type="submit">Adicionar recorrência</button>
+                </form>
+                <div id="lista-recorrencias" style="margin-top:var(--e-4)"></div>
+            </section>
         </div>
     </main>
 </div>

@@ -6,7 +6,7 @@
 // leitura gratuita rapidinho.
 import {
   collection, getDocs, query, where,
-  addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp
+  addDoc, updateDoc, deleteDoc, doc, writeBatch, serverTimestamp, getDoc, setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
@@ -91,6 +91,20 @@ export async function criarTransacao(usuario, dados) {
   salvarCache(usuario.uid, cacheAtual);
 
   return referencia.id;
+}
+
+// ID determinístico por modelo e mês: duas abas abertas ao mesmo tempo não
+// criam a mesma cobrança recorrente duas vezes.
+export async function criarOcorrenciaRecorrente(usuario, recorrencia, ocorrencia, dados) {
+  const id = `rec_${recorrencia.id}_${ocorrencia}`;
+  const referencia = doc(db, NOME_COLECAO, id);
+  const existente = await getDoc(referencia);
+  if (existente.exists()) return false;
+  await setDoc(referencia, { userId: usuario.uid, ...dados, recorrencia_id: recorrencia.id, ocorrencia, criadoEm: serverTimestamp() });
+  const cacheAtual = lerCache(usuario.uid) ?? [];
+  cacheAtual.push({ id, userId: usuario.uid, ...dados, recorrencia_id: recorrencia.id, ocorrencia, criadoEmMs: Date.now() });
+  salvarCache(usuario.uid, cacheAtual);
+  return true;
 }
 
 // Atualiza os campos editáveis de uma transação e reflete no cache local.

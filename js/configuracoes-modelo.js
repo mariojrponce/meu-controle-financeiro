@@ -17,7 +17,8 @@ export function configuracoesPadrao() {
     bancos: [...BANCOS_SUGERIDOS_PADRAO],
     classificacoes: [...CLASSIFICACOES_SUGERIDAS_PADRAO],
     bancosVale: [...BANCOS_VALE_PADRAO],
-    regras: REGRAS_PADRAO.map((r) => ({ ...r, de: [...r.de] }))
+    regras: REGRAS_PADRAO.map((r) => ({ ...r, de: [...r.de] })),
+    recorrencias: []
   };
 }
 
@@ -40,7 +41,15 @@ export function limparConfiguracoes(bruto) {
     bancos: limparLista(bruto?.bancos, padrao.bancos),
     classificacoes: limparLista(bruto?.classificacoes, padrao.classificacoes),
     bancosVale: limparLista(bruto?.bancosVale, padrao.bancosVale),
-    regras: Array.isArray(bruto?.regras) ? bruto.regras.map(limparRegra).filter(Boolean).slice(0, LIMITE_ITENS) : padrao.regras
+    regras: Array.isArray(bruto?.regras) ? bruto.regras.map(limparRegra).filter(Boolean).slice(0, LIMITE_ITENS) : padrao.regras,
+    recorrencias: Array.isArray(bruto?.recorrencias) ? bruto.recorrencias.map((r) => {
+      if (!r || typeof r.id !== "string" || typeof r.valor !== "number" || r.valor <= 0 || !Number.isInteger(r.dia) || r.dia < 1 || r.dia > 31) return null;
+      const texto = (v, n) => String(v ?? "").trim().slice(0, n);
+      const tipo = r.tipo === "ENTRADA" ? "ENTRADA" : "SAIDA";
+      return { id: r.id.slice(0, 80), ativo: r.ativo !== false, valor: r.valor, dia: r.dia, tipo,
+        descricao: texto(r.descricao, 120), saida: texto(r.saida, 120), banco: texto(r.banco, 60),
+        classificacao_saida: texto(r.classificacao_saida, 60), tipo_mov: r.tipo_mov === "INTERNO" ? "INTERNO" : "EXTERNO" };
+    }).filter(r => r && r.descricao && r.banco && r.classificacao_saida).slice(0, 100) : []
   };
 }
 

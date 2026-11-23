@@ -23,7 +23,8 @@ service cloud.firestore {
         'userId', 'valor', 'data', 'tipo', 'tipo_mov', 'descricao', 'saida', 'banco',
         'classificacao_saida', 'criadoEm',
         'investimento', 'dono_carteira', 'banco_investimento',   // tela Investimentos
-        'importacao_id', 'id_externo', 'texto_banco'             // importação de extratos
+        'importacao_id', 'id_externo', 'texto_banco',             // importação de extratos
+        'recorrencia_id', 'ocorrencia'                            // despesas recorrentes
       ]);
     }
 
@@ -47,7 +48,9 @@ service cloud.firestore {
              && textoOpcional(dados, 'banco_investimento', 60)
              && textoOpcional(dados, 'importacao_id', 200)
              && textoOpcional(dados, 'id_externo', 300)
-             && textoOpcional(dados, 'texto_banco', 300);
+             && textoOpcional(dados, 'texto_banco', 300)
+             && textoOpcional(dados, 'recorrencia_id', 80)
+             && textoOpcional(dados, 'ocorrencia', 7);
     }
 
     match /carteira/{itemId} {
@@ -87,11 +90,12 @@ service cloud.firestore {
 
       allow create, update: if request.auth != null
                             && request.auth.uid == uid
-                            && request.resource.data.keys().hasOnly(['bancos', 'classificacoes', 'bancosVale', 'regras', 'atualizadoEm'])
+                            && request.resource.data.keys().hasOnly(['bancos', 'classificacoes', 'bancosVale', 'regras', 'recorrencias', 'atualizadoEm'])
                             && listaValida(request.resource.data, 'bancos')
                             && listaValida(request.resource.data, 'classificacoes')
                             && listaValida(request.resource.data, 'bancosVale')
-                            && listaValida(request.resource.data, 'regras');
+                            && listaValida(request.resource.data, 'regras')
+                            && listaValida(request.resource.data, 'recorrencias');
     }
 
     // Bloqueia qualquer outra coleção não prevista explicitamente
